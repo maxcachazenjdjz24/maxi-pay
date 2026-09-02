@@ -1,0 +1,25 @@
+# Dependencias y compilación
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Estado del agente en ejecución (nunca debe subirse — contiene la wallet
+# cifrada, la base de datos con memoria/historial, y configuración con
+# posibles claves de API)
+.automaton/
+*.db
+*.db-wal
+*.db-shm
+
+# Wallets y secretos (por si se generan fuera de ~/.automaton)
+wallet.json
+*.key
+*.pem
+.env
+.env.*
+
+# Sistema operativo / editor
+.DS_Store
+*.log
+.vscode/
+.idea/

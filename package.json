@@ -1,0 +1,33 @@
+{
+  "name": "mi-automaton",
+  "version": "0.1.0",
+  "description": "Agente autónomo propio, inspirado en Conway Automaton (Conway-Research/automaton, MIT), corriendo en infraestructura propia.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "automaton": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js --run",
+    "setup": "node dist/index.js --setup",
+    "status": "node dist/index.js --status",
+    "approvals": "node dist/approvals-cli.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0",
+    "better-sqlite3": "^11.0.0",
+    "chalk": "^5.3.0",
+    "cron-parser": "^5.10.0",
+    "js-tiktoken": "^1.0.21",
+    "ulid": "^2.3.0",
+    "viem": "^2.44.2",
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

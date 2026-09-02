@@ -33,6 +33,26 @@ servidor, inferencia directa vía Anthropic, y una wallet EVM propia cifrada.
   simple) y sin ecosistema de "colonia" de agentes — se priorizó tener
   algo simple y funcional primero.
 
+## Proveedores de inferencia soportados
+
+El modelo se configura como `"proveedor/modelo"` en `automaton.json`
+(campo `inferenceModel`), por ejemplo `"anthropic/claude-sonnet-4-5"` o
+`"google/gemini-2.5-pro"`. Proveedores disponibles:
+
+| Proveedor | Variable de entorno | Formato |
+|---|---|---|
+| Anthropic | `ANTHROPIC_API_KEY` | nativo |
+| Google (Gemini) | `GOOGLE_API_KEY` (o `GEMINI_API_KEY`) | nativo |
+| OpenAI | `OPENAI_API_KEY` | compatible OpenAI |
+| Groq | `GROQ_API_KEY` | compatible OpenAI |
+| OpenRouter | `OPENROUTER_API_KEY` | compatible OpenAI |
+| Grok (xAI) | `GROK_API_KEY` | compatible OpenAI |
+| Alibaba Model Studio | `MODELSTUDIO_API_KEY` | compatible OpenAI |
+| Ollama (local) | ninguna | compatible OpenAI |
+
+Solo necesitas definir la variable del proveedor que vayas a usar. El
+wizard (`npm run setup`) te pregunta cuál quieres configurar por defecto.
+
 ## Requisitos
 
 - Node.js 20+

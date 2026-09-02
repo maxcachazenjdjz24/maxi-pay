@@ -33,7 +33,7 @@ import {
   toolsToInferenceFormat,
   executeTool,
 } from "./tools.js";
-import { chatWithAnthropic } from "../inference/anthropic-client.js";
+import { chat as chatWithInference } from "../inference/router.js";
 import { ulid } from "ulid";
 import { createLogger } from "../observability/logger.js";
 
@@ -146,7 +146,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
       // ── Think: call Anthropic ──
       log(config, `[THINK] Calling ${config.inferenceModel}...`);
       const inferenceTools = toolsToInferenceFormat(tools);
-      const result = await chatWithAnthropic({
+      const result = await chatWithInference({
         modelId: config.inferenceModel,
         messages,
         maxTokens: config.maxTokensPerTurn ?? 4096,

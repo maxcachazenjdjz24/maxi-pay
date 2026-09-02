@@ -54,7 +54,12 @@ Related:
   node dist/approvals-cli.js list|approve <id>|deny <id>   Manage pending approvals
 
 Environment:
-  ANTHROPIC_API_KEY              Required for inference
+  Modelo configurado en automaton.json como "proveedor/modelo", ej.
+  "anthropic/claude-sonnet-4-5", "openai/gpt-5", "google/gemini-2.5-pro".
+  Define solo la key del proveedor que vayas a usar:
+    ANTHROPIC_API_KEY | GOOGLE_API_KEY | OPENAI_API_KEY | GROQ_API_KEY
+    OPENROUTER_API_KEY | GROK_API_KEY | MODELSTUDIO_API_KEY
+  (Ollama no requiere key; corre localmente)
   AUTOMATON_WALLET_PASSPHRASE    Required to encrypt/decrypt the wallet
   AUTOMATON_RPC_URL              Base RPC endpoint (optional, has a default)
 `);
@@ -201,13 +206,32 @@ async function run(): Promise<void> {
     }
   }
 
-  if (!process.env.ANTHROPIC_API_KEY && !config.anthropicApiKey) {
-    logger.error("No Anthropic API key found (ANTHROPIC_API_KEY env var or config). Cannot run inference.");
-    process.exit(1);
-  }
-  if (process.env.ANTHROPIC_API_KEY === undefined && config.anthropicApiKey) {
+  if (config.anthropicApiKey && !process.env.ANTHROPIC_API_KEY) {
     process.env.ANTHROPIC_API_KEY = config.anthropicApiKey;
   }
+  if (config.openaiApiKey && !process.env.OPENAI_API_KEY) {
+    process.env.OPENAI_API_KEY = config.openaiApiKey;
+  }
+
+  const { parseModelId } = await import("./inference/router.js");
+  const { provider } = parseModelId(config.inferenceModel);
+  const REQUIRED_ENV_VAR: Record<string, string> = {
+    anthropic: "ANTHROPIC_API_KEY",
+    google: "GOOGLE_API_KEY (o GEMINI_API_KEY)",
+    openai: "OPENAI_API_KEY",
+    groq: "GROQ_API_KEY",
+    openrouter: "OPENROUTER_API_KEY",
+    grok: "GROK_API_KEY",
+    modelstudio: "MODELSTUDIO_API_KEY",
+  };
+  const requiredVar = REQUIRED_ENV_VAR[provider];
+  if (requiredVar && !process.env[requiredVar.split(" ")[0]] && !process.env.GEMINI_API_KEY) {
+    logger.error(
+      `Falta la variable de entorno ${requiredVar} para el proveedor configurado ("${provider}"). Cannot run inference.`,
+    );
+    process.exit(1);
+  }
+  // Ollama no requiere key.
 
   const { account, chainIdentity } = await getWallet();
 

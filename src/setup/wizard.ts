@@ -81,35 +81,64 @@ export async function runSetupWizard(): Promise<AutomatonConfig> {
   );
   console.log(chalk.green(`  Operador: ${operatorId}\n`));
 
-  // ─── 3. Claves de inferencia ───────────────────────────────────
-  console.log(chalk.white("  Claves de los proveedores de inferencia (Enter para omitir)."));
-  const anthropicApiKey = await promptOptional("Anthropic API key (sk-ant-..., opcional)");
-  if (anthropicApiKey && !anthropicApiKey.startsWith("sk-ant-")) {
-    console.log(chalk.yellow("  Aviso: las claves de Anthropic normalmente empiezan con sk-ant-. Se guarda igual."));
+  // ─── 3. Proveedor de inferencia ─────────────────────────────────
+  console.log(chalk.white("  ¿Qué proveedor de inferencia vas a usar?"));
+  console.log(chalk.dim("  (anthropic, google, openai, groq, openrouter, grok, modelstudio, ollama)\n"));
+  const VALID_PROVIDERS = ["anthropic", "google", "openai", "groq", "openrouter", "grok", "modelstudio", "ollama"];
+  let provider = "anthropic";
+  while (true) {
+    const input = await promptOptional("Proveedor [anthropic]");
+    if (!input) break; // default: anthropic
+    if (VALID_PROVIDERS.includes(input.trim().toLowerCase())) {
+      provider = input.trim().toLowerCase();
+      break;
+    }
+    console.log(chalk.yellow(`  Proveedor no reconocido. Opciones válidas: ${VALID_PROVIDERS.join(", ")}`));
   }
+  const modelIdInput = await promptOptional(`Modelo de ${provider} a usar (Enter para el valor por defecto)`);
 
-  const openaiApiKey = await promptOptional("OpenAI API key (sk-..., opcional)");
-  if (openaiApiKey && !openaiApiKey.startsWith("sk-")) {
-    console.log(chalk.yellow("  Aviso: las claves de OpenAI normalmente empiezan con sk-. Se guarda igual."));
-  }
+  const PROVIDER_ENV_VARS: Record<string, string> = {
+    anthropic: "ANTHROPIC_API_KEY",
+    google: "GOOGLE_API_KEY",
+    openai: "OPENAI_API_KEY",
+    groq: "GROQ_API_KEY",
+    openrouter: "OPENROUTER_API_KEY",
+    grok: "GROK_API_KEY",
+    modelstudio: "MODELSTUDIO_API_KEY",
+  };
+  const anthropicApiKey =
+    provider === "anthropic" ? await promptOptional("Anthropic API key (sk-ant-..., opcional)") : undefined;
+  const openaiApiKey =
+    provider === "openai" ? await promptOptional("OpenAI API key (sk-..., opcional)") : undefined;
+  let ollamaBaseUrl: string | undefined;
 
-  const ollamaInput = await promptOptional("URL base de Ollama (http://localhost:11434, opcional)");
-  const ollamaBaseUrl = ollamaInput || undefined;
-
-  if (anthropicApiKey || openaiApiKey || ollamaBaseUrl) {
-    const providers = [
-      anthropicApiKey ? "Anthropic" : null,
-      openaiApiKey ? "OpenAI" : null,
-      ollamaBaseUrl ? "Ollama" : null,
-    ].filter(Boolean).join(", ");
-    console.log(chalk.green(`  Proveedores configurados: ${providers}\n`));
-  } else {
+  if (provider === "ollama") {
+    const ollamaInput = await promptOptional("URL base de Ollama (http://localhost:11434, opcional)");
+    ollamaBaseUrl = ollamaInput || undefined;
+  } else if (provider !== "anthropic" && provider !== "openai") {
+    const envVar = PROVIDER_ENV_VARS[provider];
     console.log(
       chalk.yellow(
-        "  Sin ninguna clave configurada, el agente no podrá razonar. Puedes agregarlas después en automaton.json.\n",
+        `  Define la variable de entorno ${envVar || "correspondiente"} antes de arrancar el agente (no se guarda en el wizard).`,
       ),
     );
   }
+
+  const DEFAULT_MODELS: Record<string, string> = {
+    anthropic: "anthropic/claude-sonnet-4-5",
+    google: "google/gemini-2.5-pro",
+    openai: "openai/gpt-5",
+    groq: "groq/llama-3.3-70b-versatile",
+    openrouter: "openrouter/anthropic/claude-sonnet-4-5",
+    grok: "grok/grok-4",
+    modelstudio: "modelstudio/qwen3-max",
+    ollama: "ollama/qwen3:8b",
+  };
+  const inferenceModel = modelIdInput
+    ? `${provider}/${modelIdInput}`
+    : DEFAULT_MODELS[provider] || "anthropic/claude-sonnet-4-5";
+
+  console.log(chalk.green(`  Modelo configurado: ${inferenceModel}\n`));
 
   // ─── 4. Política de gasto (treasury) ──────────────────────────
   console.log(chalk.cyan("  Política de gasto"));
@@ -160,6 +189,7 @@ export async function runSetupWizard(): Promise<AutomatonConfig> {
     openaiApiKey: openaiApiKey || undefined,
     anthropicApiKey: anthropicApiKey || undefined,
     ollamaBaseUrl,
+    inferenceModel,
     treasuryPolicy,
   });
 

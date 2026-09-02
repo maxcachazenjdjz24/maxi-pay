@@ -120,6 +120,7 @@ export function createConfig(params: {
   openaiApiKey?: string;
   anthropicApiKey?: string;
   ollamaBaseUrl?: string;
+  inferenceModel?: string;
   parentAddress?: string;
   treasuryPolicy?: TreasuryPolicy;
 }): AutomatonConfig {
@@ -131,7 +132,7 @@ export function createConfig(params: {
     openaiApiKey: params.openaiApiKey,
     anthropicApiKey: params.anthropicApiKey,
     ollamaBaseUrl: params.ollamaBaseUrl,
-    inferenceModel: DEFAULT_CONFIG.inferenceModel || "claude-sonnet-4-5",
+    inferenceModel: params.inferenceModel || DEFAULT_CONFIG.inferenceModel || "anthropic/claude-sonnet-4-5",
     maxTokensPerTurn: DEFAULT_CONFIG.maxTokensPerTurn || 4096,
     heartbeatConfigPath:
       DEFAULT_CONFIG.heartbeatConfigPath || "~/.automaton/heartbeat.yml",

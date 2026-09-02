@@ -61,7 +61,7 @@ export interface AutomatonConfig {
 }
 
 export const DEFAULT_CONFIG: Partial<AutomatonConfig> = {
-  inferenceModel: "claude-sonnet-4-5",
+  inferenceModel: "anthropic/claude-sonnet-4-5",
   maxTokensPerTurn: 4096,
   heartbeatConfigPath: "~/.automaton/heartbeat.yml",
   dbPath: "~/.automaton/state.db",

@@ -48,6 +48,9 @@ function getAgentHome(): string {
  * Returns the resolved absolute path, or an error string if out of bounds.
  */
 function confinePathToHome(filePath: string): string | { error: string } {
+  if (!filePath || typeof filePath !== "string") {
+    return { error: "Invalid path: path must be a non-empty string." };
+  }
   const agentHome = getAgentHome();
   const expanded = filePath.startsWith("~")
     ? nodePath.join(agentHome, filePath.slice(1))

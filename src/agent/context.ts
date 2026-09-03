@@ -17,8 +17,8 @@ import type {
 import { DEFAULT_TOKEN_BUDGET } from "../types.js";
 import { createTokenCounter } from "../memory/context-manager.js";
 
-const MAX_CONTEXT_TURNS = 8;
-const SUMMARY_THRESHOLD = 6;
+const MAX_CONTEXT_TURNS = 5;
+const SUMMARY_THRESHOLD = 4;
 
 let tokenCounter: ReturnType<typeof createTokenCounter> | null = null;
 
@@ -155,10 +155,7 @@ export function buildContextMessages(
   }
 
   // Add recent turns as conversation history
-  const lastTurn = turnsToRender[turnsToRender.length - 1];
   for (const turn of turnsToRender) {
-    const isHistorical = turn !== lastTurn;
-
     // The turn's input (if any) as a user message
     if (turn.input) {
       messages.push({
@@ -176,31 +173,14 @@ export function buildContextMessages(
 
       // If there were tool calls, include them
       if (turn.toolCalls.length > 0) {
-        msg.tool_calls = turn.toolCalls.map((tc) => {
-          let argsToPass = tc.arguments;
-          // For historical turns, compress large file writes to save tokens
-          if (
-            isHistorical &&
-            (tc.name === "write_file" || tc.name === "edit_own_file") &&
-            typeof tc.arguments?.content === "string" &&
-            tc.arguments.content.length > 200
-          ) {
-            argsToPass = {
-              ...tc.arguments,
-              content:
-                tc.arguments.content.slice(0, 100) +
-                `... [${tc.arguments.content.length} chars written]`,
-            };
-          }
-          return {
-            id: tc.id,
-            type: "function" as const,
-            function: {
-              name: tc.name,
-              arguments: JSON.stringify(argsToPass),
-            },
-          };
-        });
+        msg.tool_calls = turn.toolCalls.map((tc) => ({
+          id: tc.id,
+          type: "function" as const,
+          function: {
+            name: tc.name,
+            arguments: JSON.stringify(tc.arguments),
+          },
+        }));
       }
       messages.push(msg);
 
@@ -209,12 +189,10 @@ export function buildContextMessages(
         const rawContent = tc.error
           ? `Error: ${tc.error}`
           : tc.result;
-        // For older turns, use even tighter truncation to save tokens
-        const maxResultLen = isHistorical ? 500 : MAX_TOOL_RESULT_SIZE;
         messages.push({
           role: "tool",
           name: tc.name,
-          content: truncateToolResult(rawContent, maxResultLen),
+          content: truncateToolResult(rawContent),
           tool_call_id: tc.id,
         });
       }

@@ -337,6 +337,9 @@ export interface ExecResult {
   stdout: string;
   stderr: string;
   exitCode: number;
+  /** true si el proceso fue matado por exceder el timeout — señal real
+   * de que quedó corriendo/escuchando (ej. un servidor), no de que falló. */
+  timedOut?: boolean;
 }
 
 // (reservado: CreateSandboxOptions, SandboxInfo, PricingTier, CreditTransferResult,

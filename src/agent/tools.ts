@@ -118,22 +118,17 @@ function isForbiddenCommand(command: string): string | null {
 }
 
 /**
- * Detecta si un comando parece un intento de arrancar un servidor/proceso
- * de larga duración directamente con exec (ej. "node server.js"). exec
- * espera a que el comando termine, así que esto se cuelga o falla — el
- * patrón real detrás de la mayoría de "servidores duplicados" que
- * dejábamos abandonados en pruebas. Redirige explícitamente a la
- * herramienta correcta en vez de dejar que el modelo siga intentando
- * variaciones con exec.
+ * Detecta de forma sintáctica los casos más obvios de intentar arrancar un
+ * proceso en background con la sintaxis equivocada (bash "&" o "nohup" en
+ * PowerShell, donde no funcionan). No intenta adivinar si un "node x.js"
+ * cualquiera es un servidor — eso depende del contenido del archivo, no
+ * del comando, y adivinar mal bloquea scripts legítimos que sí terminan
+ * solos (ver looksLikeHungForegroundProcess para la detección real, por
+ * timeout, en la propia herramienta exec).
  */
-function looksLikeForegroundServerLaunch(command: string): boolean {
-  const trimmed = command.trim();
-  // "node algo.js" o "node algo.js --flag", sin Start-Process, sin &,
-  // sin nohup, sin redirección — es decir, exactamente el patrón que
-  // bloquea exec en primer plano.
-  const isBareNodeInvocation = /^node\s+\S+\.js(\s+\S+)*$/i.test(trimmed);
-  const hasBackgroundingHint = /Start-Process|&\s*$|nohup|>\s*\S+\s*2>&1\s*&/i.test(trimmed);
-  return isBareNodeInvocation && !hasBackgroundingHint;
+function usesWrongBackgroundingSyntax(command: string, isWindows: boolean): boolean {
+  if (!isWindows) return false;
+  return /&\s*$/.test(command.trim()) || /^nohup\s+/i.test(command.trim());
 }
 
 function escapeShellArg(arg: string): string {
@@ -170,14 +165,24 @@ export function createBuiltinTools(): AutomatonTool[] {
         const forbidden = isForbiddenCommand(command);
         if (forbidden) return forbidden;
 
-        if (looksLikeForegroundServerLaunch(command)) {
-          return `Blocked: "${command}" looks like it starts a long-running process (a server) in the foreground — exec waits for commands to finish, so this will hang or return before the process is actually ready. Use start_background_process instead, e.g. start_background_process(label: "my-service", command: "${command}"). This also tracks the process by PID so you can stop it cleanly later, and reusing the same label replaces any previous instance instead of leaving duplicates running.`;
+        const isWindows = process.platform === "win32";
+        if (usesWrongBackgroundingSyntax(command, isWindows)) {
+          return `Blocked: "${command}" uses "&"/"nohup" to background a process, but that syntax doesn't work in PowerShell. Use start_background_process instead, e.g. start_background_process(label: "my-service", command: "${command.replace(/&\s*$/, "").trim()}"). It also tracks the process by PID so you can stop it cleanly later.`;
         }
 
-        const result = await ctx.runtime.exec(
-          command,
-          (args.timeout as number) || 30000,
-        );
+        // Si el operador no pidió un timeout específico, usamos uno corto
+        // (5s) como sonda: si el comando no termina en ese tiempo, es una
+        // señal real de que quedó corriendo/escuchando (un servidor), no
+        // una suposición basada en el nombre del comando — así no se
+        // bloquean scripts legítimos que sí terminan solos.
+        const requestedTimeout = args.timeout as number | undefined;
+        const timeout = requestedTimeout || 5000;
+        const result = await ctx.runtime.exec(command, timeout);
+
+        if (result.timedOut && !requestedTimeout) {
+          return `Blocked: "${command}" did not finish within ${timeout}ms and was stopped — this usually means it's a long-running process (a server) rather than a one-off command. Use start_background_process instead, e.g. start_background_process(label: "my-service", command: "${command}"). If this really is a slow one-off command, retry exec with an explicit timeout in milliseconds.`;
+        }
+
         return `exit_code: ${result.exitCode}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`;
       },
     },

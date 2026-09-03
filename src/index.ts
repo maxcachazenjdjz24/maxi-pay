@@ -157,6 +157,7 @@ function createLocalRuntime(): LocalRuntime {
           stdout: err.stdout || "",
           stderr: err.stderr || err.message || String(err),
           exitCode: typeof err.code === "number" ? err.code : 1,
+          timedOut: !!err.killed,
         };
       }
     },

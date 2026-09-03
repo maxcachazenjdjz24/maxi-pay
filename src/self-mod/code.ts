@@ -161,12 +161,42 @@ function resolveAndValidatePath(filePath: string): string | null {
 
 /**
  * Check if a file path is protected from modification.
+ *
+ * Los patrones "genéricos" (nombres de archivo comunes como package.json,
+ * wallet.json, automaton.json) solo se protegen DENTRO de la carpeta
+ * propia del automaton (~/.automaton) — de lo contrario, un package.json
+ * legítimo que el agente crea para un proyecto nuevo suyo (ej.
+ * ~/mi-nuevo-proyecto/package.json) quedaría bloqueado por error, aunque
+ * no tenga nada que ver con la configuración/identidad del propio agente.
+ * Los patrones con ruta (ej. "self-mod/code.ts", "agent/tools.ts") sí
+ * protegen en cualquier ubicación, porque identifican inequívocamente
+ * el código fuente del propio automaton.
  */
+const GENERIC_FILENAME_PATTERNS = new Set([
+  "wallet.json",
+  "config.json",
+  "automaton.json",
+  "state.db",
+  "state.db-wal",
+  "state.db-shm",
+  "constitution.md",
+  "SOUL.md",
+  "package.json",
+]);
+
 export function isProtectedFile(filePath: string): boolean {
   const resolved = path.resolve(filePath);
+  const automatonDir = path.resolve(os.homedir(), ".automaton");
+  const isInsideAutomatonDir =
+    resolved === automatonDir || resolved.startsWith(automatonDir + path.sep);
 
   // Check against protected file patterns using path-segment matching
   for (const pattern of PROTECTED_FILES) {
+    const isGenericFilename = GENERIC_FILENAME_PATTERNS.has(pattern) && !pattern.includes("/");
+    if (isGenericFilename && !isInsideAutomatonDir) {
+      // Nombre genérico fuera de la carpeta del automaton: no protegido.
+      continue;
+    }
     const patternResolved = path.resolve(pattern);
     // Exact match on resolved paths
     if (resolved === patternResolved) return true;

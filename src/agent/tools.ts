@@ -32,20 +32,29 @@ const logger = createLogger("tools");
 // ─── Path Confinement ─────────────────────────────────────────
 // write_file está restringido al árbol de directorios del home del
 // agente en el servidor (equivalente al SANDBOX_HOME del original).
-const AGENT_HOME = process.env.AGENT_HOME || "/root";
+// AGENT_HOME confina las escrituras del agente. Si no se define
+// explícitamente, se usa el mismo HOME real del proceso (os.homedir()).
+// index.ts ahora usa el shell nativo del sistema operativo para exec
+// (PowerShell en Windows, bash en Linux/Mac), así exec y write_file/
+// read_file operan sobre el mismo sistema de archivos — ya no hay
+// discrepancia entre un exec en WSL/Linux y un os.homedir() de Windows.
+function getAgentHome(): string {
+  return process.env.AGENT_HOME || require("node:os").homedir();
+}
 
 /**
  * Validate that a file path resolves to within the allowed root directory.
  * Returns the resolved absolute path, or an error string if out of bounds.
  */
 function confinePathToHome(filePath: string): string | { error: string } {
+  const agentHome = getAgentHome();
   const expanded = filePath.startsWith("~")
-    ? nodePath.join(AGENT_HOME, filePath.slice(1))
+    ? nodePath.join(agentHome, filePath.slice(1))
     : filePath;
-  const resolved = nodePath.resolve(AGENT_HOME, expanded);
-  if (resolved !== AGENT_HOME && !resolved.startsWith(AGENT_HOME + "/")) {
+  const resolved = nodePath.resolve(agentHome, expanded);
+  if (resolved !== agentHome && !resolved.startsWith(agentHome + "/")) {
     return {
-      error: `Blocked: write_file path "${filePath}" resolves to "${resolved}" which is outside the allowed directory (${AGENT_HOME}). Writes are confined to the agent's home.`,
+      error: `Blocked: write_file path "${filePath}" resolves to "${resolved}" which is outside the allowed directory (${agentHome}). Writes are confined to the agent's home.`,
     };
   }
   return resolved;

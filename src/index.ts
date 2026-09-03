@@ -125,13 +125,24 @@ Version:    ${config.version}
 
 /** Ejecución local real, en este mismo servidor. */
 function createLocalRuntime(): LocalRuntime {
+  const isWindows = process.platform === "win32";
   return {
     exec: async (command, timeout = 30000) => {
       try {
-        const { stdout, stderr } = await execFileAsync("bash", ["-c", command], {
-          timeout,
-          maxBuffer: 10 * 1024 * 1024,
-        });
+        // En Windows se usa PowerShell (no bash de WSL), para que exec
+        // opere sobre el mismo sistema de archivos que ve Node con
+        // os.homedir() — evita que write_file/read_file (Windows) y exec
+        // (que antes iba a WSL/Linux) apunten a dos "hogares" distintos.
+        const { stdout, stderr } = isWindows
+          ? await execFileAsync(
+              "powershell.exe",
+              ["-NoProfile", "-NonInteractive", "-Command", command],
+              { timeout, maxBuffer: 10 * 1024 * 1024 },
+            )
+          : await execFileAsync("bash", ["-c", command], {
+              timeout,
+              maxBuffer: 10 * 1024 * 1024,
+            });
         return { stdout, stderr, exitCode: 0 };
       } catch (err: any) {
         return {

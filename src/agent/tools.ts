@@ -117,6 +117,25 @@ function isForbiddenCommand(command: string): string | null {
   return null;
 }
 
+/**
+ * Detecta si un comando parece un intento de arrancar un servidor/proceso
+ * de larga duración directamente con exec (ej. "node server.js"). exec
+ * espera a que el comando termine, así que esto se cuelga o falla — el
+ * patrón real detrás de la mayoría de "servidores duplicados" que
+ * dejábamos abandonados en pruebas. Redirige explícitamente a la
+ * herramienta correcta en vez de dejar que el modelo siga intentando
+ * variaciones con exec.
+ */
+function looksLikeForegroundServerLaunch(command: string): boolean {
+  const trimmed = command.trim();
+  // "node algo.js" o "node algo.js --flag", sin Start-Process, sin &,
+  // sin nohup, sin redirección — es decir, exactamente el patrón que
+  // bloquea exec en primer plano.
+  const isBareNodeInvocation = /^node\s+\S+\.js(\s+\S+)*$/i.test(trimmed);
+  const hasBackgroundingHint = /Start-Process|&\s*$|nohup|>\s*\S+\s*2>&1\s*&/i.test(trimmed);
+  return isBareNodeInvocation && !hasBackgroundingHint;
+}
+
 function escapeShellArg(arg: string): string {
   return `'${arg.replace(/'/g, "'\\''")}'`;
 }
@@ -150,6 +169,10 @@ export function createBuiltinTools(): AutomatonTool[] {
         const command = args.command as string;
         const forbidden = isForbiddenCommand(command);
         if (forbidden) return forbidden;
+
+        if (looksLikeForegroundServerLaunch(command)) {
+          return `Blocked: "${command}" looks like it starts a long-running process (a server) in the foreground — exec waits for commands to finish, so this will hang or return before the process is actually ready. Use start_background_process instead, e.g. start_background_process(label: "my-service", command: "${command}"). This also tracks the process by PID so you can stop it cleanly later, and reusing the same label replaces any previous instance instead of leaving duplicates running.`;
+        }
 
         const result = await ctx.runtime.exec(
           command,

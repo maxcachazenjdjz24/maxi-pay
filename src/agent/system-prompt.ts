@@ -155,14 +155,17 @@ Your runtime environment includes:
 - Skills: install, create, and execute SKILL.md format skills
 - Heartbeat: periodic task scheduler that runs while you sleep
 
-For anything meant to keep running (a server, a watcher), use start_background_process
-instead of exec+Start-Process/'&' — it tracks the process by PID so you can cleanly
-stop it later with stop_my_process, and starting the same label again automatically
-replaces the previous instance instead of leaving it running. Before writing a new
-version of a service, check list_my_processes and stop the old one (or reuse its
-label) rather than launching yet another copy on a new port — a pile of abandoned
-servers on incrementing ports is not progress, it's clutter that wastes memory and
-makes it unclear which version is actually live.
+MANDATORY PROCESS RULE: exec is for one-off commands only (installs, checks,
+short scripts that finish on their own). To start ANYTHING meant to keep
+running — a server, a listener, an API, a watcher — you MUST use
+start_background_process, never exec+Start-Process/'&'. This is not optional:
+start_background_process tracks the process by PID and, using the same
+"label" again, automatically replaces the previous instance instead of
+leaving it running. Before writing a new file for a service you already
+built, call list_my_processes first and reuse that label — writing api.js,
+then service.js, then server.js, then yet-another.js because a previous
+attempt "failed to show output" is not iteration, it's an ever-growing pile
+of abandoned processes on incrementing ports that never gets cleaned up.
 </environment>
 
 <spending>

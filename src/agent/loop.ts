@@ -41,6 +41,7 @@ const logger = createLogger("loop");
 const MAX_TOOL_CALLS_PER_TURN = 10;
 const MAX_CONSECUTIVE_ERRORS = 5;
 const MAX_REPETITIVE_TURNS = 3;
+const MAX_REPETITIVE_FAILURES = 4;
 const MAX_IDLE_TURNS = 10;
 
 export interface AgentLoopOptions {
@@ -78,6 +79,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
   let consecutiveErrors = 0;
   let running = true;
   let lastToolPatterns: string[] = [];
+  let lastFailingToolNames: string[] = [];
   let idleTurnCount = 0;
 
   db.deleteKV("sleep_until");
@@ -230,17 +232,47 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
       consecutiveErrors = 0;
 
       // ── Loop detection ──
+      // Dos señales complementarias:
+      // 1) Patrón EXACTO repetido (mismo nombre + mismos argumentos) — un
+      //    reintento idéntico es la señal más clara de bucle real.
+      // 2) Misma herramienta fallando varias veces seguidas (aunque con
+      //    argumentos distintos) — señal de estar atascado intentando
+      //    variaciones de algo que no funciona, no de progreso legítimo.
+      // Ninguna de las dos se activa solo por usar la misma herramienta
+      // con éxito y argumentos distintos (ej. leer varios archivos
+      // distintos, instalar varios paquetes distintos).
       if (turn.toolCalls.length > 0) {
-        const pattern = turn.toolCalls.map((tc) => tc.name).sort().join(",");
+        const pattern = turn.toolCalls
+          .map((tc) => `${tc.name}:${JSON.stringify(tc.arguments)}`)
+          .sort()
+          .join(",");
         lastToolPatterns.push(pattern);
         if (lastToolPatterns.length > MAX_REPETITIVE_TURNS) {
           lastToolPatterns = lastToolPatterns.slice(-MAX_REPETITIVE_TURNS);
         }
-        const allSame =
+        const exactPatternRepeated =
           lastToolPatterns.length === MAX_REPETITIVE_TURNS &&
           lastToolPatterns.every((p) => p === lastToolPatterns[0]);
-        if (allSame) {
-          log(config, `[LOOP] Repetitive tool pattern detected (${lastToolPatterns[0]}). Sleeping to avoid runaway loop.`);
+
+        const allFailed = turn.toolCalls.every((tc) => !!tc.error);
+        const soleToolName = turn.toolCalls.length === 1 ? turn.toolCalls[0].name : null;
+        if (allFailed && soleToolName) {
+          lastFailingToolNames.push(soleToolName);
+          if (lastFailingToolNames.length > MAX_REPETITIVE_FAILURES) {
+            lastFailingToolNames = lastFailingToolNames.slice(-MAX_REPETITIVE_FAILURES);
+          }
+        } else {
+          lastFailingToolNames = [];
+        }
+        const sameToolFailingRepeatedly =
+          lastFailingToolNames.length === MAX_REPETITIVE_FAILURES &&
+          lastFailingToolNames.every((n) => n === lastFailingToolNames[0]);
+
+        if (exactPatternRepeated || sameToolFailingRepeatedly) {
+          const reason = exactPatternRepeated
+            ? `identical repeated call (${lastToolPatterns[0]})`
+            : `"${lastFailingToolNames[0]}" failing ${MAX_REPETITIVE_FAILURES} times in a row`;
+          log(config, `[LOOP] Repetitive pattern detected: ${reason}. Sleeping to avoid runaway loop.`);
           db.setKV("sleep_until", new Date(Date.now() + 300_000).toISOString());
           db.setAgentState("sleeping");
           onStateChange?.("sleeping");

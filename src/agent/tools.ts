@@ -159,6 +159,135 @@ export function createBuiltinTools(): AutomatonTool[] {
       },
     },
     {
+      name: "start_background_process",
+      description:
+        "Start a long-running process (e.g. a server) in the background and track it by PID. ALWAYS use this instead of exec+Start-Process/'&' for anything meant to keep running (servers, watchers) — it lets you cleanly stop the exact process later with stop_my_process, without ever touching processes you didn't start (including your own runtime). If a process is already registered for this label, it is stopped first, so re-running your server just replaces the old instance instead of piling up duplicates on new ports.",
+      category: "vm",
+      riskLevel: "caution",
+      parameters: {
+        type: "object",
+        properties: {
+          label: {
+            type: "string",
+            description: "A short name for this process, e.g. \"payment-api\". Reusing the same label for the same logical service replaces the previous instance.",
+          },
+          command: {
+            type: "string",
+            description: "Command to run, e.g. \"node server.js\"",
+          },
+        },
+        required: ["label", "command"],
+      },
+      execute: async (args, ctx) => {
+        const label = args.label as string;
+        const command = args.command as string;
+        const forbidden = isForbiddenCommand(command);
+        if (forbidden) return forbidden;
+
+        const registryRaw = ctx.db.getKV("background_processes") || "{}";
+        let registry: Record<string, number>;
+        try {
+          registry = JSON.parse(registryRaw);
+        } catch {
+          registry = {};
+        }
+
+        // Si ya había un proceso con esta etiqueta, lo detenemos primero
+        // — evita ir acumulando servidores duplicados en puertos nuevos.
+        const previousPid = registry[label];
+        if (previousPid) {
+          const isWindows = process.platform === "win32";
+          await ctx.runtime.exec(
+            isWindows
+              ? `Stop-Process -Id ${previousPid} -Force -ErrorAction SilentlyContinue`
+              : `kill -9 ${previousPid} 2>/dev/null || true`,
+            5000,
+          );
+        }
+
+        const isWindows = process.platform === "win32";
+        const [cmd, ...cmdArgs] = command.split(" ");
+        const startCommand = isWindows
+          ? `$p = Start-Process -FilePath "${cmd}" -ArgumentList "${cmdArgs.join(" ")}" -PassThru -WindowStyle Hidden; $p.Id`
+          : `nohup ${command} > /dev/null 2>&1 & echo $!`;
+
+        const result = await ctx.runtime.exec(startCommand, 10_000);
+        const pid = parseInt(result.stdout.trim(), 10);
+        if (!pid || isNaN(pid)) {
+          return `Failed to start "${label}": ${result.stderr || result.stdout || "no PID returned"}`;
+        }
+
+        registry[label] = pid;
+        ctx.db.setKV("background_processes", JSON.stringify(registry));
+
+        return `Started "${label}" with PID ${pid}${previousPid ? ` (replaced previous instance, PID ${previousPid})` : ""}. Use stop_my_process("${label}") to stop it later.`;
+      },
+    },
+    {
+      name: "stop_my_process",
+      description:
+        "Stop a background process you started with start_background_process, by its label. Only affects processes YOU started and tracked this way — safe by design, since it never touches processes by generic name (which could include your own runtime).",
+      category: "vm",
+      riskLevel: "caution",
+      parameters: {
+        type: "object",
+        properties: {
+          label: {
+            type: "string",
+            description: "The label used when starting the process with start_background_process",
+          },
+        },
+        required: ["label"],
+      },
+      execute: async (args, ctx) => {
+        const label = args.label as string;
+        const registryRaw = ctx.db.getKV("background_processes") || "{}";
+        let registry: Record<string, number>;
+        try {
+          registry = JSON.parse(registryRaw);
+        } catch {
+          registry = {};
+        }
+
+        const pid = registry[label];
+        if (!pid) {
+          return `No tracked process found for label "${label}". Use list_my_processes to see what's tracked.`;
+        }
+
+        const isWindows = process.platform === "win32";
+        const result = await ctx.runtime.exec(
+          isWindows
+            ? `Stop-Process -Id ${pid} -Force -ErrorAction SilentlyContinue`
+            : `kill -9 ${pid} 2>/dev/null || true`,
+          5000,
+        );
+
+        delete registry[label];
+        ctx.db.setKV("background_processes", JSON.stringify(registry));
+
+        return `Stopped "${label}" (PID ${pid}).`;
+      },
+    },
+    {
+      name: "list_my_processes",
+      description: "List the background processes you've started and are currently tracking (label -> PID).",
+      category: "vm",
+      riskLevel: "safe",
+      parameters: { type: "object", properties: {} },
+      execute: async (_args, ctx) => {
+        const registryRaw = ctx.db.getKV("background_processes") || "{}";
+        let registry: Record<string, number>;
+        try {
+          registry = JSON.parse(registryRaw);
+        } catch {
+          registry = {};
+        }
+        const entries = Object.entries(registry);
+        if (entries.length === 0) return "No tracked background processes.";
+        return entries.map(([label, pid]) => `${label}: PID ${pid}`).join("\n");
+      },
+    },
+    {
       name: "write_file",
       description: "Write content to a file on your server.",
       category: "vm",

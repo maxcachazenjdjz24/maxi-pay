@@ -53,7 +53,7 @@ function confinePathToHome(filePath: string): string | { error: string } {
     ? nodePath.join(agentHome, filePath.slice(1))
     : filePath;
   const resolved = nodePath.resolve(agentHome, expanded);
-  if (resolved !== agentHome && !resolved.startsWith(agentHome + "/")) {
+  if (resolved !== agentHome && !resolved.startsWith(agentHome + nodePath.sep)) {
     return {
       error: `Blocked: write_file path "${filePath}" resolves to "${resolved}" which is outside the allowed directory (${agentHome}). Writes are confined to the agent's home.`,
     };

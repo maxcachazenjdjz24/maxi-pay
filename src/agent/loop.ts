@@ -117,7 +117,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
       cycleTurnCount++;
       if (cycleTurnCount > maxCycleTurns) {
         log(config, `[LOOP] Max turns per cycle reached (${maxCycleTurns}). Sleeping.`);
-        db.setKV("sleep_until", new Date(Date.now() + 5 * 60_000).toISOString());
+        db.setKV("sleep_until", new Date(Date.now() + 60_000).toISOString());
         db.setAgentState("sleeping");
         onStateChange?.("sleeping");
         running = false;
@@ -241,7 +241,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
           lastToolPatterns.every((p) => p === lastToolPatterns[0]);
         if (allSame) {
           log(config, `[LOOP] Repetitive tool pattern detected (${lastToolPatterns[0]}). Sleeping to avoid runaway loop.`);
-          db.setKV("sleep_until", new Date(Date.now() + 10 * 60_000).toISOString());
+          db.setKV("sleep_until", new Date(Date.now() + 2 * 60_000).toISOString());
           db.setAgentState("sleeping");
           onStateChange?.("sleeping");
           running = false;
@@ -253,7 +253,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
         idleTurnCount++;
         if (idleTurnCount >= MAX_IDLE_TURNS) {
           log(config, `[LOOP] ${MAX_IDLE_TURNS} idle turns with no action. Sleeping.`);
-          db.setKV("sleep_until", new Date(Date.now() + 5 * 60_000).toISOString());
+          db.setKV("sleep_until", new Date(Date.now() + 60_000).toISOString());
           db.setAgentState("sleeping");
           onStateChange?.("sleeping");
           running = false;
@@ -276,7 +276,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
 
       if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
         log(config, `[LOOP] ${MAX_CONSECUTIVE_ERRORS} consecutive errors. Sleeping to avoid runaway failure loop.`);
-        db.setKV("sleep_until", new Date(Date.now() + 15 * 60_000).toISOString());
+        db.setKV("sleep_until", new Date(Date.now() + 3 * 60_000).toISOString());
         db.setAgentState("sleeping");
         onStateChange?.("sleeping");
         running = false;

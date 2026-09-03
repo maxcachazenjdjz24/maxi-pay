@@ -83,6 +83,13 @@ const FORBIDDEN_COMMAND_PATTERNS = [
   /kill\s+.*automaton/,
   /pkill\s+.*automaton/,
   /systemctl\s+(stop|disable)\s+automaton/,
+  // Killing node/node.exe by generic name: this runtime IS a node process,
+  // a name-based kill can terminate itself along with whatever it meant
+  // to stop. Target by specific PID instead.
+  /Stop-Process\s+.*-Name\s+["']?node(\.exe)?["']?/i,
+  /taskkill\s+.*\/im\s+["']?node(\.exe)?["']?/i,
+  /\bpkill\s+(-[a-z]+\s+)*node\b/i,
+  /\bkillall\s+(-[a-z]+\s+)*node(\.exe)?\b/i,
   // Database destruction
   /DROP\s+TABLE/i,
   /DELETE\s+FROM\s+(turns|identity|kv|schema_version|skills|children)/i,

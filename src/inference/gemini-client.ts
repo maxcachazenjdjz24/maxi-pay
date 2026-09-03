@@ -45,31 +45,45 @@ function toGeminiContents(messages: ChatMessage[]): {
 
   for (const msg of messages) {
     if (msg.role === "system") {
-      systemParts.push(msg.content);
+      if (msg.content) systemParts.push(msg.content);
       continue;
     }
     if (msg.role === "tool") {
-      contents.push({
-        role: "function",
-        parts: [
-          {
-            functionResponse: {
-              name: msg.name || "unknown",
-              response: { result: msg.content },
-            },
-          },
-        ],
-      });
+      const functionResponsePart = {
+        functionResponse: {
+          name: msg.name || "tool_result",
+          response: { result: msg.content },
+        },
+      };
+      const lastContent = contents[contents.length - 1];
+      if (
+        lastContent &&
+        lastContent.role === "user" &&
+        lastContent.parts.some((p) => "functionResponse" in p)
+      ) {
+        lastContent.parts.push(functionResponsePart);
+      } else {
+        contents.push({
+          role: "user",
+          parts: [functionResponsePart],
+        });
+      }
       continue;
     }
     if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
       const parts: Record<string, unknown>[] = [];
       if (msg.content) parts.push({ text: msg.content });
       for (const tc of msg.tool_calls) {
+        let args = {};
+        try {
+          args = JSON.parse(tc.function.arguments || "{}");
+        } catch {
+          args = {};
+        }
         parts.push({
           functionCall: {
             name: tc.function.name,
-            args: JSON.parse(tc.function.arguments || "{}"),
+            args,
           },
         });
       }
@@ -78,7 +92,7 @@ function toGeminiContents(messages: ChatMessage[]): {
     }
     contents.push({
       role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
+      parts: [{ text: msg.content || "" }],
     });
   }
 

@@ -119,6 +119,12 @@ export function createConfig(params: {
   walletAddress: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  googleApiKey?: string;
+  modelStudioApiKey?: string;
+  groqApiKey?: string;
+  openrouterApiKey?: string;
+  grokApiKey?: string;
+  apiKeys?: Record<string, string>;
   ollamaBaseUrl?: string;
   inferenceModel?: string;
   parentAddress?: string;
@@ -131,6 +137,12 @@ export function createConfig(params: {
     operatorId: params.operatorId,
     openaiApiKey: params.openaiApiKey,
     anthropicApiKey: params.anthropicApiKey,
+    googleApiKey: params.googleApiKey,
+    modelStudioApiKey: params.modelStudioApiKey,
+    groqApiKey: params.groqApiKey,
+    openrouterApiKey: params.openrouterApiKey,
+    grokApiKey: params.grokApiKey,
+    apiKeys: params.apiKeys,
     ollamaBaseUrl: params.ollamaBaseUrl,
     inferenceModel: params.inferenceModel || DEFAULT_CONFIG.inferenceModel || "anthropic/claude-sonnet-4-5",
     maxTokensPerTurn: DEFAULT_CONFIG.maxTokensPerTurn || 4096,

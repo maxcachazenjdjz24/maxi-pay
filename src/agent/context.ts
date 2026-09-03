@@ -190,6 +190,7 @@ export function buildContextMessages(
           : tc.result;
         messages.push({
           role: "tool",
+          name: tc.name,
           content: truncateToolResult(rawContent),
           tool_call_id: tc.id,
         });

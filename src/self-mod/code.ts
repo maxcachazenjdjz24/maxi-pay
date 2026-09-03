@@ -340,7 +340,13 @@ export async function editFile(
   // 10. Rebuild if source file was edited
   if (/\.(ts|js|tsx|jsx)$/.test(filePath)) {
     try {
-      await runtime.exec("npm run build", 60_000);
+      const repoRoot = process.cwd();
+      const isWindows = process.platform === "win32";
+      const escapedRoot = isWindows ? `'${repoRoot.replace(/'/g, "''")}'` : `'${repoRoot.replace(/'/g, "'\\''")}'`;
+      const result = await runtime.exec(`npm --prefix ${escapedRoot} run build`, 60_000);
+      if (result.exitCode !== 0) {
+        return { success: true, error: `File edited but rebuild failed: ${result.stderr || result.stdout}` };
+      }
     } catch {
       return { success: true, error: "File edited but rebuild failed. Run 'npm run build' manually." };
     }

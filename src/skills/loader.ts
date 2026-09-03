@@ -9,6 +9,7 @@
 import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import type { Skill, AutomatonDatabase } from "../types.js";
 import { parseSkillMd } from "./format.js";
 import { sanitizeInput } from "../agent/injection-defense.js";
@@ -99,13 +100,15 @@ function checkRequirements(skill: Skill): boolean {
 
   // Check required binaries
   if (skill.requires.bins) {
+    const isWindows = process.platform === "win32";
+    const lookupCmd = isWindows ? "where" : "which";
     for (const bin of skill.requires.bins) {
       // Validate binary name to prevent injection
       if (!BIN_NAME_RE.test(bin)) {
         return false;
       }
       try {
-        execFileSync("which", [bin], { stdio: "ignore" });
+        execFileSync(lookupCmd, [bin], { stdio: "ignore" });
       } catch {
         return false;
       }
@@ -186,7 +189,7 @@ export function getActiveSkillInstructions(skills: Skill[]): string {
 
 function resolveHome(p: string): string {
   if (p.startsWith("~")) {
-    return path.join(process.env.HOME || "/root", p.slice(1));
+    return path.join(os.homedir(), p.slice(1));
   }
-  return p;
+  return path.resolve(p);
 }

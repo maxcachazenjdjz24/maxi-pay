@@ -83,60 +83,106 @@ export async function runSetupWizard(): Promise<AutomatonConfig> {
 
   // ─── 3. Proveedor de inferencia ─────────────────────────────────
   console.log(chalk.white("  ¿Qué proveedor de inferencia vas a usar?"));
-  console.log(chalk.dim("  (anthropic, google, openai, groq, openrouter, grok, modelstudio, ollama)\n"));
-  const VALID_PROVIDERS = ["anthropic", "google", "openai", "groq", "openrouter", "grok", "modelstudio", "ollama"];
+  console.log(chalk.dim("  Selecciona una opción escribiendo el número o nombre:\n"));
+  console.log(chalk.cyan("    1) anthropic   ") + chalk.dim("- Claude (ej. claude-sonnet-4-5, claude-3-5-haiku)"));
+  console.log(chalk.cyan("    2) google      ") + chalk.dim("- Gemini (ej. gemini-2.5-pro, gemini-2.0-flash)"));
+  console.log(chalk.cyan("    3) modelstudio ") + chalk.dim("- Alibaba Cloud / Qwen (ej. qwen-plus, qwen-max)"));
+  console.log(chalk.cyan("    4) openai      ") + chalk.dim("- GPT (ej. gpt-4o, gpt-5)"));
+  console.log(chalk.cyan("    5) groq        ") + chalk.dim("- Llama / ultra-rápido (ej. llama-3.3-70b-versatile)"));
+  console.log(chalk.cyan("    6) openrouter  ") + chalk.dim("- Multi-proveedor unificado"));
+  console.log(chalk.cyan("    7) grok        ") + chalk.dim("- xAI Grok (ej. grok-4)"));
+  console.log(chalk.cyan("    8) ollama      ") + chalk.dim("- Local / offline (ej. qwen2.5-coder:7b)\n"));
+
+  const PROVIDER_MAP: Record<string, string> = {
+    "1": "anthropic",
+    "anthropic": "anthropic",
+    "2": "google",
+    "google": "google",
+    "gemini": "google",
+    "3": "modelstudio",
+    "modelstudio": "modelstudio",
+    "alibaba": "modelstudio",
+    "dashscope": "modelstudio",
+    "qwen": "modelstudio",
+    "4": "openai",
+    "openai": "openai",
+    "gpt": "openai",
+    "5": "groq",
+    "groq": "groq",
+    "6": "openrouter",
+    "openrouter": "openrouter",
+    "7": "grok",
+    "grok": "grok",
+    "xai": "grok",
+    "8": "ollama",
+    "ollama": "ollama",
+  };
+
   let provider = "anthropic";
   while (true) {
     const input = await promptOptional("Proveedor [anthropic]");
-    if (!input) break; // default: anthropic
-    if (VALID_PROVIDERS.includes(input.trim().toLowerCase())) {
-      provider = input.trim().toLowerCase();
+    if (!input) {
+      provider = "anthropic";
       break;
     }
-    console.log(chalk.yellow(`  Proveedor no reconocido. Opciones válidas: ${VALID_PROVIDERS.join(", ")}`));
-  }
-  const modelIdInput = await promptOptional(`Modelo de ${provider} a usar (Enter para el valor por defecto)`);
-
-  const PROVIDER_ENV_VARS: Record<string, string> = {
-    anthropic: "ANTHROPIC_API_KEY",
-    google: "GOOGLE_API_KEY",
-    openai: "OPENAI_API_KEY",
-    groq: "GROQ_API_KEY",
-    openrouter: "OPENROUTER_API_KEY",
-    grok: "GROK_API_KEY",
-    modelstudio: "MODELSTUDIO_API_KEY",
-  };
-  const anthropicApiKey =
-    provider === "anthropic" ? await promptOptional("Anthropic API key (sk-ant-..., opcional)") : undefined;
-  const openaiApiKey =
-    provider === "openai" ? await promptOptional("OpenAI API key (sk-..., opcional)") : undefined;
-  let ollamaBaseUrl: string | undefined;
-
-  if (provider === "ollama") {
-    const ollamaInput = await promptOptional("URL base de Ollama (http://localhost:11434, opcional)");
-    ollamaBaseUrl = ollamaInput || undefined;
-  } else if (provider !== "anthropic" && provider !== "openai") {
-    const envVar = PROVIDER_ENV_VARS[provider];
+    const normalized = input.trim().toLowerCase();
+    if (PROVIDER_MAP[normalized]) {
+      provider = PROVIDER_MAP[normalized];
+      break;
+    }
     console.log(
       chalk.yellow(
-        `  Define la variable de entorno ${envVar || "correspondiente"} antes de arrancar el agente (no se guarda en el wizard).`,
+        `  Opción no reconocida. Elige 1-8 o escribe el nombre (anthropic, google, modelstudio, openai, etc.)`,
       ),
     );
   }
 
   const DEFAULT_MODELS: Record<string, string> = {
+    modelstudio: "modelstudio/qwen-plus",
     anthropic: "anthropic/claude-sonnet-4-5",
     google: "google/gemini-2.5-pro",
     openai: "openai/gpt-5",
     groq: "groq/llama-3.3-70b-versatile",
     openrouter: "openrouter/anthropic/claude-sonnet-4-5",
     grok: "grok/grok-4",
-    modelstudio: "modelstudio/qwen3-max",
-    ollama: "ollama/qwen3:8b",
+    ollama: "ollama/qwen2.5-coder:7b",
   };
+
+  const defaultModel = DEFAULT_MODELS[provider] || "anthropic/claude-sonnet-4-5";
+  const modelIdInput = await promptOptional(
+    `Modelo de ${provider} a usar [${defaultModel}] (Enter para default)`,
+  );
   const inferenceModel = modelIdInput
-    ? `${provider}/${modelIdInput}`
-    : DEFAULT_MODELS[provider] || "anthropic/claude-sonnet-4-5";
+    ? (modelIdInput.includes("/") ? modelIdInput : `${provider}/${modelIdInput}`)
+    : defaultModel;
+
+  let anthropicApiKey: string | undefined;
+  let openaiApiKey: string | undefined;
+  let googleApiKey: string | undefined;
+  let modelStudioApiKey: string | undefined;
+  let groqApiKey: string | undefined;
+  let openrouterApiKey: string | undefined;
+  let grokApiKey: string | undefined;
+  let ollamaBaseUrl: string | undefined;
+
+  if (provider === "modelstudio") {
+    modelStudioApiKey = (await promptOptional("Alibaba Cloud ModelStudio / DashScope API Key (opcional)")) || undefined;
+  } else if (provider === "anthropic") {
+    anthropicApiKey = (await promptOptional("Anthropic API key (sk-ant-..., opcional)")) || undefined;
+  } else if (provider === "google") {
+    googleApiKey = (await promptOptional("Google Gemini API key (AIza..., opcional)")) || undefined;
+  } else if (provider === "openai") {
+    openaiApiKey = (await promptOptional("OpenAI API key (sk-..., opcional)")) || undefined;
+  } else if (provider === "groq") {
+    groqApiKey = (await promptOptional("Groq API key (gsk_..., opcional)")) || undefined;
+  } else if (provider === "openrouter") {
+    openrouterApiKey = (await promptOptional("OpenRouter API key (sk-or-..., opcional)")) || undefined;
+  } else if (provider === "grok") {
+    grokApiKey = (await promptOptional("xAI Grok API key (xai-..., opcional)")) || undefined;
+  } else if (provider === "ollama") {
+    const ollamaInput = await promptOptional("URL base de Ollama (http://localhost:11434, opcional)");
+    ollamaBaseUrl = ollamaInput || undefined;
+  }
 
   console.log(chalk.green(`  Modelo configurado: ${inferenceModel}\n`));
 
@@ -162,7 +208,7 @@ export async function runSetupWizard(): Promise<AutomatonConfig> {
     transferCooldownMs: DEFAULT_TREASURY_POLICY.transferCooldownMs,
     maxTransfersPerTurn: DEFAULT_TREASURY_POLICY.maxTransfersPerTurn,
     maxInferenceDailyCents: await promptWithDefault(
-      "Máximo de gasto diario en inferencia -Anthropic/OpenAI- (centavos)", DEFAULT_TREASURY_POLICY.maxInferenceDailyCents),
+      "Máximo de gasto diario en inferencia (centavos)", DEFAULT_TREASURY_POLICY.maxInferenceDailyCents),
     requireConfirmationAboveCents: await promptWithDefault(
       "Requerir tu aprobación por encima de (centavos)", DEFAULT_TREASURY_POLICY.requireConfirmationAboveCents),
   };
@@ -186,8 +232,13 @@ export async function runSetupWizard(): Promise<AutomatonConfig> {
     genesisPrompt,
     operatorId,
     walletAddress,
-    openaiApiKey: openaiApiKey || undefined,
-    anthropicApiKey: anthropicApiKey || undefined,
+    openaiApiKey,
+    anthropicApiKey,
+    googleApiKey,
+    modelStudioApiKey,
+    groqApiKey,
+    openrouterApiKey,
+    grokApiKey,
     ollamaBaseUrl,
     inferenceModel,
     treasuryPolicy,

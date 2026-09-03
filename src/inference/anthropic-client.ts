@@ -51,21 +51,26 @@ function toAnthropicMessages(messages: ChatMessage[]): {
 
   for (const msg of messages) {
     if (msg.role === "system") {
-      systemParts.push(msg.content);
+      if (msg.content) systemParts.push(msg.content);
       continue;
     }
 
     if (msg.role === "tool") {
-      converted.push({
-        role: "user",
-        content: [
-          {
-            type: "tool_result",
-            tool_use_id: msg.tool_call_id || "",
-            content: msg.content,
-          },
-        ],
-      });
+      const toolResultBlock: Anthropic.ToolResultBlockParam = {
+        type: "tool_result",
+        tool_use_id: msg.tool_call_id || "",
+        content: msg.content,
+      };
+
+      const lastMsg = converted[converted.length - 1];
+      if (lastMsg && lastMsg.role === "user" && Array.isArray(lastMsg.content)) {
+        (lastMsg.content as Anthropic.ContentBlockParam[]).push(toolResultBlock);
+      } else {
+        converted.push({
+          role: "user",
+          content: [toolResultBlock],
+        });
+      }
       continue;
     }
 
@@ -75,21 +80,33 @@ function toAnthropicMessages(messages: ChatMessage[]): {
         contentBlocks.push({ type: "text", text: msg.content });
       }
       for (const tc of msg.tool_calls) {
+        let inputObj = {};
+        try {
+          inputObj = JSON.parse(tc.function.arguments || "{}");
+        } catch {
+          inputObj = {};
+        }
         contentBlocks.push({
           type: "tool_use",
           id: tc.id,
           name: tc.function.name,
-          input: JSON.parse(tc.function.arguments || "{}"),
+          input: inputObj,
         });
       }
       converted.push({ role: "assistant", content: contentBlocks });
       continue;
     }
 
-    converted.push({
-      role: msg.role === "assistant" ? "assistant" : "user",
-      content: msg.content,
-    });
+    const role = msg.role === "assistant" ? "assistant" : "user";
+    const lastMsg = converted[converted.length - 1];
+    if (lastMsg && lastMsg.role === role && typeof lastMsg.content === "string" && typeof msg.content === "string") {
+      lastMsg.content = `${lastMsg.content}\n\n${msg.content}`;
+    } else {
+      converted.push({
+        role,
+        content: msg.content,
+      });
+    }
   }
 
   return {

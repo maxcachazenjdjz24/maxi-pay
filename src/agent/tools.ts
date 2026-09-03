@@ -132,6 +132,9 @@ function usesWrongBackgroundingSyntax(command: string, isWindows: boolean): bool
 }
 
 function escapeShellArg(arg: string): string {
+  if (process.platform === "win32") {
+    return `'${arg.replace(/'/g, "''")}'`;
+  }
   return `'${arg.replace(/'/g, "'\\''")}'`;
 }
 
@@ -139,6 +142,144 @@ function escapeShellArg(arg: string): string {
 
 export function createBuiltinTools(): AutomatonTool[] {
   return [
+    // ── Ciclo de vida y estado ──
+    {
+      name: "sleep",
+      description:
+        "Pause agent activity and sleep cleanly until a specified duration or next scheduled wake event. Use this whenever you have completed your current task, have no immediate actions to take, or want to pause execution.",
+      category: "lifecycle",
+      riskLevel: "safe",
+      parameters: {
+        type: "object",
+        properties: {
+          duration_minutes: {
+            type: "number",
+            description: "How many minutes to sleep (e.g. 5, 15, 60). Default: 5",
+          },
+          reason: {
+            type: "string",
+            description: "Why you are going to sleep (e.g. 'Task completed', 'Waiting for user input')",
+          },
+        },
+      },
+      execute: async (args, ctx) => {
+        const minutes = (args.duration_minutes as number) || 5;
+        const durationMs = Math.max(10_000, minutes * 60_000);
+        const sleepUntil = new Date(Date.now() + durationMs).toISOString();
+        ctx.db.setKV("sleep_until", sleepUntil);
+        const reason = (args.reason as string) || "Agent requested sleep";
+        return `Sleeping until ${sleepUntil} (${minutes} minutes). Reason: ${reason}`;
+      },
+    },
+    {
+      name: "system_synopsis",
+      description:
+        "Get a comprehensive snapshot of your system state: identity, wallet balance, active background processes, turn count, and installed skills.",
+      category: "vm",
+      riskLevel: "safe",
+      parameters: { type: "object", properties: {} },
+      execute: async (_args, ctx) => {
+        const turnCount = ctx.db.getTurnCount();
+        const state = ctx.db.getAgentState();
+        let balanceUsdc = 0;
+        try {
+          balanceUsdc = await getUsdcBalance(ctx.identity.account.address);
+        } catch {
+          balanceUsdc = 0;
+        }
+        const processes = ctx.db.getKV("background_processes") || "{}";
+        const skills = ctx.db.getSkills(true);
+        const children = ctx.db.getChildren();
+        return JSON.stringify(
+          {
+            name: ctx.identity.name,
+            address: ctx.identity.address,
+            state,
+            turnCount,
+            usdcBalance: balanceUsdc,
+            model: ctx.config.inferenceModel,
+            activeSkills: skills.map((s) => s.name),
+            backgroundProcesses: JSON.parse(processes),
+            childrenCount: children.length,
+          },
+          null,
+          2,
+        );
+      },
+    },
+    {
+      name: "web_fetch",
+      description:
+        "Make an HTTP request to an external API or URL. Returns response status, headers, and body (text or formatted JSON). Use this to fetch live prices, external data, check APIs, or inspect web content.",
+      category: "vm",
+      riskLevel: "caution",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "Full URL to fetch (must start with http:// or https://)",
+          },
+          method: {
+            type: "string",
+            description: "HTTP method: GET, POST, PUT, DELETE (default: GET)",
+          },
+          headers: {
+            type: "object",
+            description: "Optional HTTP headers as key-value pairs",
+          },
+          body: {
+            type: "string",
+            description: "Optional request body string (e.g. JSON string)",
+          },
+          timeout_ms: {
+            type: "number",
+            description: "Timeout in milliseconds (default: 15000)",
+          },
+        },
+        required: ["url"],
+      },
+      execute: async (args) => {
+        const url = args.url as string;
+        if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+          return "Blocked: URL must start with http:// or https://";
+        }
+        const method = ((args.method as string) || "GET").toUpperCase();
+        const headers = (args.headers as Record<string, string>) || {};
+        const body = args.body as string | undefined;
+        const timeoutMs = (args.timeout_ms as number) || 15000;
+
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          const response = await fetch(url, {
+            method,
+            headers,
+            body: method !== "GET" && method !== "HEAD" ? body : undefined,
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+
+          const contentType = response.headers.get("content-type") || "";
+          let responseText = await response.text();
+          if (contentType.includes("application/json")) {
+            try {
+              const parsed = JSON.parse(responseText);
+              responseText = JSON.stringify(parsed, null, 2);
+            } catch {
+              // keep as raw text
+            }
+          }
+          if (responseText.length > 20000) {
+            responseText = responseText.slice(0, 20000) + "\n...[response truncated]";
+          }
+          return `HTTP ${response.status} ${response.statusText}\nContent-Type: ${contentType}\n\n${responseText}`;
+        } catch (err: any) {
+          return `HTTP Request failed: ${err.message || String(err)}`;
+        }
+      },
+    },
+
     // ── Ejecución local / archivos ──
     {
       name: "exec",
@@ -234,10 +375,16 @@ export function createBuiltinTools(): AutomatonTool[] {
         }
 
         const isWindows = process.platform === "win32";
-        const [cmd, ...cmdArgs] = command.split(" ");
-        const startCommand = isWindows
-          ? `$p = Start-Process -FilePath "${cmd}" -ArgumentList "${cmdArgs.join(" ")}" -PassThru -WindowStyle Hidden; $p.Id`
-          : `nohup ${command} > /dev/null 2>&1 & echo $!`;
+        const agentHome = getAgentHome();
+        let startCommand: string;
+        if (isWindows) {
+          const parts = command.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [command];
+          const cmd = parts[0].replace(/^["']|["']$/g, "");
+          const cmdArgs = parts.slice(1).join(" ");
+          startCommand = `$p = Start-Process -FilePath "${cmd}" -ArgumentList ${escapeShellArg(cmdArgs)} -WorkingDirectory ${escapeShellArg(agentHome)} -PassThru -WindowStyle Hidden; $p.Id`;
+        } else {
+          startCommand = `nohup ${command} > /dev/null 2>&1 & echo $!`;
+        }
 
         const result = await ctx.runtime.exec(startCommand, 10_000);
         const pid = parseInt(result.stdout.trim(), 10);
@@ -355,13 +502,13 @@ export function createBuiltinTools(): AutomatonTool[] {
       execute: async (args, ctx) => {
         const filePath = args.path as string;
         // Block reads of sensitive files (wallet, env, config secrets)
-        const basename = filePath.split("/").pop() || "";
+        const basename = nodePath.basename(filePath);
         const sensitiveFiles = ["wallet.json", ".env", "automaton.json"];
         const sensitiveExtensions = [".key", ".pem"];
         if (
-          sensitiveFiles.includes(basename) ||
-          sensitiveExtensions.some((ext) => basename.endsWith(ext)) ||
-          basename.startsWith("private-key")
+          sensitiveFiles.includes(basename.toLowerCase()) ||
+          sensitiveExtensions.some((ext) => basename.toLowerCase().endsWith(ext)) ||
+          basename.toLowerCase().startsWith("private-key")
         ) {
           return "Blocked: Cannot read sensitive file. This protects credentials and secrets.";
         }
@@ -370,10 +517,11 @@ export function createBuiltinTools(): AutomatonTool[] {
           const resolvedPath = typeof confined === "string" ? confined : filePath;
           return await ctx.runtime.readFile(resolvedPath);
         } catch {
-          const result = await ctx.runtime.exec(
-            `cat ${escapeShellArg(filePath)}`,
-            30_000,
-          );
+          const isWindows = process.platform === "win32";
+          const catCmd = isWindows
+            ? `Get-Content ${escapeShellArg(filePath)} -Raw`
+            : `cat ${escapeShellArg(filePath)}`;
+          const result = await ctx.runtime.exec(catCmd, 30_000);
           if (result.exitCode !== 0) {
             return `ERROR: File not found or not readable: ${filePath}`;
           }
@@ -441,12 +589,12 @@ export function createBuiltinTools(): AutomatonTool[] {
         const repoRoot = process.cwd();
 
         const lastCommit = await ctx.runtime.exec(
-          `cd '${repoRoot}' && git log -1 --oneline`,
+          `git -C ${escapeShellArg(repoRoot)} log -1 --oneline`,
           10_000,
         );
 
         const result = await ctx.runtime.exec(
-          `cd '${repoRoot}' && git revert HEAD --no-edit`,
+          `git -C ${escapeShellArg(repoRoot)} revert HEAD --no-edit`,
           30_000,
         );
         if (result.exitCode !== 0) {
@@ -454,7 +602,7 @@ export function createBuiltinTools(): AutomatonTool[] {
         }
 
         const build = await ctx.runtime.exec(
-          `cd '${repoRoot}' && npm run build`,
+          `npm --prefix ${escapeShellArg(repoRoot)} run build`,
           60_000,
         );
 
@@ -477,7 +625,7 @@ export function createBuiltinTools(): AutomatonTool[] {
         const repoRoot = process.cwd();
 
         const fetch = await ctx.runtime.exec(
-          `cd '${repoRoot}' && git fetch origin main`,
+          `git -C ${escapeShellArg(repoRoot)} fetch origin main`,
           30_000,
         );
         if (fetch.exitCode !== 0) {
@@ -485,12 +633,12 @@ export function createBuiltinTools(): AutomatonTool[] {
         }
 
         const localCommits = await ctx.runtime.exec(
-          `cd '${repoRoot}' && git log origin/main..HEAD --oneline`,
+          `git -C ${escapeShellArg(repoRoot)} log origin/main..HEAD --oneline`,
           10_000,
         );
 
         const reset = await ctx.runtime.exec(
-          `cd '${repoRoot}' && git reset --hard origin/main`,
+          `git -C ${escapeShellArg(repoRoot)} reset --hard origin/main`,
           30_000,
         );
         if (reset.exitCode !== 0) {
@@ -498,7 +646,7 @@ export function createBuiltinTools(): AutomatonTool[] {
         }
 
         const build = await ctx.runtime.exec(
-          `cd '${repoRoot}' && npm install && npm run build`,
+          `npm --prefix ${escapeShellArg(repoRoot)} run build`,
           120_000,
         );
 

@@ -37,6 +37,12 @@ export interface AutomatonConfig {
   operatorId: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  googleApiKey?: string;
+  modelStudioApiKey?: string;
+  groqApiKey?: string;
+  openrouterApiKey?: string;
+  grokApiKey?: string;
+  apiKeys?: Record<string, string>;
   ollamaBaseUrl?: string;
   inferenceModel: string;
   maxTokensPerTurn: number;

@@ -64,19 +64,41 @@ const PROVIDERS: Record<OpenAICompatibleProvider, ProviderDef> = {
 
 const clients = new Map<OpenAICompatibleProvider, OpenAI>();
 
+function getApiKey(provider: OpenAICompatibleProvider, defaultEnvVar: string): string | undefined {
+  if (provider === "modelstudio") {
+    return (
+      process.env.MODELSTUDIO_API_KEY ||
+      process.env.DASHSCOPE_API_KEY ||
+      process.env.ALIBABA_API_KEY
+    );
+  }
+  return process.env[defaultEnvVar];
+}
+
+function getBaseUrl(provider: OpenAICompatibleProvider, defaultUrl: string): string {
+  const baseUrlOverrideEnv = `AUTOMATON_${provider.toUpperCase()}_BASE_URL`;
+  if (process.env[baseUrlOverrideEnv]) {
+    return process.env[baseUrlOverrideEnv]!;
+  }
+  if (provider === "modelstudio" && process.env.DASHSCOPE_BASE_URL) {
+    return process.env.DASHSCOPE_BASE_URL;
+  }
+  return defaultUrl;
+}
+
 function getClient(provider: OpenAICompatibleProvider): OpenAI {
   const cached = clients.get(provider);
   if (cached) return cached;
 
   const def = PROVIDERS[provider];
-  const apiKey = process.env[def.apiKeyEnvVar];
+  const apiKey = getApiKey(provider, def.apiKeyEnvVar);
   if (def.requiresKey && !apiKey) {
-    throw new Error(`Falta la variable de entorno ${def.apiKeyEnvVar} para el proveedor "${provider}".`);
+    throw new Error(
+      `Falta la variable de entorno ${def.apiKeyEnvVar} para el proveedor "${provider}".`,
+    );
   }
 
-  const baseUrlOverrideEnv = `AUTOMATON_${provider.toUpperCase()}_BASE_URL`;
-  const baseUrl = process.env[baseUrlOverrideEnv] || def.baseUrl;
-
+  const baseUrl = getBaseUrl(provider, def.baseUrl);
   const client = new OpenAI({ apiKey: apiKey || "not-required", baseURL: baseUrl });
   clients.set(provider, client);
   return client;

@@ -6,6 +6,22 @@
  */
 
 import type { LocalRuntime, GitStatus, GitLogEntry } from "../types.js";
+import nodePath from "node:path";
+import nodeOs from "node:os";
+
+function resolveGitPath(p: string): string {
+  if (p.startsWith("~")) {
+    return nodePath.join(nodeOs.homedir(), p.slice(1));
+  }
+  return nodePath.resolve(p);
+}
+
+function escapeShellArg(arg: string): string {
+  if (process.platform === "win32") {
+    return `'${arg.replace(/'/g, "''")}'`;
+  }
+  return `'${arg.replace(/'/g, "'\\''")}'`;
+}
 
 /**
  * Get git status for a repository.
@@ -14,8 +30,9 @@ export async function gitStatus(
   runtime: LocalRuntime,
   repoPath: string,
 ): Promise<GitStatus> {
+  const resolved = resolveGitPath(repoPath);
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git status --porcelain -b 2>/dev/null`,
+    `git -C ${escapeShellArg(resolved)} status --porcelain -b`,
     10000,
   );
 
@@ -27,12 +44,12 @@ export async function gitStatus(
 
   for (const line of lines) {
     if (line.startsWith("## ")) {
-      branch = line.slice(3).split("...")[0];
+      branch = line.slice(3).split("...")[0].trim();
       continue;
     }
 
     const statusCode = line.slice(0, 2);
-    const file = line.slice(3);
+    const file = line.slice(3).trim();
 
     if (statusCode[0] !== " " && statusCode[0] !== "?") {
       staged.push(file);
@@ -63,9 +80,10 @@ export async function gitDiff(
   repoPath: string,
   staged: boolean = false,
 ): Promise<string> {
+  const resolved = resolveGitPath(repoPath);
   const flag = staged ? "--cached" : "";
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git diff ${flag} 2>/dev/null`,
+    `git -C ${escapeShellArg(resolved)} diff ${flag}`.trim(),
     10000,
   );
   return result.stdout || "(no changes)";
@@ -80,12 +98,13 @@ export async function gitCommit(
   message: string,
   addAll: boolean = true,
 ): Promise<string> {
+  const resolved = resolveGitPath(repoPath);
   if (addAll) {
-    await runtime.exec(`cd ${escapeShellArg(repoPath)} && git add -A`, 10000);
+    await runtime.exec(`git -C ${escapeShellArg(resolved)} add -A`, 10000);
   }
 
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git commit -m ${escapeShellArg(message)} --allow-empty 2>&1`,
+    `git -C ${escapeShellArg(resolved)} commit -m ${escapeShellArg(message)} --allow-empty`,
     10000,
   );
 
@@ -104,9 +123,10 @@ export async function gitLog(
   repoPath: string,
   limit: number = 10,
 ): Promise<GitLogEntry[]> {
+  const resolved = resolveGitPath(repoPath);
   const safeLimit = Math.max(1, Math.floor(Number(limit))) || 10;
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git log --format="%H|%s|%an|%ai" -n ${safeLimit} 2>/dev/null`,
+    `git -C ${escapeShellArg(resolved)} log --format="%H|%s|%an|%ai" -n ${safeLimit}`,
     10000,
   );
 
@@ -130,9 +150,10 @@ export async function gitPush(
   remote: string = "origin",
   branch?: string,
 ): Promise<string> {
+  const resolved = resolveGitPath(repoPath);
   const branchArg = branch ? ` ${escapeShellArg(branch)}` : "";
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git push ${escapeShellArg(remote)}${branchArg} 2>&1`,
+    `git -C ${escapeShellArg(resolved)} push ${escapeShellArg(remote)}${branchArg}`,
     30000,
   );
 
@@ -152,23 +173,24 @@ export async function gitBranch(
   action: "list" | "create" | "checkout" | "delete",
   branchName?: string,
 ): Promise<string> {
+  const resolved = resolveGitPath(repoPath);
   let cmd: string;
 
   switch (action) {
     case "list":
-      cmd = `cd ${escapeShellArg(repoPath)} && git branch -a 2>/dev/null`;
+      cmd = `git -C ${escapeShellArg(resolved)} branch -a`;
       break;
     case "create":
       if (!branchName) throw new Error("Branch name required");
-      cmd = `cd ${escapeShellArg(repoPath)} && git checkout -b ${escapeShellArg(branchName)} 2>&1`;
+      cmd = `git -C ${escapeShellArg(resolved)} checkout -b ${escapeShellArg(branchName)}`;
       break;
     case "checkout":
       if (!branchName) throw new Error("Branch name required");
-      cmd = `cd ${escapeShellArg(repoPath)} && git checkout ${escapeShellArg(branchName)} 2>&1`;
+      cmd = `git -C ${escapeShellArg(resolved)} checkout ${escapeShellArg(branchName)}`;
       break;
     case "delete":
       if (!branchName) throw new Error("Branch name required");
-      cmd = `cd ${escapeShellArg(repoPath)} && git branch -d ${escapeShellArg(branchName)} 2>&1`;
+      cmd = `git -C ${escapeShellArg(resolved)} branch -d ${escapeShellArg(branchName)}`;
       break;
     default:
       throw new Error(`Unknown branch action: ${action}`);
@@ -187,11 +209,12 @@ export async function gitClone(
   targetPath: string,
   depth?: number,
 ): Promise<string> {
+  const resolvedTarget = resolveGitPath(targetPath);
   const depthArg = depth
     ? ` --depth ${Math.max(1, Math.floor(Number(depth)))}`
     : "";
   const result = await runtime.exec(
-    `git clone${depthArg} ${escapeShellArg(url)} ${escapeShellArg(targetPath)} 2>&1`,
+    `git clone${depthArg} ${escapeShellArg(url)} ${escapeShellArg(resolvedTarget)}`,
     120000,
   );
 
@@ -199,7 +222,7 @@ export async function gitClone(
     throw new Error(`Git clone failed: ${result.stderr || result.stdout}`);
   }
 
-  return `Cloned ${url} to ${targetPath}`;
+  return `Cloned ${url} to ${resolvedTarget}`;
 }
 
 /**
@@ -209,13 +232,10 @@ export async function gitInit(
   runtime: LocalRuntime,
   repoPath: string,
 ): Promise<string> {
+  const resolved = resolveGitPath(repoPath);
   const result = await runtime.exec(
-    `cd ${escapeShellArg(repoPath)} && git init 2>&1`,
+    `git -C ${escapeShellArg(resolved)} init`,
     10000,
   );
   return result.stdout || "Git initialized";
-}
-
-function escapeShellArg(arg: string): string {
-  return `'${arg.replace(/'/g, "'\\''")}'`;
 }

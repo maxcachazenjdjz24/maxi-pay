@@ -19,7 +19,7 @@ import { loadSkills } from "./skills/loader.js";
 import { PolicyEngine } from "./agent/policy-engine.js";
 import { SpendTracker } from "./agent/spend-tracker.js";
 import { createDefaultRules } from "./agent/policy-rules/index.js";
-import type { AutomatonIdentity, AgentState, Skill, LocalRuntime } from "./types.js";
+import type { AutomatonIdentity, AutomatonConfig, AgentState, Skill, LocalRuntime } from "./types.js";
 import { DEFAULT_TREASURY_POLICY } from "./types.js";
 import { createLogger, StructuredLogger } from "./observability/logger.js";
 import { prettySink } from "./observability/pretty-sink.js";
@@ -45,21 +45,23 @@ async function main(): Promise<void> {
 Automaton v${VERSION} — Your own autonomous agent, on your own infrastructure.
 
 Usage:
-  automaton --run          Start the automaton (first run triggers setup wizard)
-  automaton --setup        Re-run the interactive setup wizard
-  automaton --status       Show current status
-  automaton --version      Show version
-  automaton --help         Show this help
+  automaton --run              Start the automaton (first run triggers setup wizard)
+  automaton --setup            Re-run the interactive setup wizard
+  automaton --status           Show current status
+  automaton --test-inference   Test AI model connectivity and tool calling
+  automaton --version          Show version
+  automaton --help             Show this help
 
 Related:
   node dist/approvals-cli.js list|approve <id>|deny <id>   Manage pending approvals
 
 Environment:
   Modelo configurado en automaton.json como "proveedor/modelo", ej.
-  "anthropic/claude-sonnet-4-5", "openai/gpt-5", "google/gemini-2.5-pro".
+  "anthropic/claude-sonnet-4-5", "openai/gpt-5", "google/gemini-2.5-pro",
+  "modelstudio/qwen-plus", "modelstudio/qwen-max".
   Define solo la key del proveedor que vayas a usar:
     ANTHROPIC_API_KEY | GOOGLE_API_KEY | OPENAI_API_KEY | GROQ_API_KEY
-    OPENROUTER_API_KEY | GROK_API_KEY | MODELSTUDIO_API_KEY
+    OPENROUTER_API_KEY | GROK_API_KEY | MODELSTUDIO_API_KEY / DASHSCOPE_API_KEY
   (Ollama no requiere key; corre localmente)
   AUTOMATON_WALLET_PASSPHRASE    Required to encrypt/decrypt the wallet
   AUTOMATON_RPC_URL              Base RPC endpoint (optional, has a default)
@@ -69,6 +71,11 @@ Environment:
 
   if (args.includes("--status")) {
     await showStatus();
+    process.exit(0);
+  }
+
+  if (args.includes("--test-inference")) {
+    await runTestInference();
     process.exit(0);
   }
 
@@ -86,6 +93,70 @@ Environment:
 
   logger.info('Run "node dist/index.js --help" for usage information.');
   logger.info('Run "node dist/index.js --run" to start the automaton.');
+}
+
+function syncConfigEnv(config: AutomatonConfig): void {
+  if (config.anthropicApiKey && !process.env.ANTHROPIC_API_KEY) {
+    process.env.ANTHROPIC_API_KEY = config.anthropicApiKey;
+  }
+  if (config.openaiApiKey && !process.env.OPENAI_API_KEY) {
+    process.env.OPENAI_API_KEY = config.openaiApiKey;
+  }
+  if (config.googleApiKey && !process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) {
+    process.env.GOOGLE_API_KEY = config.googleApiKey;
+  }
+  if (
+    config.modelStudioApiKey &&
+    !process.env.MODELSTUDIO_API_KEY &&
+    !process.env.DASHSCOPE_API_KEY &&
+    !process.env.ALIBABA_API_KEY
+  ) {
+    process.env.MODELSTUDIO_API_KEY = config.modelStudioApiKey;
+  }
+  if (config.groqApiKey && !process.env.GROQ_API_KEY) {
+    process.env.GROQ_API_KEY = config.groqApiKey;
+  }
+  if (config.openrouterApiKey && !process.env.OPENROUTER_API_KEY) {
+    process.env.OPENROUTER_API_KEY = config.openrouterApiKey;
+  }
+  if (config.grokApiKey && !process.env.GROK_API_KEY) {
+    process.env.GROK_API_KEY = config.grokApiKey;
+  }
+  if (config.apiKeys) {
+    for (const [key, val] of Object.entries(config.apiKeys)) {
+      if (!process.env[key] && val) {
+        process.env[key] = String(val);
+      }
+    }
+  }
+}
+
+async function runTestInference(): Promise<void> {
+  const config = loadConfig();
+  if (!config) {
+    logger.error("No configuration found. Run --setup first.");
+    process.exit(1);
+  }
+  syncConfigEnv(config);
+  logger.info(`Testing inference with model "${config.inferenceModel}"...`);
+  const { testInferenceConnection } = await import("./inference/test-connection.js");
+  const result = await testInferenceConnection(config.inferenceModel);
+  if (result.success) {
+    logger.info(`✅ Inference connection successful!`);
+    logger.info(`   Provider: ${result.provider}`);
+    logger.info(`   Model: ${result.model}`);
+    logger.info(`   Latency: ${result.latencyMs}ms`);
+    logger.info(
+      `   Tool Calling: ${result.toolCallWorked ? "Supported & Verified" : "Direct response only"}`,
+    );
+    if (result.response) {
+      logger.info(`   Response snippet: ${result.response.slice(0, 100)}`);
+    }
+  } else {
+    logger.error(`❌ Inference test failed:`);
+    logger.error(`   ${result.error}`);
+    process.exit(1);
+  }
 }
 
 async function showStatus(): Promise<void> {
@@ -226,32 +297,43 @@ async function run(): Promise<void> {
     }
   }
 
-  if (config.anthropicApiKey && !process.env.ANTHROPIC_API_KEY) {
-    process.env.ANTHROPIC_API_KEY = config.anthropicApiKey;
-  }
-  if (config.openaiApiKey && !process.env.OPENAI_API_KEY) {
-    process.env.OPENAI_API_KEY = config.openaiApiKey;
-  }
+  syncConfigEnv(config);
 
   const { parseModelId } = await import("./inference/router.js");
   const { provider } = parseModelId(config.inferenceModel);
-  const REQUIRED_ENV_VAR: Record<string, string> = {
-    anthropic: "ANTHROPIC_API_KEY",
-    google: "GOOGLE_API_KEY (o GEMINI_API_KEY)",
-    openai: "OPENAI_API_KEY",
-    groq: "GROQ_API_KEY",
-    openrouter: "OPENROUTER_API_KEY",
-    grok: "GROK_API_KEY",
-    modelstudio: "MODELSTUDIO_API_KEY",
-  };
-  const requiredVar = REQUIRED_ENV_VAR[provider];
-  if (requiredVar && !process.env[requiredVar.split(" ")[0]] && !process.env.GEMINI_API_KEY) {
+  const hasKey = (() => {
+    switch (provider) {
+      case "anthropic":
+        return !!process.env.ANTHROPIC_API_KEY;
+      case "google":
+        return !!(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY);
+      case "openai":
+        return !!process.env.OPENAI_API_KEY;
+      case "groq":
+        return !!process.env.GROQ_API_KEY;
+      case "openrouter":
+        return !!process.env.OPENROUTER_API_KEY;
+      case "grok":
+        return !!process.env.GROK_API_KEY;
+      case "modelstudio":
+        return !!(
+          process.env.MODELSTUDIO_API_KEY ||
+          process.env.DASHSCOPE_API_KEY ||
+          process.env.ALIBABA_API_KEY
+        );
+      case "ollama":
+        return true;
+      default:
+        return true;
+    }
+  })();
+
+  if (!hasKey) {
     logger.error(
-      `Falta la variable de entorno ${requiredVar} para el proveedor configurado ("${provider}"). Cannot run inference.`,
+      `Falta la API Key requerida para el proveedor "${provider}". Configúrala en automaton.json o defínela en las variables de entorno.`,
     );
     process.exit(1);
   }
-  // Ollama no requiere key.
 
   const { account, chainIdentity } = await getWallet();
 

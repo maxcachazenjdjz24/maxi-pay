@@ -9,6 +9,7 @@
  */
 
 import nodePath from "node:path";
+import nodeOs from "node:os";
 import { ulid } from "ulid";
 import type {
   AutomatonTool,
@@ -39,7 +40,7 @@ const logger = createLogger("tools");
 // read_file operan sobre el mismo sistema de archivos — ya no hay
 // discrepancia entre un exec en WSL/Linux y un os.homedir() de Windows.
 function getAgentHome(): string {
-  return process.env.AGENT_HOME || require("node:os").homedir();
+  return process.env.AGENT_HOME || nodeOs.homedir();
 }
 
 /**

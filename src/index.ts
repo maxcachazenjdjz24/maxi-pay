@@ -196,7 +196,7 @@ Version:    ${config.version}
 }
 
 /** Ejecución local real, en este mismo servidor. */
-function createLocalRuntime(): LocalRuntime {
+export function createLocalRuntime(): LocalRuntime {
   const isWindows = process.platform === "win32";
   // Mismo directorio base que usa write_file/read_file (AGENT_HOME en
   // agent/tools.ts) — sin esto, exec corre con el cwd del proceso (la

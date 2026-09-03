@@ -141,7 +141,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<void> {
       });
       const messages: ChatMessage[] = buildContextMessages(
         systemPrompt,
-        trimContext(db.getRecentTurns(50), 20),
+        trimContext(db.getRecentTurns(10), 8),
         currentInput,
       );
 

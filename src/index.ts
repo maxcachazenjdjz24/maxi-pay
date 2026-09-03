@@ -26,6 +26,7 @@ import { prettySink } from "./observability/pretty-sink.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs/promises";
+import os from "node:os";
 
 const logger = createLogger("main");
 const VERSION = "0.1.0";
@@ -126,6 +127,12 @@ Version:    ${config.version}
 /** Ejecución local real, en este mismo servidor. */
 function createLocalRuntime(): LocalRuntime {
   const isWindows = process.platform === "win32";
+  // Mismo directorio base que usa write_file/read_file (AGENT_HOME en
+  // agent/tools.ts) — sin esto, exec corre con el cwd del proceso (la
+  // carpeta desde donde se lanzó npm start), que puede ser distinta de
+  // AGENT_HOME, y una ruta relativa que Maxi escribe con write_file
+  // termina en un lugar donde exec no la encuentra.
+  const agentHome = process.env.AGENT_HOME || os.homedir();
   return {
     exec: async (command, timeout = 30000) => {
       try {
@@ -137,11 +144,12 @@ function createLocalRuntime(): LocalRuntime {
           ? await execFileAsync(
               "powershell.exe",
               ["-NoProfile", "-NonInteractive", "-Command", command],
-              { timeout, maxBuffer: 10 * 1024 * 1024 },
+              { timeout, maxBuffer: 10 * 1024 * 1024, cwd: agentHome },
             )
           : await execFileAsync("bash", ["-c", command], {
               timeout,
               maxBuffer: 10 * 1024 * 1024,
+              cwd: agentHome,
             });
         return { stdout, stderr, exitCode: 0 };
       } catch (err: any) {

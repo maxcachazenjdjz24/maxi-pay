@@ -202,7 +202,9 @@ export function createBuiltinTools(): AutomatonTool[] {
           return "Blocked: Cannot read sensitive file. This protects credentials and secrets.";
         }
         try {
-          return await ctx.runtime.readFile(filePath);
+          const confined = confinePathToHome(filePath);
+          const resolvedPath = typeof confined === "string" ? confined : filePath;
+          return await ctx.runtime.readFile(resolvedPath);
         } catch {
           const result = await ctx.runtime.exec(
             `cat ${escapeShellArg(filePath)}`,

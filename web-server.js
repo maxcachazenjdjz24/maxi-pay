@@ -3591,7 +3591,10 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (pathname === '/' || pathname === '/pay') {
+        if (pathname === '/' || pathname === '/home' || pathname === '/inicio') {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderHomePage());
+        } else if (pathname === '/pay') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderPayPage());
         } else if (pathname === '/admin') {
@@ -3600,9 +3603,6 @@ const server = http.createServer(async (req, res) => {
         } else if (pathname === '/cuenta') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderCuentaPage());
-        } else if (pathname === '/home' || pathname === '/inicio') {
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderHomePage());
         } else if (pathname === '/trabajos' || pathname === '/gigs') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderTrabajosPage());

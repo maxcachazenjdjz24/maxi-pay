@@ -45,19 +45,26 @@ const ADMIN_MASTER_PASSWORD_HASH = crypto.createHash('sha256').update('MaxiMaste
 const ADMIN_EMAIL = 'admin@maxi.suite';
 
 // USER ACCOUNT DATABASE PERSISTENCE
-const USERS_DB_FILE = path.join(os.homedir(), '.automaton', 'registered_users.json');
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
+}
+const USERS_DB_FILE = path.join(DATA_DIR, 'registered_users.json');
+const FALLBACK_DB_FILE = path.join(os.homedir(), '.automaton', 'registered_users.json');
 let usersDb = { users: {}, sessions: {}, adminSessions: {}, invoices: {}, withdrawals: [] };
 
 function loadUsersDb() {
   try {
     if (fs.existsSync(USERS_DB_FILE)) {
       usersDb = JSON.parse(fs.readFileSync(USERS_DB_FILE, 'utf8'));
-      if (!usersDb.users) usersDb.users = {};
-      if (!usersDb.sessions) usersDb.sessions = {};
-      if (!usersDb.adminSessions) usersDb.adminSessions = {};
-      if (!usersDb.invoices) usersDb.invoices = {};
-      if (!usersDb.withdrawals) usersDb.withdrawals = [];
+    } else if (fs.existsSync(FALLBACK_DB_FILE)) {
+      usersDb = JSON.parse(fs.readFileSync(FALLBACK_DB_FILE, 'utf8'));
     }
+    if (!usersDb.users) usersDb.users = {};
+    if (!usersDb.sessions) usersDb.sessions = {};
+    if (!usersDb.adminSessions) usersDb.adminSessions = {};
+    if (!usersDb.invoices) usersDb.invoices = {};
+    if (!usersDb.withdrawals) usersDb.withdrawals = [];
   } catch (e) {
     console.error('Error loading users db:', e.message);
   }
@@ -66,6 +73,7 @@ function loadUsersDb() {
 function saveUsersDb() {
   try {
     fs.writeFileSync(USERS_DB_FILE, JSON.stringify(usersDb, null, 2), 'utf8');
+    try { fs.writeFileSync(FALLBACK_DB_FILE, JSON.stringify(usersDb, null, 2), 'utf8'); } catch (e) {}
   } catch (e) {
     console.error('Error saving users db:', e.message);
   }

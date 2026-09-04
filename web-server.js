@@ -304,12 +304,25 @@ async function checkRecentUsdcTransfers(targetWallet, expectedAmount = 0, lookba
 }
 
 // SMART WALLET EMBEDDED ENGINE & BALANCE QUERY
+let generatePrivateKey, privateKeyToAccount;
+try {
+  const viemAcc = require('viem/accounts');
+  generatePrivateKey = viemAcc.generatePrivateKey;
+  privateKeyToAccount = viemAcc.privateKeyToAccount;
+} catch (e) {}
+
+function generateNewPersonalWallet() {
+  if (generatePrivateKey && privateKeyToAccount) {
+    const pk = generatePrivateKey();
+    const acc = privateKeyToAccount(pk);
+    return { walletAddress: acc.address, privateKey: pk };
+  }
+  const pk = '0x' + crypto.randomBytes(32).toString('hex');
+  return { walletAddress: '0x' + crypto.createHash('sha256').update(pk).digest('hex').slice(24), privateKey: pk };
+}
+
 function generateSmartWalletForUser(email) {
-  const seed = crypto.createHash('sha256').update('maxi_smart_wallet_' + (email || '').toLowerCase()).digest('hex');
-  const privateKey = '0x' + crypto.createHash('sha256').update(seed + '_priv_key').digest('hex');
-  const pubHash = crypto.createHash('sha256').update(privateKey).digest('hex');
-  const walletAddress = '0x' + pubHash.slice(24);
-  return { walletAddress, privateKey };
+  return generateNewPersonalWallet();
 }
 
 async function getWalletUsdcBalance(walletAddress) {
@@ -6708,6 +6721,90 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end('<h1 style="color:#07090e; text-align:center; margin-top:50px;">404 - Página No Encontrada</h1><p style="text-align:center;"><a href="/">Volver al Inicio</a></p>');
         }
+    } else if (req.method === 'POST' && pathname === '/api/user/generate-wallet') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else {
+                    email = 'jdavidjaramillo@hotmail.com';
+                }
+
+                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
+                    return;
+                }
+
+                const newWallet = generateNewPersonalWallet();
+                user.wallet = newWallet.walletAddress;
+                user.privateKey = newWallet.privateKey;
+                saveUsersDb();
+
+                console.log(`⚡ [NUEVA BILLETERA SEGREGADA GENERADA]: ${user.email} -> ${user.wallet}`);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    wallet: user.wallet,
+                    message: '¡Tu nueva Billetera Digital en Dólares (Base L2) ha sido creada con éxito!'
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    } else if (req.method === 'POST' && pathname === '/api/user/set-wallet') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else if (payload.email) {
+                    email = payload.email;
+                } else {
+                    email = 'jdavidjaramillo@hotmail.com';
+                }
+
+                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
+                    return;
+                }
+
+                const targetWallet = (payload.wallet || '').trim();
+                if (!targetWallet.startsWith('0x') || targetWallet.length !== 42) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Dirección de billetera EVM inválida (debe empezar por 0x y tener 42 caracteres).' }));
+                    return;
+                }
+
+                user.wallet = targetWallet;
+                saveUsersDb();
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    wallet: user.wallet,
+                    message: '¡Billetera vinculada con éxito!'
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
     } else if (req.method === 'POST' && pathname === '/api/user/withdraw-to-nequi') {
         let body = '';
         req.on('data', chunk => { body += chunk; });

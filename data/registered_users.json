@@ -1,1 +1,50 @@
-{"users":{"jdavidjaramillo@hotmail.com":{"id":"usr_1788532622594","name":"Juan David Jaramillo Zapata","email":"jdavidjaramillo@hotmail.com","phone":"+573147546359","wallet":"0xc94927fF92091A738406329E130E930E3bA788D6","credits":55,"plan":"Maxi Pay Pro","createdAt":"2026-09-04T14:37:02.594Z","lastPayment":{"method":"Wompi NEQUI","amountCop":39960,"date":"2026-09-04T15:02:18.058Z","txId":"1526018-1788534094-90406"}}},"sessions":{},"adminSessions":{},"invoices":{"WOMPI-1526018-1788534094-90406":{"invoiceId":"WOMPI-1526018-1788534094-90406","orderId":"PLAN-891420-7558","wompiTxId":"1526018-1788534094-90406","amountCop":39960,"amountUsd":"9.99","concept":"Suscripción Maxi Pay Pro","method":"Wompi NEQUI","status":"Aprobado 100% (Producción)","timestamp":"2026-09-04T15:01:34.651Z","buyerEmail":"jdavidjaramillo@hotmail.com"}},"withdrawals":[]}
+{
+  "users": {
+    "jdavidjaramillo@hotmail.com": {
+      "id": "usr_1788532622594",
+      "name": "Juan David Jaramillo Zapata",
+      "email": "jdavidjaramillo@hotmail.com",
+      "phone": "+573147546359",
+      "wallet": null,
+      "credits": 55,
+      "plan": "Maxi Pay Pro",
+      "createdAt": "2026-09-04T14:37:02.594Z",
+      "lastPayment": {
+        "method": "Wompi NEQUI",
+        "amountCop": 39960,
+        "date": "2026-09-04T15:02:18.058Z",
+        "txId": "1526018-1788534094-90406"
+      },
+      "privateKey": "0x4860e5e6a85891acec2e9014b31af38920f394d887b593686325da04630998fe"
+    }
+  },
+  "sessions": {},
+  "adminSessions": {},
+  "invoices": {
+    "WOMPI-1526018-1788534094-90406": {
+      "invoiceId": "WOMPI-1526018-1788534094-90406",
+      "orderId": "PLAN-891420-7558",
+      "wompiTxId": "1526018-1788534094-90406",
+      "amountCop": 39960,
+      "amountUsd": "9.99",
+      "concept": "Suscripciï¿½n Maxi Pay Pro",
+      "method": "Wompi NEQUI",
+      "status": "Aprobado 100% (Producciï¿½n)",
+      "timestamp": "2026-09-04T15:01:34.651Z",
+      "buyerEmail": "jdavidjaramillo@hotmail.com"
+    }
+  },
+  "withdrawals": [
+    {
+      "id": "WTH-1788551792166",
+      "userEmail": "jdavidjaramillo@hotmail.com",
+      "userName": "Juan David Jaramillo Zapata",
+      "amountUsd": 1,
+      "amountCop": 4000,
+      "destination": "3147546359",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-04T19:56:32.166Z"
+    }
+  ]
+}

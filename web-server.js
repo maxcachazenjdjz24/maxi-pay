@@ -4534,6 +4534,1116 @@ function renderMercadosPage() {
 </html>`;
 }
 
+function renderTutorialesPage() {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia Maxi Suite • Guías Paso a Paso, Simulador & Quizzes</title>
+    ${getGlobalStyles()}
+    <style>
+        .role-tab {
+            padding: 12px 22px;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            color: var(--text-muted);
+            font-size: 14.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-tab:hover {
+            border-color: var(--cyan);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+        .role-tab.active {
+            background: linear-gradient(135deg, rgba(0,242,254,0.15) 0%, rgba(0,223,137,0.12) 100%);
+            border-color: var(--cyan);
+            color: var(--cyan);
+            box-shadow: 0 4px 20px rgba(0,242,254,0.2);
+        }
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 22px;
+            margin-bottom: 40px;
+        }
+        .tut-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .tut-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--cyan);
+            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.12);
+        }
+        .badge-level {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .badge-beginner {
+            background: rgba(0, 223, 137, 0.15);
+            color: var(--emerald);
+            border: 1px solid rgba(0, 223, 137, 0.3);
+        }
+        .badge-intermediate {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+        }
+        .badge-pro {
+            background: rgba(192, 132, 252, 0.15);
+            color: var(--purple);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+        }
+        .badge-reward {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sandbox-box {
+            background: linear-gradient(135deg, rgba(15, 22, 36, 0.95) 0%, rgba(6, 8, 14, 0.98) 100%);
+            border: 2px solid var(--border);
+            border-radius: 22px;
+            padding: 30px;
+            margin-bottom: 45px;
+            position: relative;
+        }
+        .phone-mockup {
+            width: 290px;
+            height: 480px;
+            background: #090d16;
+            border: 6px solid #1e293b;
+            border-radius: 36px;
+            padding: 20px 16px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .phone-screen {
+            background: var(--bg-card);
+            border-radius: 22px;
+            padding: 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .qr-placeholder {
+            width: 170px;
+            height: 170px;
+            background: white;
+            padding: 10px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            margin: 12px 0;
+        }
+        .tut-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(6, 8, 14, 0.88);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .tut-modal-content {
+            background: var(--bg-card);
+            border: 2px solid var(--border-hover);
+            border-radius: 24px;
+            max-width: 820px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 35px;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+        }
+        .quiz-option {
+            background: var(--bg-dark);
+            border: 1.5px solid var(--border);
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .quiz-option:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 242, 254, 0.05);
+        }
+        .quiz-option.selected {
+            border-color: var(--cyan);
+            background: rgba(0, 242, 254, 0.12);
+            color: var(--cyan);
+        }
+        .quiz-option.correct {
+            border-color: var(--emerald) !important;
+            background: rgba(0, 223, 137, 0.15) !important;
+            color: var(--emerald) !important;
+        }
+        .quiz-option.wrong {
+            border-color: var(--rose) !important;
+            background: rgba(244, 63, 94, 0.15) !important;
+            color: var(--rose) !important;
+        }
+        .step-pill {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan), var(--emerald));
+            color: #06080e;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .step-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .glossary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .glossary-card:hover {
+            border-color: var(--cyan);
+        }
+        .glossary-body {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    ${getHeader('tutoriales')}
+
+    <div class="page-container" style="max-width:1200px;">
+        
+        <!-- HERO SECTION -->
+        <div style="text-align:center; margin-bottom:40px;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); padding:7px 18px; border-radius:24px; font-size:13px; font-weight:800; margin-bottom:16px;">
+                🚀 MAXI LEARN 2026 • EDUCACIÓN FINANCIERA SIN BARRERAS
+            </div>
+            <h1 style="font-size:42px; font-weight:900; letter-spacing:-0.03em; margin-bottom:14px; color:var(--text-main); line-height:1.15;">
+                Aprende a Cobrar en Dólares & Multiplicar tus Ganancias
+            </h1>
+            <p style="color:var(--text-muted); font-size:17px; max-width:760px; margin:0 auto 28px; font-weight:500; line-height:1.6;">
+                Guías interactivas de 3 minutos, simuladores de cobro en vivo y quizzes con recompensas diseñados para comerciantes tradicionales, servicios turísticos, freelancers e inversores.
+            </p>
+
+            <!-- OMNIBOX LIVE SEARCH -->
+            <div style="max-width:620px; margin:0 auto; position:relative;">
+                <input type="text" id="tutorialSearchInput" onkeyup="filterTutorials()" placeholder="🔍 ¿Qué quieres aprender? (ej: Nequi, QR, Turistas, Ballenas, Comisiones)..." style="width:100%; padding:16px 24px 16px 48px; border-radius:18px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-main); font-size:15px; font-weight:600; outline:none; box-shadow:0 8px 25px rgba(0,0,0,0.25);" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                <span style="position:absolute; left:18px; top:18px; font-size:18px; color:var(--text-muted);">⚡</span>
+            </div>
+        </div>
+
+        <!-- GAMIFICATION PROGRESS BANNER -->
+        <div class="card" style="background:linear-gradient(135deg, rgba(0,242,254,0.08) 0%, rgba(0,223,137,0.06) 100%); border:1.5px solid rgba(0,242,254,0.3); margin-bottom:35px; padding:20px 26px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div style="font-size:12.5px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Tu Progreso en la Academia</div>
+                    <div style="font-size:18px; font-weight:800; color:var(--text-main);" id="academyRankDisplay">🎓 Alumno Novato Maxi</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">Módulos Completados:</div>
+                        <div style="font-size:16px; font-weight:800; color:var(--emerald);" id="completedCountDisplay">0 / 8 Lecciones</div>
+                    </div>
+                    <div class="badge-reward" style="padding:8px 16px; font-size:13px;">
+                        🪙 Fichas Ganadas: <span id="fichasEarnedDisplay" style="color:white; font-weight:900;">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROLE SWITCHER TABS -->
+        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:35px;">
+            <button class="role-tab active" onclick="switchCategory('all', this)">
+                🌐 Todos los Módulos
+            </button>
+            <button class="role-tab" onclick="switchCategory('comercios', this)">
+                🏪 Comercios &amp; Turismo
+            </button>
+            <button class="role-tab" onclick="switchCategory('freelancers', this)">
+                💼 Freelancers &amp; Creadores
+            </button>
+            <button class="role-tab" onclick="switchCategory('traders', this)">
+                📈 Traders &amp; Inversores
+            </button>
+            <button class="role-tab" onclick="switchCategory('seguridad', this)">
+                🔒 Seguridad &amp; Billeteras
+            </button>
+        </div>
+
+        <!-- BENTO GRID DE TUTORIALES -->
+        <div class="tutorial-grid" id="tutorialGrid">
+
+            <!-- GUÍA 1: COMERCIOS -->
+            <div class="tut-card" data-category="comercios" data-tags="datafono qr cobro negocio restaurante hotel comercio cafe">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Principiante • 3 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        🏪 Tu Primer Datáfono Digital QR para Mostrador
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Convierte tu teléfono o tablet en una pasarela de cobro internacional. Cobra en pesos o dólares digitales sin comprar datáfonos ni pagar mensualidades bancarias.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_datafono')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 2: TURISMO & EXTRANJEROS -->
+            <div class="tut-card" data-category="comercios" data-tags="turistas extranjeros dolares usdc contracargos propinas comisiones">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Principiante • 4 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        ✈️ Cobrar a Turistas Extranjeros sin Comisiones del 5%
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Descubre cómo un turista de EE.UU. o Europa te paga en 2 segundos desde su billetera digital (Coinbase, Trust, Binance) sin rechazos de tarjetas ni pérdidas en el cambio.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_turistas')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 3: RETIROS A NEQUI -->
+            <div class="tut-card" data-category="comercios seguridad" data-tags="nequi bancolombia daviplata retiro pesos efectivo trm cambio">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Principiante • 3 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        💵 De Dólares Digitales (USDC) a Nequi en 3 Minutos
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        El paso a paso definitivo para transferir tus ganancias en USDC directamente a tu cuenta de Nequi o Bancolombia a la tasa real de mercado sin demoras de 15 días.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_retiros_nequi')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 4: FREELANCERS ENLACES -->
+            <div class="tut-card" data-category="freelancers" data-tags="freelance link pago enlace whatsapp clientes internacional remoto">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Principiante • 3 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        💼 Enlaces de Cobro Profesionales para Clientes
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Crea un enlace único con tu nombre de marca (ej: <code>maxi.suite/pay/tu-nombre</code>), fija el valor en USD y compártelo por WhatsApp, email o factura con 0% comisiones.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_freelance_link')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 5: GIG SNIPER IA -->
+            <div class="tut-card" data-category="freelancers" data-tags="trabajos bounties ia propuestas sniper upwork empleo web3">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-intermediate">Intermedio • 4 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        ⚡ Sniper de Propuestas con IA para Trabajos Web3
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Aprende a postularte a convocatorias de $50 a $650 USD generando propuestas técnicas de alta conversión en inglés y español en menos de 30 segundos con la IA de Maxi.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_gig_sniper')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 6: SMART MONEY SCORE (BALLENAS) -->
+            <div class="tut-card" data-category="traders" data-tags="ballenas radar score smart money trading base acumulacion volumen">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-pro">Avanzado • 5 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        🐋 Interpretación del Smart Money Score (0 a 100)
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Domina el radar de ballenas on-chain: cómo identificar compras institucionales (>80), absorción de liquidez DEX y retrocesos técnicos para operar con ventaja estadística.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_smart_money')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 7: CONFLUENCIA MACRO -->
+            <div class="tut-card" data-category="traders" data-tags="macro sp500 oro dxy bolsa mercados trading wallstreet">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-pro">Avanzado • 4 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        📊 Confluencia Macro: S&amp;P 500, Oro (XAU) y Cripto
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Aprende cómo la apertura de Wall Street, el Índice Dólar (DXY) y los máximos históricos del Oro generan catalizadores de liquidez en activos descentralizados de Base L2.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_macro_trading')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 8: SEGURIDAD & BASESCAN -->
+            <div class="tut-card" data-category="seguridad" data-tags="seguridad basescan blockchain llaves metamask custodia estafas">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Esencial • 3 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        🛡️ Las 5 Reglas de Oro de Seguridad Cero-Error
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Por qué Maxi Suite nunca pide tus claves privadas, cómo verificar recibos notariales en BaseScan (estado <code>Success</code>) y cómo operar con 100% de tranquilidad.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_seguridad_basescan')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 📱 MAXI SANDBOX: SIMULADOR DE COBRO QR EN VIVO -->
+        <div class="sandbox-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+                <div>
+                    <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(0,223,137,0.15); color:var(--emerald); padding:4px 12px; border-radius:14px; font-size:12px; font-weight:800; margin-bottom:6px;">
+                        ⚡ Laboratorio Interactivo
+                    </div>
+                    <h2 style="font-size:26px; font-weight:900; color:var(--text-main); margin:0;">
+                        Simulador de Cobro QR en Vivo (Pruébalo en 10 Segundos)
+                    </h2>
+                </div>
+                <div style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                    💡 Experimenta cómo tu cliente paga antes de cobrar dinero real.
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:30px; align-items:center;">
+                
+                <!-- PANEL IZQUIERDO: CONFIGURADOR DE COBRO -->
+                <div>
+                    <h3 style="font-size:18px; font-weight:800; color:var(--cyan); margin-bottom:14px;">
+                        1. Configura tu Cobro de Prueba:
+                    </h3>
+
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block; font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Nombre de tu Comercio / Freelance:</label>
+                        <input type="text" id="simMerchant" class="input-box" value="Café &amp; Bistro Colonial" oninput="updateSimData()">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div>
+                            <label style="display:block; font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Monto a Cobrar (USD):</label>
+                            <input type="number" id="simAmount" class="input-box" value="25.00" oninput="updateSimData()">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Equivalente en COP:</label>
+                            <input type="text" id="simCopDisplay" class="input-box" value="~$100.000 COP" readonly style="background:var(--bg-dark); color:var(--emerald); font-weight:800;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block; font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Concepto / Producto:</label>
+                        <input type="text" id="simConcept" class="input-box" value="Consumo Almuerzo + Bebida Turista" oninput="updateSimData()">
+                    </div>
+
+                    <button class="btn-primary" onclick="simulateCustomerPayment()" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border-radius:14px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                        📲 ¡Simular Pago de Cliente / Turista!
+                    </button>
+
+                    <div id="simLogStatus" style="margin-top:14px; font-size:13px; font-weight:700; color:var(--text-muted); text-align:center;">
+                        Esperando que el cliente escanee el código QR...
+                    </div>
+                </div>
+
+                <!-- PANEL DERECHO: CELULAR VIRTUAL CON QR -->
+                <div>
+                    <div class="phone-mockup">
+                        <div style="width:50px; height:4px; background:#334155; border-radius:4px; margin:0 auto 10px;"></div>
+                        
+                        <div class="phone-screen" id="phoneScreen">
+                            <div style="font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em;" id="phoneMerchantTag">
+                                Café &amp; Bistro Colonial
+                            </div>
+                            <div style="font-size:24px; font-weight:900; color:var(--text-main); margin:4px 0;" id="phoneAmountTag">
+                                $25.00 USDC
+                            </div>
+                            <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-bottom:8px;" id="phoneConceptTag">
+                                Consumo Almuerzo + Bebida Turista
+                            </div>
+
+                            <div class="qr-placeholder" id="simQrBox">
+                                <svg width="150" height="150" viewBox="0 0 200 200">
+                                    <!-- QR Pattern SVG Demo -->
+                                    <rect width="200" height="200" fill="white"/>
+                                    <rect x="15" y="15" width="55" height="55" fill="#06080e"/>
+                                    <rect x="25" y="25" width="35" height="35" fill="white"/>
+                                    <rect x="33" y="33" width="19" height="19" fill="#06080e"/>
+                                    
+                                    <rect x="130" y="15" width="55" height="55" fill="#06080e"/>
+                                    <rect x="140" y="25" width="35" height="35" fill="white"/>
+                                    <rect x="148" y="33" width="19" height="19" fill="#06080e"/>
+                                    
+                                    <rect x="15" y="130" width="55" height="55" fill="#06080e"/>
+                                    <rect x="25" y="140" width="35" height="35" fill="white"/>
+                                    <rect x="33" y="148" width="19" height="19" fill="#06080e"/>
+                                    
+                                    <rect x="85" y="20" width="15" height="30" fill="#06080e"/>
+                                    <rect x="85" y="70" width="30" height="15" fill="#06080e"/>
+                                    <rect x="30" y="85" width="40" height="15" fill="#06080e"/>
+                                    <rect x="135" y="85" width="45" height="20" fill="#06080e"/>
+                                    <rect x="85" y="130" width="20" height="50" fill="#06080e"/>
+                                    <rect x="120" y="130" width="45" height="15" fill="#06080e"/>
+                                    <rect x="140" y="160" width="40" height="25" fill="#06080e"/>
+                                    <!-- Center Logo Badge -->
+                                    <circle cx="100" cy="100" r="18" fill="#00f2fe"/>
+                                    <text x="100" y="106" font-size="14" font-weight="bold" text-anchor="middle" fill="#06080e">M</text>
+                                </svg>
+                            </div>
+
+                            <div style="font-size:11px; color:var(--emerald); font-weight:800; display:flex; align-items:center; gap:4px;">
+                                ⚡ Red Base • Comisión: $0.0008 USD
+                            </div>
+                            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
+                                Compatible con Coinbase, MetaMask, Binance
+                            </div>
+                        </div>
+
+                        <div style="width:36px; height:36px; border-radius:50%; border:2px solid #334155; margin:8px auto 0;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 📖 GLOSARIO "WEB3 SIN RODEOS" -->
+        <div class="card" style="margin-bottom:50px;">
+            <div style="text-align:center; margin-bottom:25px;">
+                <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Diccionario Criollo</div>
+                <h2 style="font-size:26px; font-weight:900; color:var(--text-main); margin-bottom:8px;">
+                    Glosario "Web3 Sin Rodeos" para Negocios
+                </h2>
+                <p style="color:var(--text-muted); font-size:15px; font-weight:500;">Los términos técnicos explicados en español de negocios cotidiano:</p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>💵 USDC (Dólar Digital)</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Es una moneda digital que siempre vale exactamente $1.00 USD. Está respaldada por reservas auditadas en bancos de EE.UU. No fluctúa ni se desploma como Bitcoin. Es como tener dólares en efectivo pero digitales.
+                    </div>
+                </div>
+
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>⚡ Base Network (Red Base)</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Es la autopista digital creada por Coinbase donde viajan los pagos. Permite que cualquier transferencia confirme en 2 segundos y cueste menos de $0.001 USD de tarifa de red (unos $5 pesos colombianos).
+                    </div>
+                </div>
+
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>🏦 Billetera / Wallet EVM</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Es tu cuenta digital personal indestructible. Solo tú tienes la llave de acceso (con tu FaceID o huella). Ningún banco, gobierno o empresa puede congelarte los fondos ni deducirte cuotas de manejo.
+                    </div>
+                </div>
+
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>🔄 P2P / Off-Ramp (Retiro a Banco)</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Es el mecanismo para cambiar tus dólares digitales (USDC) a pesos colombianos directo a tu Nequi, Daviplata o Bancolombia en 3 minutos a la tasa de cambio real sin intermediarios abusivos.
+                    </div>
+                </div>
+
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>🔍 BaseScan (El Notario Digital)</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Es el libro notarial público donde se registra cada pago con su código hash irrepetible. Cuando una transacción dice "Success", significa que el dinero ya está 100% en tu poder de forma irreversible.
+                    </div>
+                </div>
+
+                <div class="glossary-card" onclick="toggleGlossary(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-main);">
+                        <span>🪙 Fichas Maxi (Créditos)</span>
+                        <span style="color:var(--cyan); font-size:14px;">▼</span>
+                    </div>
+                    <div class="glossary-body">
+                        Son los créditos internos de Maxi Suite que usas para generar diagnósticos tácticos de trading con IA, redactar propuestas sniper para trabajos o verificar transacciones en Base. ¡Ganas fichas gratis completando quizzes de la academia!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE DETALLE DE TUTORIAL (FOCUS MODE) + QUIZ INTERACTIVO -->
+    <div class="tut-modal-overlay" id="tutModalOverlay" onclick="closeModalOnOutsideClick(event)">
+        <div class="tut-modal-content">
+            <button onclick="closeTutorialModal()" style="position:absolute; right:20px; top:20px; background:transparent; border:none; color:var(--text-muted); font-size:24px; cursor:pointer; font-weight:800;">✕</button>
+            
+            <div id="modalTutContent">
+                <!-- CONTENIDO DINÁMICO INYECTADO VÍA JAVASCRIPT -->
+            </div>
+        </div>
+    </div>
+
+    ${getFooter()}
+
+    <script>
+        // CATÁLOGO COMPLETO DE LECCIONES & QUIZZES
+        const TUTORIALS_DATA = {
+            'tut_datafono': {
+                id: 'tut_datafono',
+                category: 'Comercios & Turismo',
+                badge: 'Principiante • 3 min',
+                reward: 3,
+                title: '🏪 Tu Primer Datáfono Digital QR para Mostrador',
+                summary: 'Aprende cómo recibir pagos en mostrador sin datáfonos físicos ni comisiones bancarias del 5%.',
+                steps: [
+                    { num: 1, title: 'Entra a Maxi Pay (/pay)', text: 'Ingresa a la sección de cobros desde tu teléfono o tablet. Define el valor en dólares o pesos y el concepto del servicio.' },
+                    { num: 2, title: 'Muestra el Código QR al Cliente', text: 'El sistema genera un código QR estándar EIP-681 en la red Base. El cliente lo escanea con la cámara de su billetera o app de pagos.' },
+                    { num: 3, title: 'Confirmación Instantánea en Pantalla', text: 'En menos de 2 segundos, la pantalla suena 🔔 y se pone verde. Los fondos quedan acreditados directamente en tu billetera de forma irreversible.' }
+                ],
+                quiz: {
+                    question: '¿Por qué Maxi Pay es más conveniente que un datáfono tradicional para tu negocio?',
+                    options: [
+                        { text: 'Porque te cobra 5% por cada venta y te entrega el dinero en 15 días.', correct: false },
+                        { text: 'Porque cobra 0% de comisión por venta, liquida en 2 segundos y no requiere comprar aparatos.', correct: true },
+                        { text: 'Porque solo funciona cuando el banco abre en horario de oficina.', correct: false }
+                    ]
+                }
+            },
+            'tut_turistas': {
+                id: 'tut_turistas',
+                category: 'Comercios & Turismo',
+                badge: 'Principiante • 4 min',
+                reward: 3,
+                title: '✈️ Cobrar a Turistas Extranjeros sin Comisiones del 5%',
+                summary: 'Cómo evitar pérdidas por datáfonos y contracargos cuando atiendes viajeros internacionales.',
+                steps: [
+                    { num: 1, title: 'El Turista Usa su Billetera Habitual', text: 'La mayoría de viajeros de EE.UU., Canadá y Europa usan Coinbase Wallet, Binance, MetaMask o TrustWallet con saldo en USDC.' },
+                    { num: 2, title: 'Cero Rechazos Bancarios Internacionales', text: 'Las tarjetas de crédito extranjeras suelen bloquearse por seguridad en el exterior. Con QR en USDC el pago pasa siempre sin fricción.' },
+                    { num: 3, title: 'Cero Riesgo de Contracargos Falsos', text: 'A diferencia de las tarjetas tradicionales donde el turista puede desconocer el cobro al regresar a su país, una transacción on-chain en Base es definitiva y no puede ser revertida.' }
+                ],
+                quiz: {
+                    question: '¿Qué ventaja tiene cobrarle a un turista en USDC por Base en lugar de pasar su tarjeta internacional por datáfono?',
+                    options: [
+                        { text: 'Evitas perder entre 4% y 6% en comisiones bancarias y eliminas el riesgo de contracargos fraudulentos.', correct: true },
+                        { text: 'El turista tiene que esperar 3 días a que su banco en EE.UU. apruebe el pago.', correct: false },
+                        { text: 'El dinero se convierte en una moneda que puede bajar 50% de valor mañana.', correct: false }
+                    ]
+                }
+            },
+            'tut_retiros_nequi': {
+                id: 'tut_retiros_nequi',
+                category: 'Comercios & Seguridad',
+                badge: 'Principiante • 3 min',
+                reward: 3,
+                title: '💵 De Dólares Digitales (USDC) a Nequi en 3 Minutos',
+                summary: 'El método más rápido y seguro para monetizar tus ganancias a pesos colombianos.',
+                steps: [
+                    { num: 1, title: 'Revisa tu Saldo en Base', text: 'Tus USDC recibidos se encuentran en tu billetera en la red Base (cero comisiones de custodia).' },
+                    { num: 2, title: 'Selecciona la Pasarela P2P / DolarApp / Littio', text: 'Transfiere los USDC a tu cuenta de retiro o cambia en P2P a la tasa de mercado real (TRM plena).' },
+                    { num: 3, title: 'Recibe la Transferencia en Nequi / Bancolombia', text: 'En 3 a 5 minutos tienes los pesos colombianos disponibles en tu app bancaria sin retenciones sorpresivas.' }
+                ],
+                quiz: {
+                    question: '¿El dólar digital (USDC) pierde valor como el Bitcoin?',
+                    options: [
+                        { text: 'Sí, fluctúa todos los días según la bolsa.', correct: false },
+                        { text: 'No. 1 USDC siempre equivale exactamente a $1 USD con paridad 1:1 respaldada.', correct: true },
+                        { text: 'Solo vale los fines de semana.', correct: false }
+                    ]
+                }
+            },
+            'tut_freelance_link': {
+                id: 'tut_freelance_link',
+                category: 'Freelancers & Creadores',
+                badge: 'Principiante • 3 min',
+                reward: 3,
+                title: '💼 Enlaces de Cobro Profesionales para Clientes',
+                summary: 'Cómo cobrar honorarios y servicios digitales a clientes en cualquier parte del mundo.',
+                steps: [
+                    { num: 1, title: 'Personaliza tu Enlace', text: 'En Maxi Pay pon tu nombre de freelance o agencia y el valor acordado con tu cliente.' },
+                    { num: 2, title: 'Envía el Link por WhatsApp o Email', text: 'El cliente abre un checkout dual elegante tipo Stripe donde puede pagar con tarjeta internacional o escanear el QR con USDC.' },
+                    { num: 3, title: 'Notificación Inmediata en Telegram', text: 'Apenas el cliente paga, recibes una alerta instantánea con el ID de la orden en tu bot de Telegram.' }
+                ],
+                quiz: {
+                    question: '¿Qué opciones de pago le ofrece tu enlace de Maxi Pay al cliente final?',
+                    options: [
+                        { text: 'Solo transferencias en efectivo por ventanilla.', correct: false },
+                        { text: 'Pago Dual: Tarjeta Débito/Crédito tradicional o Cripto USDC en Base L2.', correct: true },
+                        { text: 'Únicamente cheques en dólares emitidos en Nueva York.', correct: false }
+                    ]
+                }
+            },
+            'tut_gig_sniper': {
+                id: 'tut_gig_sniper',
+                category: 'Freelancers & Creadores',
+                badge: 'Intermedio • 4 min',
+                reward: 3,
+                title: '⚡ Sniper de Propuestas con IA para Trabajos Web3',
+                summary: 'Gana convocatorias de $50 a $650 USD postulándote con propuestas redactadas por IA.',
+                steps: [
+                    { num: 1, title: 'Explora el Radar de Trabajos (/trabajos)', text: 'Filtra oportunidades en Bountycaster, Web3 Careers y GitHub por presupuesto y habilidades.' },
+                    { num: 2, title: 'Haz Clic en "✨ Generar Propuesta Sniper"', text: 'La IA analiza los requerimientos del cliente y redacta una propuesta técnica impecable en 30 segundos.' },
+                    { num: 3, title: 'Copia y Postúlate en 1 Clic', text: 'Envía tu propuesta con tu dirección de Maxi Pay para recibir el pago directo al ser seleccionado.' }
+                ],
+                quiz: {
+                    question: '¿Qué ventaja te da el Sniper de Propuestas con IA en Maxi Trabajos?',
+                    options: [
+                        { text: 'Redacta propuestas técnicas personalizadas en inglés/español en 30 segundos para postularte antes que nadie.', correct: true },
+                        { text: 'Te obliga a pagar 20% de comisión como Upwork.', correct: false },
+                        { text: 'Solo sirve para redactar poemas.', correct: false }
+                    ]
+                }
+            },
+            'tut_smart_money': {
+                id: 'tut_smart_money',
+                category: 'Traders & Inversores',
+                badge: 'Avanzado • 5 min',
+                reward: 3,
+                title: '🐋 Interpretación del Smart Money Score (0 a 100)',
+                summary: 'Cómo seguir las huellas de las ballenas y fondos de inversión en Base Mainnet.',
+                steps: [
+                    { num: 1, title: 'Score > 80: Acumulación Fuerte', text: 'Las ballenas están retirando tokens a billeteras frías o inyectando liquidez masiva. Señal de alta convicción alcista.' },
+                    { num: 2, title: 'Score 40 - 80: Rango / Acumulación Silenciosa', text: 'Mercado en consolidación. Ideal para estrategias de Grid Trading en DEX.' },
+                    { num: 3, title: 'Score < 40: Distribución / Presión Vendedora', text: 'Salida de capital institucional. Momento de proteger ganancias o abrir coberturas.' }
+                ],
+                quiz: {
+                    question: '¿Qué significa un Smart Money Score superior a 80 en el Radar de Ballenas?',
+                    options: [
+                        { text: 'Que el mercado se congeló por 24 horas.', correct: false },
+                        { text: 'Fuerte acumulación institucional e inyección de liquidez de grandes capitales.', correct: true },
+                        { text: 'Que debes vender todos tus activos inmediatamente.', correct: false }
+                    ]
+                }
+            },
+            'tut_macro_trading': {
+                id: 'tut_macro_trading',
+                category: 'Traders & Inversores',
+                badge: 'Avanzado • 4 min',
+                reward: 3,
+                title: '📊 Confluencia Macro: S&P 500, Oro (XAU) y Cripto',
+                summary: 'Sincroniza tus operaciones cripto con los grandes flujos de capital global.',
+                steps: [
+                    { num: 1, title: 'El S&P 500 como Termómetro de Riesgo', text: 'Cuando Wall Street abre en verde y el índice Dólar (DXY) retrocede, los activos descentralizados en Base tienen mayor impulso alcista.' },
+                    { num: 2, title: 'El Oro (XAU) como Sensor de Liquidez', text: 'Máximos históricos en el oro indican expansión monetaria global, favoreciendo activos duros como Bitcoin y Ethereum.' },
+                    { num: 3, title: 'Gestión de Riesgo Cuantitativa', text: 'Nunca arriesgues más del 1.5% de tu capital por operación y utiliza siempre niveles de Stop Loss calculados por volatilidad (ATR).' }
+                ],
+                quiz: {
+                    question: '¿Por qué es importante monitorear el S&P 500 y el Oro junto a las criptomonedas?',
+                    options: [
+                        { text: 'Porque el dinero institucional se mueve según la liquidez global de Wall Street y las tasas de interés.', correct: true },
+                        { text: 'Porque la bolsa de valores solo abre los domingos.', correct: false },
+                        { text: 'No tiene ninguna importancia.', correct: false }
+                    ]
+                }
+            },
+            'tut_seguridad_basescan': {
+                id: 'tut_seguridad_basescan',
+                category: 'Seguridad & Billeteras',
+                badge: 'Esencial • 3 min',
+                reward: 3,
+                title: '🛡️ Las 5 Reglas de Oro de Seguridad Cero-Error',
+                summary: 'Aprende a proteger tus fondos y verificar cada pago como un auditor profesional.',
+                steps: [
+                    { num: 1, title: 'Cero Custodia: Tus Llaves, Tu Dinero', text: 'Maxi Suite NUNCA solicita tus 12 palabras semilla ni contraseñas bancarias. Tu dinero siempre está bajo tu control personal.' },
+                    { num: 2, title: 'Códigos QR con Protocolo Anti-Error', text: 'Los códigos QR de Maxi Pay contienen la red Base predeterminada y el monto exacto, evitando errores de tipeo.' },
+                    { num: 3, title: 'Verificación en BaseScan', text: 'Cada transacción tiene un hash único. Si en BaseScan dice "Success", la transferencia es 100% real e infalsificable.' }
+                ],
+                quiz: {
+                    question: '¿Maxi Suite o su equipo de soporte te pedirán alguna vez tus 12 palabras semilla o clave privada?',
+                    options: [
+                        { text: 'Sí, para activar la cuenta.', correct: false },
+                        { text: 'JAMÁS. Nadie legítimo te pedirá nunca tus palabras semilla ni contraseñas privadas.', correct: true },
+                        { text: 'Solo los días festivos.', correct: false }
+                    ]
+                }
+            }
+        };
+
+        let currentActiveTutorialId = null;
+
+        // FILTRO DE CATEGORÍAS
+        function switchCategory(cat, btn) {
+            document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.tut-card');
+            cards.forEach(c => {
+                if (cat === 'all') {
+                    c.style.display = 'flex';
+                } else {
+                    const categories = c.getAttribute('data-category') || '';
+                    if (categories.includes(cat)) {
+                        c.style.display = 'flex';
+                    } else {
+                        c.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // BUSCADOR EN TIEMPO REAL
+        function filterTutorials() {
+            const query = document.getElementById('tutorialSearchInput').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.tut-card');
+            cards.forEach(c => {
+                const text = c.innerText.toLowerCase();
+                const tags = (c.getAttribute('data-tags') || '').toLowerCase();
+                if (text.includes(query) || tags.includes(query)) {
+                    c.style.display = 'flex';
+                } else {
+                    c.style.display = 'none';
+                }
+            });
+        }
+
+        // ABRIR MODAL DE TUTORIAL
+        function openTutorialModal(tutId) {
+            const data = TUTORIALS_DATA[tutId];
+            if (!data) return;
+            currentActiveTutorialId = tutId;
+
+            let stepsHtml = '';
+            data.steps.forEach(s => {
+                stepsHtml += '<div class="step-row">' +
+                    '<div class="step-pill">' + s.num + '</div>' +
+                    '<div>' +
+                        '<div style="font-size:16px; font-weight:800; color:var(--text-main); margin-bottom:4px;">' + s.title + '</div>' +
+                        '<div style="font-size:14px; color:var(--text-muted); line-height:1.6;">' + s.text + '</div>' +
+                    '</div>' +
+                '</div>';
+            });
+
+            let quizHtml = '<div style="margin-top:30px; background:var(--bg-dark); border:1.5px solid var(--border); border-radius:16px; padding:22px;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                    '<span style="font-size:12px; font-weight:800; color:#fbbf24; text-transform:uppercase;">🧠 Quiz Rápido • Gana +3 Fichas</span>' +
+                    '<span class="badge-reward">🪙 Recompensa Real</span>' +
+                '</div>' +
+                '<div style="font-size:16px; font-weight:800; color:var(--text-main); margin-bottom:14px;">' +
+                    data.quiz.question +
+                '</div>' +
+                '<div id="quizOptionsContainer">';
+
+            data.quiz.options.forEach((opt, idx) => {
+                quizHtml += '<div class="quiz-option" onclick="selectQuizOption(' + idx + ', ' + opt.correct + ')">' +
+                    '<span style="width:22px; height:22px; border-radius:50%; border:2px solid var(--border); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;">' + String.fromCharCode(65 + idx) + '</span>' +
+                    '<span>' + opt.text + '</span>' +
+                '</div>';
+            });
+
+            quizHtml += '</div>' +
+                '<button class="btn-primary" id="btnSubmitQuiz" onclick="submitLessonQuiz(\'' + tutId + '\')" style="width:100%; justify-content:center; margin-top:14px; padding:12px; font-size:14px;">' +
+                    '✅ Validar Respuesta &amp; Reclamar Fichas' +
+                '</button>' +
+                '<div id="quizFeedbackMsg" style="margin-top:12px; display:none; padding:12px; border-radius:10px; font-size:13.5px; font-weight:800; text-align:center;"></div>' +
+            '</div>';
+
+            const modalHtml = '<div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">' +
+                '<span class="badge-level badge-beginner">' + data.category + '</span>' +
+                '<span class="badge-level badge-pro">' + data.badge + '</span>' +
+            '</div>' +
+            '<h2 style="font-size:26px; font-weight:900; color:var(--text-main); margin-bottom:8px;">' + data.title + '</h2>' +
+            '<p style="color:var(--text-muted); font-size:15px; margin-bottom:24px; line-height:1.5;">' + data.summary + '</p>' +
+            '<div style="margin-bottom:20px;">' + stepsHtml + '</div>' +
+            quizHtml;
+
+            document.getElementById('modalTutContent').innerHTML = modalHtml;
+            document.getElementById('tutModalOverlay').style.display = 'flex';
+        }
+
+        function closeTutorialModal() {
+            document.getElementById('tutModalOverlay').style.display = 'none';
+        }
+
+        function closeModalOnOutsideClick(e) {
+            if (e.target.id === 'tutModalOverlay') {
+                closeTutorialModal();
+            }
+        }
+
+        let selectedQuizIndex = null;
+        let isSelectedCorrect = false;
+
+        function selectQuizOption(index, correct) {
+            selectedQuizIndex = index;
+            isSelectedCorrect = correct;
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach((opt, idx) => {
+                if (idx === index) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+        }
+
+        async function submitLessonQuiz(tutId) {
+            if (selectedQuizIndex === null) {
+                alert('Por favor selecciona una opción antes de continuar.');
+                return;
+            }
+
+            const feedback = document.getElementById('quizFeedbackMsg');
+            feedback.style.display = 'block';
+
+            const options = document.querySelectorAll('.quiz-option');
+
+            if (isSelectedCorrect) {
+                options[selectedQuizIndex].classList.add('correct');
+                feedback.style.background = 'rgba(0, 223, 137, 0.15)';
+                feedback.style.border = '1.5px solid var(--emerald)';
+                feedback.style.color = 'var(--emerald)';
+                feedback.innerHTML = '🎉 ¡RESPUESTA 100% CORRECTA! Acreditando tus Fichas...';
+
+                // Llamada al backend para sumar fichas
+                const token = localStorage.getItem('maxi_user_token');
+                try {
+                    const res = await fetch('/api/academy/submit-quiz', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? 'Bearer ' + token : ''
+                        },
+                        body: JSON.stringify({ tutorialId: tutId, score: 100 })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        feedback.innerHTML = '🎉 ¡Felicitaciones! Has ganado +' + (data.rewardAdded || 3) + ' Fichas. Saldo total: ' + data.totalCredits + ' Fichas.';
+                        saveCompletedTutorialLocal(tutId);
+                        updateAcademyProgressUI();
+                        if (typeof checkUserSession === 'function') checkUserSession();
+                    } else {
+                        feedback.innerHTML = '✓ ¡Correcto! ' + (data.error || 'Módulo completado.');
+                    }
+                } catch(err) {
+                    feedback.innerHTML = '🎉 ¡Excelente! Respuesta correcta guardada.';
+                }
+            } else {
+                options[selectedQuizIndex].classList.add('wrong');
+                feedback.style.background = 'rgba(244, 63, 94, 0.15)';
+                feedback.style.border = '1.5px solid var(--rose)';
+                feedback.style.color = 'var(--rose)';
+                feedback.innerHTML = '❌ Respuesta incorrecta. Revisa los pasos de la lección e intenta de nuevo.';
+            }
+        }
+
+        function saveCompletedTutorialLocal(tutId) {
+            let completed = JSON.parse(localStorage.getItem('maxi_completed_tuts') || '[]');
+            if (!completed.includes(tutId)) {
+                completed.push(tutId);
+                localStorage.setItem('maxi_completed_tuts', JSON.stringify(completed));
+            }
+        }
+
+        function updateAcademyProgressUI() {
+            const completed = JSON.parse(localStorage.getItem('maxi_completed_tuts') || '[]');
+            const count = completed.length;
+            const display = document.getElementById('completedCountDisplay');
+            const fichasDisplay = document.getElementById('fichasEarnedDisplay');
+            const rankDisplay = document.getElementById('academyRankDisplay');
+
+            if (display) display.innerText = count + ' / 8 Lecciones';
+            if (fichasDisplay) fichasDisplay.innerText = count * 3;
+
+            if (rankDisplay) {
+                if (count >= 7) rankDisplay.innerText = '👑 Maestro Maxi Suite Pro';
+                else if (count >= 4) rankDisplay.innerText = '⚡ Comerciante Avanzado';
+                else if (count >= 1) rankDisplay.innerText = '🌱 Estudiante Activo';
+                else rankDisplay.innerText = '🎓 Alumno Novato Maxi';
+            }
+        }
+
+        // SIMULADOR DE COBRO QR
+        function updateSimData() {
+            const name = document.getElementById('simMerchant').value.trim() || 'Comercio';
+            const amount = parseFloat(document.getElementById('simAmount').value) || 25;
+            const concept = document.getElementById('simConcept').value.trim() || 'Servicio';
+
+            document.getElementById('phoneMerchantTag').innerText = name;
+            document.getElementById('phoneAmountTag').innerText = '$' + amount.toFixed(2) + ' USDC';
+            document.getElementById('phoneConceptTag').innerText = concept;
+            document.getElementById('simCopDisplay').value = '~$' + (amount * 4000).toLocaleString() + ' COP';
+        }
+
+        function simulateCustomerPayment() {
+            const status = document.getElementById('simLogStatus');
+            const screen = document.getElementById('phoneScreen');
+            const amount = parseFloat(document.getElementById('simAmount').value) || 25;
+
+            status.innerHTML = '⏳ <span style="color:var(--cyan);">Turista escaneando QR con Coinbase Wallet...</span>';
+            screen.style.border = '2px solid var(--cyan)';
+
+            setTimeout(() => {
+                status.innerHTML = '⚡ <span style="color:var(--emerald);">Firmando transacción on-chain en Base Network (Gas: $0.0008 USD)...</span>';
+                
+                setTimeout(() => {
+                    screen.innerHTML = '<div style="font-size:44px; margin-bottom:10px;">✅</div>' +
+                        '<div style="font-size:20px; font-weight:900; color:var(--emerald); margin-bottom:4px;">¡PAGO APROBADO!</div>' +
+                        '<div style="font-size:26px; font-weight:900; color:var(--text-main); margin-bottom:8px;">$' + amount.toFixed(2) + ' USDC</div>' +
+                        '<div style="font-size:12px; color:var(--text-muted); line-height:1.4; margin-bottom:12px;">' +
+                            'Recibido en Base L2 • Irreversible<br>' +
+                            'Hash: <code>0x8f2a...c914</code>' +
+                        '</div>' +
+                        '<div style="background:rgba(0,223,137,0.15); border:1px solid var(--emerald); border-radius:10px; padding:8px 12px; font-size:11.5px; font-weight:800; color:var(--emerald);">' +
+                            '✓ Notificación enviada a Telegram' +
+                        '</div>';
+                    screen.style.border = '2px solid var(--emerald)';
+                    screen.style.background = 'linear-gradient(135deg, rgba(0,223,137,0.15) 0%, rgba(15,22,36,1) 100%)';
+                    status.innerHTML = '🎉 <strong style="color:var(--emerald);">¡PAGO RECIBIDO EXITOSAMENTE!</strong> Tu saldo ha sido acreditado en 1.8 segundos.';
+                }, 1800);
+
+            }, 1500);
+        }
+
+        function toggleGlossary(el) {
+            const body = el.querySelector('.glossary-body');
+            const arrow = el.querySelector('span:last-child');
+            if (body.style.display === 'block') {
+                body.style.display = 'none';
+                arrow.innerText = '▼';
+            } else {
+                body.style.display = 'block';
+                arrow.innerText = '▲';
+            }
+        }
+
+        // INIT
+        window.addEventListener('DOMContentLoaded', () => {
+            updateAcademyProgressUI();
+            updateSimData();
+        });
+    </script>
+</body>
+</html>`;
+}
+
 function renderDemoStoreHtml() {
   return `<!DOCTYPE html>
 <html lang="es">
@@ -5190,6 +6300,65 @@ const server = http.createServer(async (req, res) => {
                     userCredits.set(ip, newTotal);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, rewardAdded: reward, totalCredits: newTotal }));
+                }
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/academy/submit-quiz') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const { ip, credits, user } = getClientCredits(req);
+                const payload = JSON.parse(body || '{}');
+                const { tutorialId, score } = payload;
+
+                if (!tutorialId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'tutorialId es requerido' }));
+                    return;
+                }
+
+                const reward = 3;
+
+                if (user) {
+                    if (!user.completedTutorials) user.completedTutorials = {};
+                    if (user.completedTutorials[tutorialId]) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ 
+                            success: true, 
+                            alreadyCompleted: true, 
+                            rewardAdded: 0, 
+                            totalCredits: user.credits,
+                            message: 'Módulo completado anteriormente.' 
+                        }));
+                        return;
+                    }
+                    user.completedTutorials[tutorialId] = {
+                        date: new Date().toISOString(),
+                        score: score || 100
+                    };
+                    user.credits = (user.credits || 0) + reward;
+                    saveUsersDb();
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ 
+                        success: true, 
+                        rewardAdded: reward, 
+                        totalCredits: user.credits,
+                        message: `🎉 ¡Felicitaciones! Has ganado +${reward} Fichas.` 
+                    }));
+                } else {
+                    const newTotal = credits + reward;
+                    userCredits.set(ip, newTotal);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ 
+                        success: true, 
+                        rewardAdded: reward, 
+                        totalCredits: newTotal,
+                        message: `🎉 ¡Felicitaciones! Has ganado +${reward} Fichas.` 
+                    }));
                 }
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });

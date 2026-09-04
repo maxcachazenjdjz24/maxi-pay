@@ -5,7 +5,7 @@
       "name": "Juan David Jaramillo Zapata",
       "email": "jdavidjaramillo@hotmail.com",
       "phone": "+573147546359",
-      "wallet": null,
+      "wallet": "0x355BAB72e5d6f5FF5ab46116C5beC522047f2004",
       "credits": 55,
       "plan": "Maxi Pay Pro",
       "createdAt": "2026-09-04T14:37:02.594Z",
@@ -15,7 +15,51 @@
         "date": "2026-09-04T15:02:18.058Z",
         "txId": "1526018-1788534094-90406"
       },
-      "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735"
+      "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735",
+      "sales": [
+        {
+          "txHash": "0xefea94b611ba6879bf53f79bb3ca6a2ae8231113c72249d39cef81fdb77aa085",
+          "invoiceId": "CARD-ONRAMP-1788563018753",
+          "orderId": "TEST-ORD-1788563018751",
+          "amountUsd": 10,
+          "amountCop": 40000,
+          "concept": "Curso Online / Asesoría Pro",
+          "paymentMethod": "Tarjeta Internacional (USDC en Base L2)",
+          "cardHolder": "Michael Scott",
+          "from": "Tarjeta Visa/MC •••• 6789",
+          "to": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
+          "date": "2026-09-04T23:03:38.753Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "txHash": "0xf388eeaf80d19a1187cd79b17cfba5eb4acd956fd10554ff871f462247edbcf7",
+          "invoiceId": "CARD-ONRAMP-1788562998947",
+          "orderId": "TEST-ORD-1788562998945",
+          "amountUsd": 10,
+          "amountCop": 40000,
+          "concept": "Curso Online / Asesoría Pro",
+          "paymentMethod": "Tarjeta Internacional (USDC en Base L2)",
+          "cardHolder": "Michael Scott",
+          "from": "Tarjeta Visa/MC •••• 6789",
+          "to": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
+          "date": "2026-09-04T23:03:18.947Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "txHash": "0xc28d249c60f2f06b27c06ac359be5930eefcc1b5401d49e87cf9ad41e9f29fb7",
+          "invoiceId": "CARD-ONRAMP-1788562953705",
+          "orderId": "TEST-ORD-1788562953702",
+          "amountUsd": 10,
+          "amountCop": 40000,
+          "concept": "Curso Online / Asesoría Pro",
+          "paymentMethod": "Tarjeta Internacional (USDC en Base L2)",
+          "cardHolder": "Michael Scott",
+          "from": "Tarjeta Visa/MC •••• 6789",
+          "to": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
+          "date": "2026-09-04T23:02:33.705Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        }
+      ]
     }
   },
   "sessions": {
@@ -35,6 +79,42 @@
       "status": "Aprobado 100% (Producci�n)",
       "timestamp": "2026-09-04T15:01:34.651Z",
       "buyerEmail": "jdavidjaramillo@hotmail.com"
+    },
+    "CARD-ONRAMP-1788562953705": {
+      "invoiceId": "CARD-ONRAMP-1788562953705",
+      "orderId": "TEST-ORD-1788562953702",
+      "amountUsd": "10.00",
+      "amountCop": 40000,
+      "concept": "Curso Online / Asesoría Pro",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-04T23:02:33.705Z",
+      "buyerName": "Michael Scott",
+      "buyerEmail": "cliente@internacional.com"
+    },
+    "CARD-ONRAMP-1788562998947": {
+      "invoiceId": "CARD-ONRAMP-1788562998947",
+      "orderId": "TEST-ORD-1788562998945",
+      "amountUsd": "10.00",
+      "amountCop": 40000,
+      "concept": "Curso Online / Asesoría Pro",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-04T23:03:18.947Z",
+      "buyerName": "Michael Scott",
+      "buyerEmail": "cliente@internacional.com"
+    },
+    "CARD-ONRAMP-1788563018753": {
+      "invoiceId": "CARD-ONRAMP-1788563018753",
+      "orderId": "TEST-ORD-1788563018751",
+      "amountUsd": "10.00",
+      "amountCop": 40000,
+      "concept": "Curso Online / Asesoría Pro",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-04T23:03:38.753Z",
+      "buyerName": "Michael Scott",
+      "buyerEmail": "cliente@internacional.com"
     }
   },
   "withdrawals": [

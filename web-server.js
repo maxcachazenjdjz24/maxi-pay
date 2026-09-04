@@ -4334,40 +4334,52 @@ function renderMercadosPage() {
             color: var(--cyan);
             box-shadow: 0 4px 20px rgba(0,242,254,0.2);
         }
-        .bento-grid {
+        .market-terminal-grid {
             display: grid;
-            grid-template-columns: 8fr 4fr;
+            grid-template-columns: minmax(0, 1.85fr) minmax(0, 1.15fr);
             gap: 22px;
             margin-bottom: 35px;
+            width: 100%;
+            align-items: start;
         }
-        @media (max-width: 1024px) {
-            .bento-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 1140px) {
+            .market-terminal-grid {
+                grid-template-columns: 100%;
             }
+        }
+        .market-main-col {
+            min-width: 0;
+            width: 100%;
+        }
+        .market-side-col {
+            min-width: 0;
+            width: 100%;
         }
         .asset-chip-bar {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             overflow-x: auto;
+            max-width: 100%;
             padding-bottom: 8px;
             margin-bottom: 16px;
             scrollbar-width: thin;
         }
         .asset-chip {
-            padding: 8px 14px;
+            padding: 8px 12px;
             background: var(--bg-card);
             border: 1.5px solid var(--border);
             border-radius: 12px;
             color: var(--text-main);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
         .asset-chip:hover {
             border-color: var(--cyan);
@@ -4401,6 +4413,8 @@ function renderMercadosPage() {
             border-radius: 18px;
             padding: 20px;
             margin-bottom: 18px;
+            width: 100%;
+            box-sizing: border-box;
             transition: all 0.25s ease;
         }
         .telemetry-card:hover {
@@ -4430,6 +4444,8 @@ function renderMercadosPage() {
             border: 1.5px solid rgba(192,132,252,0.35);
             border-radius: 18px;
             padding: 22px;
+            width: 100%;
+            box-sizing: border-box;
             position: relative;
             overflow: hidden;
         }
@@ -4452,6 +4468,8 @@ function renderMercadosPage() {
             border-radius: 20px;
             padding: 26px;
             overflow-x: auto;
+            width: 100%;
+            box-sizing: border-box;
         }
         .custom-table {
             width: 100%;
@@ -4482,7 +4500,7 @@ function renderMercadosPage() {
 <body>
     ${getHeader('mercados')}
 
-    <div class="page-container">
+    <div class="page-container" style="max-width:1320px; width:100%; box-sizing:border-box;">
         <!-- HEADER HERO -->
         <div style="text-align:center; margin-bottom:28px;">
             <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); padding:6px 16px; border-radius:20px; font-size:12.5px; font-weight:800; margin-bottom:12px;">
@@ -4511,57 +4529,59 @@ function renderMercadosPage() {
         </div>
 
         <!-- BENTO GRID -->
-        <div class="bento-grid">
+        <div class="market-terminal-grid">
             <!-- COLUMNA PRINCIPAL (GRÁFICO MAESTRO) -->
-            <div class="card" style="padding:22px;">
-                <!-- QUICK ASSET CHIPS -->
-                <div class="asset-chip-bar" id="assetChipsContainer">
-                    <button class="asset-chip active" data-symbol="BINANCE:ETHUSDC" data-name="Ethereum" onclick="switchActiveAsset('BINANCE:ETHUSDC', 'ETH/USDC', 'crypto')">
-                        💎 ETH/USDC <span class="chip-badge-up">+5.04%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="BINANCE:BTCUSDC" data-name="Bitcoin" onclick="switchActiveAsset('BINANCE:BTCUSDC', 'BTC/USDC', 'crypto')">
-                        👑 BTC/USDC <span class="chip-badge-up">+3.18%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="COINBASE:AEROUSD" data-name="Aerodrome" onclick="switchActiveAsset('COINBASE:AEROUSD', 'AERO/USD', 'crypto')">
-                        ⚡ AERO/USD <span class="chip-badge-up">+8.42%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="TVC:GOLD" data-name="Oro Spot" onclick="switchActiveAsset('TVC:GOLD', 'Oro (XAU/USD)', 'macro')">
-                        🥇 ORO Spot <span class="chip-badge-up">+0.80%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="CAPITALCOM:US500" data-name="S&P 500" onclick="switchActiveAsset('CAPITALCOM:US500', 'S&P 500 (SPX)', 'macro')">
-                        📈 S&P 500 <span class="chip-badge-up">+0.45%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="TVC:USOIL" data-name="Petróleo WTI" onclick="switchActiveAsset('TVC:USOIL', 'Petróleo WTI', 'macro')">
-                        🛢️ Petróleo WTI <span class="chip-badge-down">-1.20%</span>
-                    </button>
-                    <button class="asset-chip" data-symbol="FX_IDC:USDCOP" data-name="Dólar / COP" onclick="switchActiveAsset('FX_IDC:USDCOP', 'USD/COP (TRM)', 'forex')">
-                        🇨🇴 USD/COP (TRM) <span class="chip-badge-up" style="background:rgba(0,242,254,0.15); color:var(--cyan);">~$4.025 COP</span>
-                    </button>
-                </div>
-
-                <!-- TRADINGVIEW IFRAME CONTAINER -->
-                <div style="height:520px; width:100%; border-radius:14px; overflow:hidden; border:1px solid var(--border);">
-                    <iframe id="tvMasterIframe" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_master&symbol=BINANCE%3AETHUSDC&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=es&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3AETHUSDC" style="width:100%; height:100%; border:none;"></iframe>
-                </div>
-
-                <!-- BOTTOM ACTIONS BAR -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px;">
-                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted);">
-                        Activo en Pantalla: <span id="lblActiveAssetName" style="color:var(--cyan); font-weight:800;">ETH/USDC (Ethereum)</span>
+            <div class="market-main-col">
+                <div class="card" style="padding:22px; width:100%; box-sizing:border-box; margin-bottom:0;">
+                    <!-- QUICK ASSET CHIPS -->
+                    <div class="asset-chip-bar" id="assetChipsContainer">
+                        <button class="asset-chip active" data-symbol="BINANCE:ETHUSDC" data-name="Ethereum" onclick="switchActiveAsset('BINANCE:ETHUSDC', 'ETH/USDC', 'crypto')">
+                            💎 ETH/USDC <span class="chip-badge-up">+5.04%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="BINANCE:BTCUSDC" data-name="Bitcoin" onclick="switchActiveAsset('BINANCE:BTCUSDC', 'BTC/USDC', 'crypto')">
+                            👑 BTC/USDC <span class="chip-badge-up">+3.18%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="COINBASE:AEROUSD" data-name="Aerodrome" onclick="switchActiveAsset('COINBASE:AEROUSD', 'AERO/USD', 'crypto')">
+                            ⚡ AERO/USD <span class="chip-badge-up">+8.42%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="TVC:GOLD" data-name="Oro Spot" onclick="switchActiveAsset('TVC:GOLD', 'Oro (XAU/USD)', 'macro')">
+                            🥇 ORO Spot <span class="chip-badge-up">+0.80%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="CAPITALCOM:US500" data-name="S&P 500" onclick="switchActiveAsset('CAPITALCOM:US500', 'S&P 500 (SPX)', 'macro')">
+                            📈 S&P 500 <span class="chip-badge-up">+0.45%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="TVC:USOIL" data-name="Petróleo WTI" onclick="switchActiveAsset('TVC:USOIL', 'Petróleo WTI', 'macro')">
+                            🛢️ Petróleo WTI <span class="chip-badge-down">-1.20%</span>
+                        </button>
+                        <button class="asset-chip" data-symbol="FX_IDC:USDCOP" data-name="Dólar / COP" onclick="switchActiveAsset('FX_IDC:USDCOP', 'USD/COP (TRM)', 'forex')">
+                            🇨🇴 USD/COP (TRM) <span class="chip-badge-up" style="background:rgba(0,242,254,0.15); color:var(--cyan);">~$4.025 COP</span>
+                        </button>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <a href="https://aerodrome.finance" target="_blank" class="btn-secondary" style="padding:8px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                            ⚡ Operar en DEX Aerodrome ↗
-                        </a>
-                        <a href="/tutoriales" class="btn-secondary" style="padding:8px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                            🎓 Guías de Trading (+3 Fichas)
-                        </a>
+
+                    <!-- TRADINGVIEW IFRAME CONTAINER -->
+                    <div style="height:520px; width:100%; border-radius:14px; overflow:hidden; border:1px solid var(--border);">
+                        <iframe id="tvMasterIframe" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_master&symbol=BINANCE%3AETHUSDC&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=es&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE%3AETHUSDC" style="width:100%; height:100%; border:none;"></iframe>
+                    </div>
+
+                    <!-- BOTTOM ACTIONS BAR -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px;">
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted);">
+                            Activo en Pantalla: <span id="lblActiveAssetName" style="color:var(--cyan); font-weight:800;">ETH/USDC (Ethereum)</span>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <a href="https://aerodrome.finance" target="_blank" class="btn-secondary" style="padding:8px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                ⚡ Operar en DEX Aerodrome ↗
+                            </a>
+                            <a href="/tutoriales" class="btn-secondary" style="padding:8px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                🎓 Guías de Trading (+3 Fichas)
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- COLUMNA LATERAL (TELEMETRÍA & IA) -->
-            <div>
+            <div class="market-side-col">
                 <!-- CARD 1: MONITOR DE GAS BASE L2 -->
                 <div class="telemetry-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">

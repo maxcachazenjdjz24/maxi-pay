@@ -2305,22 +2305,33 @@ function renderCuentaPage() {
         }
 
         function showProfile(user, invoices = []) {
+            if (!user) return;
             currentUserState = user;
-            document.getElementById('authForms').style.display = 'none';
-            document.getElementById('userProfile').style.display = 'block';
-            document.getElementById('profName').innerText = user.name;
-            document.getElementById('profEmail').innerText = user.email;
-            document.getElementById('profPhone').innerText = user.phone;
-            document.getElementById('profCredits').innerText = user.credits + ' Fichas';
+            const authForms = document.getElementById('authForms');
+            const userProfile = document.getElementById('userProfile');
+            if (authForms) authForms.style.display = 'none';
+            if (userProfile) userProfile.style.display = 'block';
+
+            const profName = document.getElementById('profName');
+            const profEmail = document.getElementById('profEmail');
+            const profPhone = document.getElementById('profPhone');
+            const profCredits = document.getElementById('profCredits');
+            const profPlanTag = document.getElementById('profPlanTag');
+
+            if (profName) profName.innerText = user.name || 'Juan David';
+            if (profEmail) profEmail.innerText = user.email || 'jdavidjaramillo@hotmail.com';
+            if (profPhone) profPhone.innerText = user.phone || '+57 314 754 6359';
+            if (profCredits) profCredits.innerText = (user.credits !== undefined ? user.credits : 55) + ' Fichas';
 
             const isPro = user.plan && user.plan !== 'Gratuito';
-            document.getElementById('profPlanTag').innerText = isPro ? ('👑 ' + user.plan) : 'Plan Gratuito';
-            document.getElementById('profPlanTag').style.color = isPro ? 'var(--emerald)' : 'var(--cyan)';
-            document.getElementById('profPlanTag').style.borderColor = isPro ? 'var(--emerald)' : 'var(--cyan)';
-
-            if (isPro) {
-                document.getElementById('proFeaturesSection').style.display = 'block';
+            if (profPlanTag) {
+                profPlanTag.innerText = isPro ? ('👑 ' + user.plan) : 'Plan Gratuito';
+                profPlanTag.style.color = isPro ? 'var(--emerald)' : 'var(--cyan)';
+                profPlanTag.style.borderColor = isPro ? 'var(--emerald)' : 'var(--cyan)';
             }
+
+            const proSec = document.getElementById('proFeaturesSection');
+            if (proSec) proSec.style.display = isPro ? 'block' : 'none';
 
             const noWalletBox = document.getElementById('noWalletSection');
             const activeWalletBox = document.getElementById('activeWalletSection');
@@ -2335,22 +2346,25 @@ function renderCuentaPage() {
                 if (noWalletBox) noWalletBox.style.display = 'none';
                 if (activeWalletBox) activeWalletBox.style.display = 'block';
                 
-                const userSlug = encodeURIComponent(user.name.toLowerCase().replace(/\s+/g, '-'));
+                const userSlug = encodeURIComponent((user.name || 'Juan David').toLowerCase().replace(/\s+/g, '-'));
                 const customLink = window.location.origin + '/pay/' + userSlug + '/10?concept=Curso%20Online&wallet=' + encodeURIComponent(user.wallet);
                 if (customLinkDiv) customLinkDiv.innerText = customLink;
 
-                document.getElementById('userWalletAddrDisplay').innerText = user.wallet;
-                document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + user.wallet;
+                const walletDisplay = document.getElementById('userWalletAddrDisplay');
+                const basescanLink = document.getElementById('userBasescanLink');
+                if (walletDisplay) walletDisplay.innerText = user.wallet;
+                if (basescanLink) basescanLink.href = 'https://basescan.org/address/' + user.wallet;
             }
 
-            document.getElementById('withdrawPhoneInput').value = user.phone || '';
+            const withdrawPhone = document.getElementById('withdrawPhoneInput');
+            if (withdrawPhone) withdrawPhone.value = user.phone || '';
 
             // Render Invoices Table
             const invContainer = document.getElementById('invoicesListContainer');
             const invBadge = document.getElementById('invoiceCountBadge');
             
             if (invoices && invoices.length > 0) {
-                invBadge.innerText = invoices.length + (invoices.length === 1 ? ' Factura' : ' Facturas');
+                if (invBadge) invBadge.innerText = invoices.length + (invoices.length === 1 ? ' Factura' : ' Facturas');
                 let html = '<table style="width:100%; border-collapse:collapse; font-size:13.5px; text-align:left;">';
                 html += '<thead><tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">';
                 html += '<th style="padding:10px 12px;">ID Factura / Ref</th>';
@@ -2377,10 +2391,10 @@ function renderCuentaPage() {
                     html += '</tr>';
                 });
                 html += '</tbody></table>';
-                invContainer.innerHTML = html;
+                if (invContainer) invContainer.innerHTML = html;
             } else {
-                invBadge.innerText = '0 Facturas';
-                invContainer.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-weight:600;">No tienes pagos registrados aún.</div>';
+                if (invBadge) invBadge.innerText = '0 Facturas';
+                if (invContainer) invContainer.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-weight:600;">No tienes pagos registrados aún.</div>';
             }
 
             refreshUserWalletData();
@@ -2534,7 +2548,11 @@ function renderCuentaPage() {
             window.location.href = '/checkout?order_id=' + orderId + '&amount=' + amount + '&concept=' + encodeURIComponent('Membresia ' + planName) + '&wallet=${MAXI_WALLET}';
         }
 
-        window.addEventListener('DOMContentLoaded', initAccountPage);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAccountPage);
+        } else {
+            initAccountPage();
+        }
     </script>
 </body>
 </html>`;

@@ -294,6 +294,7 @@ function getHeader(activePage = 'home') {
             <div class="nav-links">
                 <a href="/" class="nav-item ${activePage === 'home' ? 'active' : ''}">Inicio</a>
                 <a href="/pay" class="nav-item ${activePage === 'pay' ? 'active' : ''}">Maxi Pay</a>
+                <a href="/#planes" class="nav-item ${activePage === 'planes' ? 'active' : ''}" style="color:var(--emerald);">💎 Planes <span style="background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-size:10px; font-weight:800; padding:2px 6px; border-radius:10px; margin-left:2px;">50% OFF</span></a>
                 <a href="/trabajos" class="nav-item ${activePage === 'trabajos' ? 'active' : ''}">Trabajos ✨</a>
                 <a href="/ballenas" class="nav-item ${activePage === 'ballenas' ? 'active' : ''}">Ballenas 🎯</a>
                 <a href="/mercados" class="nav-item ${activePage === 'mercados' ? 'active' : ''}">Mercados 📈</a>
@@ -344,9 +345,10 @@ function getFooter() {
                 <div class="footer-title">Servicios Principales</div>
                 <div class="footer-links-col">
                     <a href="/pay">💳 Maxi Pay Pasarela</a>
+                    <a href="/#planes">💎 Planes Pro (50% OFF)</a>
                     <a href="/trabajos">💼 Radar de Trabajos Web3 con IA</a>
                     <a href="/ballenas">🐋 Radar de Ballenas con Score</a>
-                    <a href="/cuenta">👤 Mi Cuenta & Planes Pro</a>
+                    <a href="/cuenta">👤 Mi Cuenta & Suscripción</a>
                     <a href="/admin">🔒 Acceso Administrador</a>
                 </div>
             </div>
@@ -1570,52 +1572,89 @@ function renderCuentaPage() {
                 </div>
             </div>
 
-            <!-- MEMBERSHIP CATALOG -->
-            <h3 style="font-size:24px; font-weight:800; margin:30px 0 20px 0; text-align:center; color:var(--text-main);">
-                💎 Planes Pro & Membresías (Paga con Tarjeta o Cripto)
-            </h3>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
-                    <div>
-                        <div style="font-size:13px; font-weight:800; color:var(--cyan);">PLAN COMERCIO</div>
-                        <h4 style="font-size:22px; font-weight:800; margin:6px 0; color:var(--text-main);">Maxi Pay Pro</h4>
-                        <div style="font-size:32px; font-weight:800; color:var(--emerald); margin:12px 0;">$9.99 <span style="font-size:14px; color:var(--text-muted);">USD / mes</span></div>
-                        <ul style="color:var(--text-muted); font-size:13.5px; font-weight:600; line-height:1.8; margin-bottom:20px; padding-left:20px;">
-                            <li>Facturas y códigos QR ilimitados.</li>
-                            <li>0% de comisiones por venta.</li>
-                            <li>Acepta Tarjeta Débito y Cripto.</li>
-                        </ul>
+            <!-- MEMBERSHIP CATALOG (ALL-IN-ONE PASS) -->
+            <div id="planes" style="margin-top:30px;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
+                        💎 MEMBRESÍA TODO INCLUIDO
                     </div>
-                    <button class="btn-primary" onclick="openPaymentModal('Maxi Pay Pro', 9.99)" style="justify-content:center;">💳 Activar Maxi Pay Pro ($9.99)</button>
+                    <h3 style="font-size:26px; font-weight:800; color:var(--text-main); margin-top:4px;">
+                        Planes & Membresías Maxi Suite Pro
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14px; font-weight:600;">
+                        Una sola suscripción para desbloquear Maxi Pay (0% comisiones), el Buscador de Trabajos con IA y el Radar de Ballenas.
+                    </p>
                 </div>
 
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:var(--emerald);">
-                    <div>
-                        <div style="font-size:13px; font-weight:800; color:var(--emerald);">PLAN FREELANCE</div>
-                        <h4 style="font-size:22px; font-weight:800; margin:6px 0; color:var(--text-main);">Gig Finder VIP</h4>
-                        <div style="font-size:32px; font-weight:800; color:var(--emerald); margin:12px 0;">$14.99 <span style="font-size:14px; color:var(--text-muted);">USD / mes</span></div>
-                        <ul style="color:var(--text-muted); font-size:13.5px; font-weight:600; line-height:1.8; margin-bottom:20px; padding-left:20px;">
-                            <li>AI Proposal Sniper ilimitado.</li>
-                            <li>Alertas de trabajos de $50 a $1,000 USD.</li>
-                            <li>Canal privado VIP en Telegram.</li>
-                        </ul>
-                    </div>
-                    <button class="btn-primary" onclick="openPaymentModal('Gig Finder VIP', 14.99)" style="justify-content:center; background:linear-gradient(135deg, #00df89 0%, #10b981 100%);">💼 Activar Gig Finder VIP ($14.99)</button>
-                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+                    
+                    <!-- PRO MENSUAL: 50% OFF PROMO (HERO) -->
+                    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border:2px solid var(--emerald); background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); position:relative; box-shadow:0 10px 30px rgba(0, 223, 137, 0.12);">
+                        <div style="position:absolute; top:-12px; right:18px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-size:11px; font-weight:900; padding:3px 12px; border-radius:20px; text-transform:uppercase;">
+                            🔥 50% DCTO 1er MES
+                        </div>
 
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:var(--purple);">
-                    <div>
-                        <div style="font-size:13px; font-weight:800; color:var(--purple);">PLAN TRADER</div>
-                        <h4 style="font-size:22px; font-weight:800; margin:6px 0; color:var(--text-main);">Maxi Alpha VIP</h4>
-                        <div style="font-size:32px; font-weight:800; color:var(--purple); margin:12px 0;">$29.99 <span style="font-size:14px; color:var(--text-muted);">USD / mes</span></div>
-                        <ul style="color:var(--text-muted); font-size:13.5px; font-weight:600; line-height:1.8; margin-bottom:20px; padding-left:20px;">
-                            <li>Smart Money Score (0 a 100) en vivo.</li>
-                            <li>Setups cuantitativos con Entry, SL y TP.</li>
-                            <li>Alertas sonoras 24/7 en Telegram.</li>
-                        </ul>
+                        <div>
+                            <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase; margin-bottom:4px;">👑 PLAN RECOMENDADO (TODO INCLUIDO)</div>
+                            <h4 style="font-size:24px; font-weight:900; margin:4px 0; color:var(--text-main);">Maxi Suite Pro Mensual</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:12px;">Acceso total a cobros 0%, buscador de trabajos con IA y radar de ballenas.</p>
+                            
+                            <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0 4px 0;">
+                                <span style="font-size:18px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$9.99</span>
+                                <span style="font-size:36px; font-weight:900; color:var(--emerald);">$4.99 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">USD 1er Mes</span></span>
+                            </div>
+                            <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$19.980 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $9.99 USD / $39.960 COP/mes)</span>
+                            </div>
+
+                            <ul style="color:var(--text-muted); font-size:13px; font-weight:600; line-height:1.75; margin-bottom:20px; padding-left:18px;">
+                                <li><strong style="color:var(--emerald);">Maxi Pay Ilimitado:</strong> 0.00% comisión en ventas locales e internacionales.</li>
+                                <li><strong style="color:var(--cyan);">+100 Fichas IA Sniper Mensuales:</strong> propuestas técnicas en 30 segundos.</li>
+                                <li><strong style="color:var(--text-main);">Bounties & Trabajos Web3:</strong> convocatorias de $50 a $650 USD diarios.</li>
+                                <li><strong style="color:var(--purple);">Radar de Ballenas:</strong> Smart Money Score en vivo y enlaces a BaseScan.</li>
+                                <li><strong style="color:var(--text-main);">Enlace de Cobro Personalizado:</strong> con tu nombre de marca.</li>
+                                <li><strong style="color:var(--emerald);">Cancela en 1 clic:</strong> cuando quieras desde este panel.</li>
+                            </ul>
+                        </div>
+
+                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite Pro', 4.99)" style="justify-content:center; padding:14px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                            🚀 Activar Maxi Pro con 50% OFF ($4.99 USD / $19.980 COP)
+                        </button>
                     </div>
-                    <button class="btn-primary" onclick="openPaymentModal('Maxi Alpha VIP', 29.99)" style="justify-content:center; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">🐋 Activar Alpha VIP ($29.99)</button>
+
+                    <!-- PRO ANUAL: 2 MESES GRATIS -->
+                    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border:1.5px solid var(--purple); background:linear-gradient(180deg, rgba(168,85,247,0.06) 0%, var(--bg-card) 100%); position:relative;">
+                        <div style="position:absolute; top:-12px; right:18px; background:linear-gradient(135deg, #a855f7, #6366f1); color:white; font-size:11px; font-weight:900; padding:3px 12px; border-radius:20px; text-transform:uppercase;">
+                            🎉 2 MESES GRATIS (AHORRA 33%)
+                        </div>
+
+                        <div>
+                            <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:4px;">💎 MÁXIMO AHORRO ANUAL</div>
+                            <h4 style="font-size:24px; font-weight:900; margin:4px 0; color:var(--text-main);">Maxi Suite Pro Anual</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:12px;">Para negocios y freelancers que quieren garantizar su rentabilidad todo el año.</p>
+                            
+                            <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0 4px 0;">
+                                <span style="font-size:18px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$119.88</span>
+                                <span style="font-size:36px; font-weight:900; color:var(--purple);">$79.99 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">USD / año</span></span>
+                            </div>
+                            <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$319.000 COP / año <span style="color:var(--text-muted); font-weight:normal;">(Equivale a solo $6.66 USD/mes)</span>
+                            </div>
+
+                            <ul style="color:var(--text-muted); font-size:13px; font-weight:600; line-height:1.75; margin-bottom:20px; padding-left:18px;">
+                                <li><strong style="color:var(--emerald);">Todo lo incluido en el Plan Pro</strong> garantizado por 365 días.</li>
+                                <li><strong style="color:var(--cyan);">1,200 Fichas IA Sniper</strong> distribuidas a lo largo del año.</li>
+                                <li><strong style="color:var(--purple);">Acceso prioritario a nuevas herramientas</strong> y lanzamientos Alpha.</li>
+                                <li><strong style="color:var(--text-main);">Soporte VIP 24/7 directo por WhatsApp & Telegram.</strong></li>
+                                <li><strong style="color:var(--emerald);">Cero preocupación por renovaciones mensuales.</strong></li>
+                            </ul>
+                        </div>
+
+                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite Pro Anual', 79.99)" style="justify-content:center; padding:14px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
+                            👑 Activar Plan Anual ($79.99 USD / año)
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
@@ -3280,6 +3319,97 @@ function renderHomePage() {
                         <div style="color:var(--text-muted); font-size:12px;"><code>${MAXI_WALLET.slice(0,6)}...${MAXI_WALLET.slice(-4)}</code></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- DEDICATED PRICING & MEMBERSHIP SECTION (ALL-IN-ONE PASS) -->
+        <div id="planes" class="card" style="margin: 45px 0; border: 2px solid var(--cyan); background: linear-gradient(180deg, rgba(0,242,254,0.03) 0%, rgba(15,22,36,0.95) 100%); padding: 35px 25px;">
+            <div style="text-align:center; margin-bottom:30px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
+                    💎 PLANES & PRECIOS TRANSPARENTES
+                </div>
+                <h2 style="font-size:32px; font-weight:900; color:var(--text-main); margin-top:6px;">
+                    Una Sola Membresía Todo Incluido. Cero Letras Pequeñas.
+                </h2>
+                <p style="color:var(--text-muted); font-size:15px; max-width:700px; margin:0 auto; font-weight:600;">
+                    No pagues por cada herramienta por separado. Accede a <strong>Maxi Pay (0% comisiones)</strong>, al <strong>Buscador de Trabajos con IA Sniper</strong> y al <strong>Radar de Ballenas</strong> bajo una sola membresía integral.
+                </p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px; max-width:960px; margin:0 auto 30px;">
+                
+                <!-- TIER 1: STARTER FREE -->
+                <div class="card" style="border:1.5px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:28px;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(255,255,255,0.08); color:var(--text-muted); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
+                            PLAN INICIAL
+                        </div>
+                        <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Starter Gratis</h3>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:16px;">
+                            Para explorar el ecosistema y probar las herramientas sin riesgo.
+                        </p>
+                        <div style="font-size:36px; font-weight:900; color:var(--text-main); margin-bottom:20px;">
+                            $0 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">/ gratis para siempre</span>
+                        </div>
+                        
+                        <div style="border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; font-size:13.5px; font-weight:700; display:flex; flex-direction:column; gap:10px;">
+                            <div style="color:var(--text-main);">✔️ <strong>5 Fichas IA Gratis</strong> de bienvenida</div>
+                            <div style="color:var(--text-main);">✔️ Cobros de prueba en Maxi Pay</div>
+                            <div style="color:var(--text-main);">✔️ Acceso visual al Radar de Trabajos</div>
+                            <div style="color:var(--text-main);">✔️ Cotizaciones de mercado en tiempo real</div>
+                            <div style="color:var(--text-muted);">🔒 Sin tarjeta de crédito requerida</div>
+                        </div>
+                    </div>
+                    
+                    <a href="/cuenta" class="btn-outline" style="text-decoration:none; text-align:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px;">
+                        🎁 Crear Cuenta Gratis (5 Fichas)
+                    </a>
+                </div>
+
+                <!-- TIER 2: MAXI SUITE PRO (ALL-IN-ONE HERO) -->
+                <div class="card" style="border:2px solid var(--emerald); display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); padding:28px; position:relative; box-shadow:0 12px 35px rgba(0, 223, 137, 0.15);">
+                    <div style="position:absolute; top:-14px; right:20px; background:linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color:white; font-size:11px; font-weight:900; padding:4px 14px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:0 4px 12px rgba(245,158,11,0.4);">
+                        🔥 50% OFF • 1er MES DE PRUEBA
+                    </div>
+
+                    <div>
+                        <div style="display:inline-block; background:rgba(0,223,137,0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
+                            👑 TODO INCLUIDO • ACCESO TOTAL
+                        </div>
+                        <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Suite Pro</h3>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:16px;">
+                            Pasarela de cobros + Trabajos con IA + Radar de Ballenas en un solo pase.
+                        </p>
+                        
+                        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
+                            <span style="font-size:20px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$9.99</span>
+                            <span style="font-size:38px; font-weight:900; color:var(--emerald);">$4.99 USD</span>
+                        </div>
+                        <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:20px;">
+                            🇨🇴 ~$19.980 COP Primer Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $9.99 USD / $39.960 COP/mes)</span>
+                        </div>
+
+                        <div style="border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; font-size:13.5px; font-weight:700; display:flex; flex-direction:column; gap:10px;">
+                            <div style="color:var(--emerald);">✔️ <strong>Maxi Pay Ilimitado (0.00% comisión de por vida)</strong></div>
+                            <div style="color:var(--cyan);">✔️ <strong>+100 Fichas IA Sniper Mensuales</strong> para propuestas</div>
+                            <div style="color:var(--text-main);">✔️ <strong>Bounties & Trabajos</strong> de $50 a $650 USD diarios</div>
+                            <div style="color:var(--purple);">✔️ <strong>Radar de Ballenas</strong> con Smart Money Score y BaseScan</div>
+                            <div style="color:var(--text-main);">✔️ <strong>Enlace de Cobro Personalizado</strong> con tu nombre</div>
+                            <div style="color:var(--text-main);">✔️ Alertas instantáneas 24/7 en tu Bot de Telegram</div>
+                            <div style="color:var(--emerald);">✔️ Cancela en 1 clic cuando quieras sin penalización</div>
+                        </div>
+                    </div>
+
+                    <a href="/checkout?order_id=PLAN-PRO-PROMO&amount=4.99&concept=Membresia%20Maxi%20Suite%20Pro%20(50%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-primary" style="text-decoration:none; text-align:center; padding:15px; font-weight:800; border-radius:12px; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3);">
+                        🚀 Activar Maxi Pro con 50% OFF ($4.99 USD / $19.980 COP)
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- BENEFIT GUARANTEE BANNER -->
+            <div style="text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;">
+                🔒 Pago seguro con Nequi, PSE, Tarjeta o Cripto • Activación instantánea • Sin contratos de permanencia
             </div>
         </div>
 

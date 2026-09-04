@@ -2,7 +2,6 @@
   "name": "mi-automaton",
   "version": "0.1.0",
   "description": "Agente autónomo propio, inspirado en Conway Automaton (Conway-Research/automaton, MIT), corriendo en infraestructura propia.",
-  "type": "module",
   "main": "main.js",
   "bin": {
     "automaton": "main.js"

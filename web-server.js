@@ -1589,35 +1589,69 @@ function renderCuentaPage() {
     <div class="page-container">
         <!-- AUTH REGISTRATION / LOGIN -->
         <div id="authForms" style="max-width:520px; margin:0 auto;">
-            <div class="card">
-                <div style="text-align:center; margin-bottom:24px;">
-                    <div style="font-size:36px; margin-bottom:8px;">👤</div>
-                    <h2 style="font-size:26px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
-                    <p style="color:var(--text-muted); font-size:14px; font-weight:600;">
-                        Regístrate con tu <strong>Correo Electrónico</strong> y <strong>Número de Celular</strong> para recibir <strong>+5 Fichas Gratis de Bienvenida</strong>.
-                    </p>
+            <div class="card" style="box-shadow:0 15px 45px rgba(0, 242, 254, 0.1);">
+                <div style="display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; gap:8px;">
+                    <button id="tabBtnRegister" onclick="switchAuthTab('register')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); cursor:pointer;">
+                        👤 Crear Cuenta
+                    </button>
+                    <button id="tabBtnLogin" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); cursor:pointer;">
+                        🔑 Iniciar Sesión
+                    </button>
                 </div>
 
-                <div id="regError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
+                <!-- REGISTER FORM -->
+                <div id="formRegisterSection">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                            Regístrate con tu <strong>Correo</strong> y <strong>Celular</strong> para recibir <strong>+5 Fichas Gratis de Bienvenida</strong>.
+                        </p>
+                    </div>
 
-                <label style="display:block; font-size:13.5px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Nombre Completo:</label>
-                <input type="text" id="regName" class="input-box" placeholder="Ej: Juan David Jaramillo">
+                    <div id="regError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
 
-                <label style="display:block; font-size:13.5px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
-                <input type="email" id="regEmail" class="input-box" placeholder="ejemplo@correo.com">
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Nombre Completo:</label>
+                    <input type="text" id="regName" class="input-box" placeholder="Ej: Juan David Jaramillo">
 
-                <label style="display:block; font-size:13.5px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
-                <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
+                    <input type="email" id="regEmail" class="input-box" placeholder="ejemplo@correo.com">
 
-                <label style="display:block; font-size:13.5px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Billetera Base (Opcional):</label>
-                <input type="text" id="regWallet" class="input-box" placeholder="0x... (EVM Wallet)">
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
+                    <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
 
-                <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:10px;">
-                    🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
-                </button>
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Billetera Base (Opcional):</label>
+                    <input type="text" id="regWallet" class="input-box" placeholder="0x... (EVM Wallet)">
 
-                <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                    ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="quickLoginPrompt()" style="color:var(--cyan); font-weight:800;">Iniciar Sesión con tu Correo</a>
+                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:10px;">
+                        🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
+                    </button>
+
+                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
+                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Iniciar Sesión con tu Correo</a>
+                    </div>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <div id="formLoginSection" style="display:none;">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión</h2>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                            Ingresa tu correo registrado para acceder a tu panel, saldo y billetera personal.
+                        </p>
+                    </div>
+
+                    <div id="loginError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico Registrado:</label>
+                    <input type="email" id="loginEmailInput" class="input-box" value="jdavidjaramillo@hotmail.com" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
+
+                    <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:12px; padding:14px; font-weight:800; font-size:14.5px;">
+                        🔑 Iniciar Sesión en Mi Cuenta
+                    </button>
+
+                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
+                        ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Regístrate aquí</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2024,6 +2058,25 @@ function renderCuentaPage() {
     <script>
         let currentUserState = null;
 
+        function switchAuthTab(tab) {
+            const regSection = document.getElementById('formRegisterSection');
+            const loginSection = document.getElementById('formLoginSection');
+            const tabReg = document.getElementById('tabBtnRegister');
+            const tabLog = document.getElementById('tabBtnLogin');
+
+            if (tab === 'login') {
+                if (regSection) regSection.style.display = 'none';
+                if (loginSection) loginSection.style.display = 'block';
+                if (tabReg) { tabReg.style.borderBottomColor = 'transparent'; tabReg.style.color = 'var(--text-muted)'; }
+                if (tabLog) { tabLog.style.borderBottomColor = 'var(--cyan)'; tabLog.style.color = 'var(--cyan)'; }
+            } else {
+                if (regSection) regSection.style.display = 'block';
+                if (loginSection) loginSection.style.display = 'none';
+                if (tabReg) { tabReg.style.borderBottomColor = 'var(--cyan)'; tabReg.style.color = 'var(--cyan)'; }
+                if (tabLog) { tabLog.style.borderBottomColor = 'transparent'; tabLog.style.color = 'var(--text-muted)'; }
+            }
+        }
+
         async function submitRegister() {
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
@@ -2046,7 +2099,7 @@ function renderCuentaPage() {
                 const data = await res.json();
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
-                    showProfile(data.user);
+                    showProfile(data.user, data.invoices || []);
                 } else {
                     errBox.style.display = 'block';
                     errBox.innerText = data.error || 'Error al registrar.';
@@ -2057,9 +2110,18 @@ function renderCuentaPage() {
             }
         }
 
-        async function quickLoginPrompt() {
-            const email = prompt('Ingresa tu Correo Electrónico registrado:');
-            if (!email) return;
+        async function submitLoginFromInput() {
+            const email = document.getElementById('loginEmailInput').value.trim();
+            const errBox = document.getElementById('loginError');
+            if (errBox) errBox.style.display = 'none';
+
+            if (!email) {
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Por favor ingresa tu correo electrónico registrado.';
+                }
+                return;
+            }
 
             try {
                 const res = await fetch('/api/auth/login', {
@@ -2070,13 +2132,27 @@ function renderCuentaPage() {
                 const data = await res.json();
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
-                    showProfile(data.user);
+                    showProfile(data.user, data.invoices || []);
                 } else {
-                    alert(data.error || 'No se encontró una cuenta con ese correo.');
+                    if (errBox) {
+                        errBox.style.display = 'block';
+                        errBox.innerText = data.error || 'No se encontró una cuenta con ese correo.';
+                    } else {
+                        alert(data.error || 'No se encontró una cuenta con ese correo.');
+                    }
                 }
             } catch (e) {
-                alert('Error al iniciar sesión: ' + e.message);
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Error al conectar: ' + e.message;
+                } else {
+                    alert('Error al conectar: ' + e.message);
+                }
             }
+        }
+
+        function quickLoginPrompt() {
+            switchAuthTab('login');
         }
 
         async function refreshUserWalletData() {
@@ -2416,24 +2492,7 @@ function renderCuentaPage() {
 
         async function initAccountPage() {
             let token = localStorage.getItem('maxi_user_token');
-            if (!token) {
-                // Auto-login default user for seamless experience
-                try {
-                    const res = await fetch('/api/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: 'jdavidjaramillo@hotmail.com' })
-                    });
-                    const data = await res.json();
-                    if (data.success && data.token) {
-                        localStorage.setItem('maxi_user_token', data.token);
-                        token = data.token;
-                        showProfile(data.user, data.invoices);
-                        return;
-                    }
-                } catch (e) {}
-            }
-
+            
             if (token) {
                 try {
                     const res = await fetch('/api/auth/me', {
@@ -2441,10 +2500,32 @@ function renderCuentaPage() {
                     });
                     const data = await res.json();
                     if (data.authenticated && data.user) {
-                        showProfile(data.user, data.invoices);
+                        showProfile(data.user, data.invoices || []);
+                        return;
+                    } else {
+                        localStorage.removeItem('maxi_user_token');
+                        token = null;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    localStorage.removeItem('maxi_user_token');
+                    token = null;
+                }
             }
+
+            // Auto-login registered account for smooth seamless experience
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'jdavidjaramillo@hotmail.com' })
+                });
+                const data = await res.json();
+                if (data.success && data.token) {
+                    localStorage.setItem('maxi_user_token', data.token);
+                    showProfile(data.user, data.invoices || []);
+                    return;
+                }
+            } catch (e) {}
         }
 
         function openPaymentModal(planName, amount, planId) {

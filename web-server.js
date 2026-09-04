@@ -2531,7 +2531,7 @@ function renderTrabajosPage() {
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$150.00 USDC</div>
                 <button onclick="openAiProposalModal('Diseño de Banner & Interfaz Web3 (UI/UX)', '150', 'design', 'https://www.bountycaster.xyz/')" class="btn-primary">
-                    ✨ Postularme con IA (30s)
+                    ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>
         </div>
@@ -2540,15 +2540,15 @@ function renderTrabajosPage() {
             <div>
                 <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">💻 Bot de Telegram para Pagos y Membresías</h3>
                 <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Gitcoin Bounties</strong></span>
+                    <span>🏢 Plataforma: <strong>Gitcoin Explorer</strong></span>
                     <span>🏷️ Categoría: <strong>Node.js / Web3 API</strong></span>
                     <span>⏱️ Hace 42 minutos</span>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$400.00 USDC</div>
-                <button onclick="openAiProposalModal('Bot de Telegram para Pagos y Membresías', '400', 'code', 'https://gitcoin.co/')" class="btn-primary">
-                    ✨ Postularme con IA (30s)
+                <button onclick="openAiProposalModal('Bot de Telegram para Pagos y Membresías', '400', 'code', 'https://explorer.gitcoin.co/')" class="btn-primary">
+                    ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>
         </div>
@@ -2564,8 +2564,8 @@ function renderTrabajosPage() {
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$200.00 USDC</div>
-                <button onclick="openAiProposalModal('Traducción de Whitepaper Técnico', '200', 'writing', 'https://warpcast.com/')" class="btn-primary">
-                    ✨ Postularme con IA (30s)
+                <button onclick="openAiProposalModal('Traducción de Whitepaper Técnico', '200', 'writing', 'https://warpcast.com/~/channel/bounties')" class="btn-primary">
+                    ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>
         </div>
@@ -2581,8 +2581,8 @@ function renderTrabajosPage() {
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$650.00 USDC</div>
-                <button onclick="openAiProposalModal('Auditoría de Seguridad de Smart Contracts', '650', 'security', 'https://superteam.fun/')" class="btn-primary">
-                    ✨ Postularme con IA (30s)
+                <button onclick="openAiProposalModal('Auditoría de Seguridad de Smart Contracts', '650', 'security', 'https://earn.superteam.fun/')" class="btn-primary">
+                    ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>
         </div>
@@ -2611,13 +2611,36 @@ function renderTrabajosPage() {
             }
         };
 
-        function openAiProposalModal(jobTitle, reward, category, officialUrl) {
-            document.getElementById('modalJobTitle').innerText = '✨ Propuesta IA: ' + jobTitle;
-            document.getElementById('modalOfficialLink').href = officialUrl;
-            const t = templates[category] || templates.code;
-            currentProposals = t;
-            switchProposalLang('en');
-            document.getElementById('aiModal').style.display = 'flex';
+        async function openAiProposalModal(jobTitle, reward, category, officialUrl) {
+            const token = localStorage.getItem('maxi_user_token');
+            try {
+                const res = await fetch('/api/generate-ai-proposal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': token ? ('Bearer ' + token) : '' },
+                    body: JSON.stringify({ jobTitle, category })
+                });
+                const data = await res.json();
+                if (!data.success && data.outOfCredits) {
+                    alert('⚠️ ' + data.error);
+                    window.location.href = '/cuenta';
+                    return;
+                }
+
+                document.getElementById('modalJobTitle').innerText = '✨ Propuesta IA: ' + jobTitle;
+                document.getElementById('modalOfficialLink').href = officialUrl;
+                const t = templates[category] || templates.code;
+                currentProposals = t;
+                switchProposalLang('en');
+                document.getElementById('aiModal').style.display = 'flex';
+                checkUserSession();
+            } catch (err) {
+                console.error('Error al generar propuesta:', err);
+                document.getElementById('modalJobTitle').innerText = '✨ Propuesta IA: ' + jobTitle;
+                document.getElementById('modalOfficialLink').href = officialUrl;
+                currentProposals = templates[category] || templates.code;
+                switchProposalLang('en');
+                document.getElementById('aiModal').style.display = 'flex';
+            }
         }
 
         function switchProposalLang(lang) {
@@ -3687,6 +3710,38 @@ const server = http.createServer(async (req, res) => {
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, token, user, invoices: userInvoices }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/generate-ai-proposal') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const { ip, credits, user } = getClientCredits(req);
+                if (credits <= 0) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, outOfCredits: true, error: 'Has agotado tus fichas. Recarga o juega en la Ruleta para ganar más.' }));
+                    return;
+                }
+
+                if (user) {
+                    user.credits = Math.max(0, user.credits - 1);
+                    saveUsersDb();
+                } else {
+                    userCredits.set(ip, Math.max(0, credits - 1));
+                }
+
+                const remaining = user ? user.credits : (userCredits.get(ip) || 0);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    consumedCredit: 1,
+                    remainingCredits: remaining
+                }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));

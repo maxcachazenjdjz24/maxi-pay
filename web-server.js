@@ -2684,7 +2684,7 @@ function renderHomePage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maxi Suite 9.0 • El Ecosistema Definitivo de Pagos, Empleos Web3 & Trading</title>
+    <title>Maxi Suite 9.0 • El Sistema Inteligente de Cobros, Empleos & Finanzas</title>
     ${getGlobalStyles()}
     <style>
         .hero-glow {
@@ -2733,6 +2733,31 @@ function renderHomePage() {
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 14px;
+        }
+        .profile-tab {
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+        .profile-tab:hover {
+            border-color: var(--cyan);
+            color: var(--text-main);
+        }
+        .profile-tab.active {
+            border-color: var(--cyan);
+            background: rgba(0, 242, 254, 0.12);
+            color: var(--cyan);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.15);
         }
         .matrix-table {
             width: 100%;
@@ -2806,18 +2831,18 @@ function renderHomePage() {
     <div class="page-container" style="position:relative; z-index:1;">
         
         <!-- HERO SECTION -->
-        <div style="text-align:center; padding: 45px 10px 35px; max-width: 950px; margin: 0 auto;">
+        <div style="text-align:center; padding: 45px 10px 35px; max-width: 980px; margin: 0 auto;">
             <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1.5px solid rgba(0,242,254,0.35); color:var(--cyan); padding:8px 18px; border-radius:30px; font-size:13px; font-weight:800; margin-bottom:20px;">
-                ⚡ EL SISTEMA OPERATIVO DE INGRESOS PARA CREADORES, FREELANCERS & TRADERS
+                ⚡ EL SISTEMA INTELIGENTE DE COBROS E INGRESOS PARA NEGOCIOS, PROFESIONALES & INVERSORES
             </div>
             
-            <h1 style="font-size:clamp(34px, 5.5vw, 54px); font-weight:900; letter-spacing:-0.035em; line-height:1.12; margin-bottom:18px; color:var(--text-main);">
-                Gana más. Cobra sin comisiones.<br>
-                <span class="gradient-text">Monetiza en automático con Maxi Suite.</span>
+            <h1 style="font-size:clamp(32px, 5vw, 52px); font-weight:900; letter-spacing:-0.035em; line-height:1.15; margin-bottom:18px; color:var(--text-main);">
+                Conserva el 100% de lo que ganas.<br>
+                <span class="gradient-text">Cobra a clientes locales y turistas sin pagar comisiones abusivas.</span>
             </h1>
             
-            <p style="color:var(--text-muted); font-size:clamp(16px, 2vw, 18.5px); font-weight:600; line-height:1.65; max-width:820px; margin:0 auto 32px;">
-                Deja de perder el <strong>20% en Upwork</strong> y el <strong>4.5% en pasarelas tradicionales</strong>. Cobra por <strong>Nequi, PSE o USDC</strong> con <strong>0% de comisión</strong>, gana bounties de <strong>$50 a $650 USD</strong> con propuestas redactadas por IA en 30 segundos y opera con el <strong>Smart Money Radar</strong> en Base.
+            <p style="color:var(--text-muted); font-size:clamp(16px, 2vw, 18.5px); font-weight:600; line-height:1.65; max-width:860px; margin:0 auto 32px;">
+                Dile adiós al <strong>5% que te quitan los datáfonos</strong> y al <strong>20% de las plataformas intermediarias</strong>. Con <strong>Maxi Suite</strong> recibes pagos al instante por <strong>Nequi, PSE, Tarjetas o Dólares Digitales (USDC)</strong> con <strong>0% de comisión de plataforma</strong>, encuentras trabajos remotos en dólares con propuestas redactadas por IA y maximizas tu dinero con analítica en tiempo real.
             </p>
             
             <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
@@ -2832,8 +2857,8 @@ function renderHomePage() {
                 </a>
             </div>
 
-            <div style="font-size:12.5px; color:var(--text-muted); font-weight:700;">
-                🔒 Sin contratos de permanencia • Cancela cuando quieras en 1 clic • +5 Fichas de Bienvenida
+            <div style="font-size:13px; color:var(--text-muted); font-weight:700;">
+                🔒 Sin datáfonos costosos • Sin contratos de permanencia • Tu dinero directo a tu cuenta o Nequi • Cancela cuando quieras
             </div>
         </div>
 
@@ -2848,7 +2873,7 @@ function renderHomePage() {
             <div class="card" style="padding:20px; text-align:center; border-color:rgba(0, 242, 254, 0.35); background:rgba(0, 242, 254, 0.03);">
                 <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.5px;">Tiempo de Liquidación</div>
                 <div style="font-size:32px; font-weight:900; color:var(--cyan); margin:4px 0;">~2 Segundos</div>
-                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">On-Chain Base (Gas &lt; $0.001)</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">Sin esperar 15 días bancarios</div>
             </div>
 
             <div class="card" style="padding:20px; text-align:center; border-color:rgba(168, 85, 247, 0.35); background:rgba(168, 85, 247, 0.03);">
@@ -2864,14 +2889,186 @@ function renderHomePage() {
             </div>
         </div>
 
+        <!-- NEW INTERACTIVE PROFILE SWITCHER: "DISEÑADO A TU MEDIDA" -->
+        <div class="card" style="border-color:var(--cyan); margin-bottom:45px; padding:32px;">
+            <div style="text-align:center; margin-bottom:25px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; color:var(--cyan); font-size:12px; font-weight:800; text-transform:uppercase;">
+                    🎯 ADAPTADO A TU NEGOCIO O ACTIVIDAD
+                </div>
+                <h2 style="font-size:28px; font-weight:800; color:var(--text-main); margin-top:6px;">
+                    ¿Cómo Maxi Suite Cuida y Multiplica tu Dinero?
+                </h2>
+                <p style="color:var(--text-muted); font-size:15px; font-weight:600;">
+                    Selecciona tu perfil y descubre cómo ahorras miles de dólares en trámites y comisiones:
+                </p>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:28px;">
+                <button class="profile-tab active" id="tabProfile1" onclick="switchProfile(1)">
+                    🏪 Comercios, Turismo & Servicios Locales
+                </button>
+                <button class="profile-tab" id="tabProfile2" onclick="switchProfile(2)">
+                    💼 Freelancers, Creadores & Consultores
+                </button>
+                <button class="profile-tab" id="tabProfile3" onclick="switchProfile(3)">
+                    📈 Inversores, Traders & Finanzas
+                </button>
+            </div>
+
+            <!-- PROFILE 1 CONTENT: COMERCIOS & TURISMO -->
+            <div id="profileContent1" style="display:block;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px; align-items:center;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(251, 191, 36, 0.15); color:#f59e0b; padding:4px 12px; border-radius:14px; font-size:12px; font-weight:800; margin-bottom:12px;">
+                            PARA RESTAURANTES, GUÍAS, ACADEMIAS, CONDUCTORES & ARTESANÍAS
+                        </div>
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:12px;">
+                            Cobra a turistas extranjeros y clientes locales en segundos sin datáfonos ni retenciones
+                        </h3>
+                        <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                            Los datáfonos tradicionales te quitan hasta un <strong>5.5%</strong>, te cobran renta mensual de equipo y muchas tarjetas de turistas extranjeros son rechazadas por seguridad bancaria. Con <strong>Maxi Pay</strong>, muestras un QR en tu mostrador o envías un link por WhatsApp: tus clientes pagan en <strong>Nequi, PSE o Dólares Digitales (USDC)</strong> al instante con <strong>0% de comisión de plataforma</strong>.
+                        </p>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--emerald); display:flex; flex-direction:column; gap:6px;">
+                            <div>✔️ Cero rechazos bancarios: el turista paga desde su móvil en 1 segundo</div>
+                            <div>✔️ Cero alquiler mensual de datáfonos: cobra desde cualquier celular</div>
+                            <div>✔️ Tu dinero disponible de inmediato sin esperar 15 días</div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:22px;">
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:12px;">
+                            💡 Ejemplo de Impacto Financiero Real:
+                        </div>
+                        <div style="font-size:14px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                            Un guía turístico o restaurante que vende <strong>$3,000 USD/mes</strong> a extranjeros:
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; margin-bottom:12px;">
+                            <div style="color:var(--rose); font-weight:700; font-size:13px; margin-bottom:4px;">❌ Con datáfono o pasarela tradicional:</div>
+                            <div style="font-size:13px; color:var(--text-muted);">Pierde hasta <strong>$180 USD</strong> en comisiones + demoras de 10 días para recibir su dinero.</div>
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; border:1px solid rgba(0, 223, 137, 0.3);">
+                            <div style="color:var(--emerald); font-weight:800; font-size:13px; margin-bottom:4px;">✅ Con Maxi Pay:</div>
+                            <div style="font-size:13px; color:var(--text-main);">Conserva <strong>$3,000 USD completos (+$180 USD extra de ganancia)</strong> directo a su cuenta.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE 2 CONTENT: FREELANCERS & CREADORES -->
+            <div id="profileContent2" style="display:none;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px; align-items:center;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(0, 242, 254, 0.15); color:var(--cyan); padding:4px 12px; border-radius:14px; font-size:12px; font-weight:800; margin-bottom:12px;">
+                            PARA PROGRAMADORES, DISEÑADORES, REDACTORES & ASESORES
+                        </div>
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:12px;">
+                            Gana en dólares internacionales sin que Upwork o PayPal te quiten el 20%
+                        </h3>
+                        <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                            Consigue clientes en el exterior y bounties de <strong>$50 a $650 USD</strong>. El <strong>Asistente IA Proposal Sniper</strong> redacta propuestas técnicas ganadoras en inglés nativo en 30 segundos, y cobras el 100% de tus honorarios sin que te descuenten el 20% de plataforma.
+                        </p>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--cyan); display:flex; flex-direction:column; gap:6px;">
+                            <div>✔️ Propuestas profesionales bilingües con IA en 30 segundos</div>
+                            <div>✔️ Cobros internacionales directos sin tarifas SWIFT abusivas</div>
+                            <div>✔️ Convocatorias activas de Superteam, Gitcoin y Web3</div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:22px;">
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:12px;">
+                            💡 Ejemplo de Impacto Financiero Real:
+                        </div>
+                        <div style="font-size:14px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                            Un desarrollador o diseñador que factura <strong>$1,500 USD/mes</strong> en proyectos:
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; margin-bottom:12px;">
+                            <div style="color:var(--rose); font-weight:700; font-size:13px; margin-bottom:4px;">❌ En Upwork o Fiverr:</div>
+                            <div style="font-size:13px; color:var(--text-muted);">Le descuentan <strong>$300 USD</strong> de comisión + tarifas de retiro internacional.</div>
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; border:1px solid rgba(0, 242, 254, 0.3);">
+                            <div style="color:var(--cyan); font-weight:800; font-size:13px; margin-bottom:4px;">✅ Con Maxi Suite Pro:</div>
+                            <div style="font-size:13px; color:var(--text-main);">Cobras los <strong>$1,500 USD íntegros</strong> pagando solo la suscripción plana de $9.99 USD.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE 3 CONTENT: INVERSORES & TRADERS -->
+            <div id="profileContent3" style="display:none;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:20px; align-items:center;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(168, 85, 247, 0.15); color:var(--purple); padding:4px 12px; border-radius:14px; font-size:12px; font-weight:800; margin-bottom:12px;">
+                            PARA INVERSIONISTAS INDEPENDIENTES & TRADERS ON-CHAIN
+                        </div>
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:12px;">
+                            Monitorea inyecciones de liquidez y ballenas con verificación en BaseScan
+                        </h3>
+                        <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                            No operes a ciegas ni te dejes engañar por rumores en redes. El <strong>Smart Money Radar</strong> rastrea transferencias institucionales de liquidez en Base Mainnet en tiempo real y asigna un puntaje del 0 al 100 con niveles de Entrada, Stop Loss y Take Profit.
+                        </p>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--purple); display:flex; flex-direction:column; gap:6px;">
+                            <div>✔️ Smart Money Score (0 a 100) en tiempo real</div>
+                            <div>✔️ Verificación directa de cada transacción en BaseScan.org</div>
+                            <div>✔️ Bóveda y contratos 100% transparentes on-chain</div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:22px;">
+                        <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:12px;">
+                            💡 Ventaja Cuantitativa On-Chain:
+                        </div>
+                        <div style="font-size:14px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                            Rastreo algorítmico de compras de más de $50,000 USD:
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; margin-bottom:12px;">
+                            <div style="color:var(--rose); font-weight:700; font-size:13px; margin-bottom:4px;">❌ Grupos de señales tradicionales:</div>
+                            <div style="font-size:13px; color:var(--text-muted);">Pumps & dumps no auditados sin respaldo en la blockchain.</div>
+                        </div>
+                        <div style="background:var(--bg-dark); border-radius:10px; padding:14px; border:1px solid rgba(168, 85, 247, 0.3);">
+                            <div style="color:var(--purple); font-weight:800; font-size:13px; margin-bottom:4px;">✅ Con Maxi Alpha:</div>
+                            <div style="font-size:13px; color:var(--text-main);">Datos matemáticos verificables directamente en la blockchain de Base.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPLIT COMPARISON: SIN MAXI VS CON MAXI -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:45px;">
+            <div class="card" style="border:1.5px solid rgba(244, 63, 94, 0.4); background:rgba(244, 63, 94, 0.02);">
+                <div style="font-size:13px; font-weight:800; color:var(--rose); text-transform:uppercase; margin-bottom:10px;">
+                    ❌ Forma Tradicional (Datáfonos / Pasarelas Viejas)
+                </div>
+                <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:12px;">Cobras $100.000 COP a un cliente</div>
+                <ul style="color:var(--text-muted); font-size:14px; line-height:1.7; padding-left:20px; font-weight:600;">
+                    <li>El datáfono o banco te descuenta hasta <strong>$5.000 COP</strong> (5%).</li>
+                    <li>Pagas renta mensual obligatoria por el equipo datáfono.</li>
+                    <li>Tu dinero queda retenido de <strong>3 a 15 días hábiles</strong>.</li>
+                    <li>Las tarjetas de turistas extranjeros frecuentemente son declinadas.</li>
+                    <li style="color:var(--rose); font-weight:800;">👉 Recibes solo $95.000 COP con demoras y estrés.</li>
+                </ul>
+            </div>
+
+            <div class="card" style="border:1.5px solid rgba(0, 223, 137, 0.4); background:rgba(0, 223, 137, 0.02);">
+                <div style="font-size:13px; font-weight:800; color:var(--emerald); text-transform:uppercase; margin-bottom:10px;">
+                    👑 Con Maxi Suite (Maxi Pay 0% Comisiones)
+                </div>
+                <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:12px;">Cobras $100.000 COP a un cliente</div>
+                <ul style="color:var(--text-muted); font-size:14px; line-height:1.7; padding-left:20px; font-weight:600;">
+                    <li>Comisión de plataforma: <strong>$0 COP (0.00%)</strong>.</li>
+                    <li>Cero alquiler de datáfonos: cobras con un QR en tu móvil o local.</li>
+                    <li>Notificación instantánea en pantalla y en tu <strong>Telegram</strong>.</li>
+                    <li>Turistas pagan en segundos desde su móvil sin bloqueos.</li>
+                    <li style="color:var(--emerald); font-weight:800;">👉 Recibes tus $100.000 COP íntegros al instante.</li>
+                </ul>
+            </div>
+        </div>
+
         <!-- 3 CORE PILLARS SHOWCASE -->
         <div style="text-align:center; margin-bottom:30px;">
             <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); color:var(--cyan); padding:5px 14px; border-radius:16px; font-size:12px; font-weight:800; margin-bottom:8px;">
                 🚀 TRES LÍNEAS DE NEGOCIO EN UNA SOLA MEMBRESÍA
             </div>
-            <h2 style="font-size:32px; font-weight:800; color:var(--text-main); margin-bottom:8px;">¿Cómo Maxi Suite Transforma tus Ingresos?</h2>
+            <h2 style="font-size:32px; font-weight:800; color:var(--text-main); margin-bottom:8px;">Las 3 Soluciones de Maxi Suite</h2>
             <p style="color:var(--text-muted); font-size:16px; max-width:750px; margin:0 auto; font-weight:600;">
-                Diseñado para resolver los mayores cuellos de botella financieros de profesionales y comercios en Latinoamérica.
+                Diseñado para que comerciantes, profesionales e inversionistas aumenten sus ingresos netos.
             </p>
         </div>
 
@@ -2883,16 +3080,16 @@ function renderHomePage() {
                         💳 PILAR 1 • PASARELA DE COBROS
                     </span>
                     <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
-                        Maxi Pay & Checkout Dual (0% Comisiones)
+                        Maxi Pay: Cobros Duales (0% Comisiones)
                     </h3>
                     <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
-                        Las pasarelas tradicionales y los datáfonos te quitan hasta un 5% de cada venta y retienen tus fondos 14 días. Con <strong>Maxi Pay</strong>, generas links de cobro universales: tus clientes pagan en <strong>Nequi, PSE o Tarjeta</strong> en Colombia, o en <strong>USDC en Base</strong> desde el exterior.
+                        Genera enlaces de pago y códigos QR para tu negocio. Tus clientes en Colombia pagan en <strong>Nequi, PSE o Tarjeta</strong>, y tus clientes extranjeros o turistas pagan en <strong>Dólares Digitales (USDC)</strong> en segundos.
                     </p>
                     
                     <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
                         <div style="color:var(--emerald); margin-bottom:6px;">✔️ 0.00% comisión de intermediación</div>
-                        <div style="color:var(--cyan); margin-bottom:6px;">✔️ Liquidación en 2 segundos a tu wallet</div>
-                        <div style="color:var(--text-main);">✔️ Detección on-chain automática y alertas en Telegram</div>
+                        <div style="color:var(--cyan); margin-bottom:6px;">✔️ Liquidación en 2 segundos a tu cuenta</div>
+                        <div style="color:var(--text-main);">✔️ Detección automática y alertas en Telegram</div>
                     </div>
                 </div>
                 <a href="/pay" class="btn-primary" style="text-decoration:none; text-align:center; padding:12px; background:linear-gradient(135deg, #00df89 0%, #10b981 100%);">
@@ -2907,10 +3104,10 @@ function renderHomePage() {
                         💼 PILAR 2 • EMPLEOS & BOUNTIES
                     </span>
                     <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
-                        Maxi Gig Finder + AI Proposal Sniper
+                        Gig Finder + AI Proposal Sniper
                     </h3>
                     <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
-                        No pierdas 2 horas al día revisando 10 webs distintas ni pagues el 20% en Upwork. Centralizamos los mejores bounties globales de <strong>$50 a $650 USD</strong> en diseño, programación y redacción. El <strong>AI Sniper</strong> redacta tu propuesta técnica persuasiva en 30 segundos.
+                        Encuentra oportunidades y bounties internacionales de <strong>$50 a $650 USD</strong>. El <strong>AI Sniper</strong> redacta tu propuesta técnica en inglés y español en 30 segundos para postularte con alta probabilidad de contratación.
                     </p>
 
                     <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
@@ -2934,7 +3131,7 @@ function renderHomePage() {
                         Maxi Alpha & Smart Money Score
                     </h3>
                     <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
-                        Deja de perder dinero por rumores en grupos de Telegram. Nuestro motor cuantitativo rastrea compras masivas e inyecciones de liquidez en Base y calcula el <strong>Smart Money Score (0 a 100)</strong> con zonas de Entrada, Stop-Loss y Take-Profit auditadas en BaseScan.
+                        Rastrea inyecciones institucionales de liquidez en Base Mainnet. Consulta el <strong>Smart Money Score (0 a 100)</strong> con zonas de Entrada, Stop-Loss y Take-Profit auditadas directamente en BaseScan.
                     </p>
 
                     <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
@@ -2953,10 +3150,10 @@ function renderHomePage() {
         <div class="card" style="margin: 40px 0; border-color:var(--cyan);">
             <div style="text-align:center; margin-bottom:20px;">
                 <h2 style="font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:6px;">
-                    ¿Por qué los Profesionales se Cambian a Maxi Suite?
+                    ¿Por qué Negocios y Profesionales se Cambian a Maxi Suite?
                 </h2>
                 <p style="color:var(--text-muted); font-size:14.5px; font-weight:600;">
-                    Comparativa frente a las herramientas y pasarelas convencionales:
+                    Comparativa clara frente a herramientas y datáfonos tradicionales:
                 </p>
             </div>
 
@@ -2965,39 +3162,39 @@ function renderHomePage() {
                     <thead>
                         <tr>
                             <th>Característica</th>
-                            <th style="color:var(--rose);">❌ Modelo Tradicional (PayPal / Upwork)</th>
-                            <th style="color:var(--emerald); background:rgba(0,223,137,0.1);">👑 Maxi Suite Pro ($9.99/mes)</th>
+                            <th style="color:var(--rose);">❌ Datáfonos / Pasarelas Viejas / Upwork</th>
+                            <th style="color:var(--emerald); background:rgba(0,223,137,0.1);">👑 Maxi Suite Pro ($9.99 USD/mes)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Comisión por Cobro de Clientes</strong></td>
-                            <td style="color:var(--rose);">4.5% + $0.30 USD + 3.5% spread cambiario</td>
+                            <td><strong>Comisión en Ventas & Cobros</strong></td>
+                            <td style="color:var(--rose);">3.5% a 5.5% + spread cambiario</td>
                             <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">0.00% (Cero comisiones de plataforma)</td>
                         </tr>
                         <tr>
-                            <td><strong>Comisión sobre Trabajos Freelance</strong></td>
+                            <td><strong>Comisión en Trabajos Freelance</strong></td>
                             <td style="color:var(--rose);">10% a 20% retenido por Upwork/Fiverr</td>
-                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">0.00% (Cobras el 100% de tu bounty)</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">0.00% (Cobras el 100% de tu pago)</td>
                         </tr>
                         <tr>
-                            <td><strong>Tiempo de Redacción de Propuestas</strong></td>
-                            <td>45 minutos manual en inglés (muchos errores)</td>
-                            <td style="color:var(--cyan); font-weight:800; background:rgba(0,223,137,0.05);">30 segundos con IA Sniper (inglés/español)</td>
+                            <td><strong>Alquiler de Datáfonos Físicos</strong></td>
+                            <td style="color:var(--rose);">$35.000 a $80.000 COP / mes</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">$0 COP (Cobras con cualquier celular)</td>
                         </tr>
                         <tr>
-                            <td><strong>Tiempo de Retiro y Liquidación</strong></td>
-                            <td>5 a 14 días hábiles con retenciones bancarias</td>
-                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">2 segundos (Directo a tu billetera / cuenta)</td>
+                            <td><strong>Tiempo de Liquidación</strong></td>
+                            <td>3 a 15 días hábiles con retenciones</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">2 segundos (Directo a tu cuenta / Nequi)</td>
                         </tr>
                         <tr>
-                            <td><strong>Señales de Inversión y Trading</strong></td>
-                            <td>Rumores ruidosos en redes y pérdidas por FOMO</td>
-                            <td style="color:var(--purple); font-weight:800; background:rgba(0,223,137,0.05);">Smart Money Score 0-100 auditado en BaseScan</td>
+                            <td><strong>Cobro a Turistas Extranjeros</strong></td>
+                            <td style="color:var(--rose);">22% de rechazos bancarios por seguridad</td>
+                            <td style="color:var(--cyan); font-weight:800; background:rgba(0,223,137,0.05);">99.9% de aprobación instantánea</td>
                         </tr>
                         <tr>
                             <td><strong>Costo Total Operativo</strong></td>
-                            <td style="color:var(--rose);">+$120 USD/mes en comisiones perdidas</td>
+                            <td style="color:var(--rose);">+$150 USD/mes en comisiones perdidas</td>
                             <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">Tarifa plana de solo $9.99 USD / mes</td>
                         </tr>
                     </tbody>
@@ -3010,13 +3207,13 @@ function renderHomePage() {
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
                 <div>
                     <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
-                        📈 Calculadora Matemática de Retorno de Inversión
+                        📈 Calculadora Matemática de Ahorro y Retorno
                     </div>
                     <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-top:4px;">
-                        ¿Cuánto Dinero Ahorras y Ganas con Maxi Suite?
+                        ¿Cuánto Dinero Ahorras y Proteges con Maxi Suite?
                     </h3>
                     <p style="color:var(--text-muted); font-size:14px; font-weight:600;">
-                        Desliza para calcular tu ahorro real en comisiones y tu ingreso potencial:
+                        Desliza para calcular tu ahorro real en comisiones de ventas:
                     </p>
                 </div>
                 <div style="text-align:right;">
@@ -3029,15 +3226,15 @@ function renderHomePage() {
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px;">
                 <div style="background:var(--calc-fee-bg); border:1.5px solid var(--rose); padding:20px; border-radius:14px; text-align:center;">
-                    <div style="font-size:12px; font-weight:800; color:var(--rose); text-transform:uppercase;">Comisiones Perdidas en PayPal / Bancos</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--rose); text-transform:uppercase;">Comisiones Perdidas en Datáfonos / Pasarelas</div>
                     <div id="calcLostFee" style="font-size:32px; font-weight:900; color:var(--rose); margin:8px 0;">-$48.00 USD</div>
                     <div style="font-size:12px; color:var(--calc-fee-text); font-weight:700;">Dinero que los intermediarios te quitan al mes</div>
                 </div>
 
                 <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:20px; border-radius:14px; text-align:center;">
-                    <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Tu Ahorro Neto con Maxi Pay Pro</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Tu Ahorro Neto con Maxi Suite Pro</div>
                     <div id="calcSavedNet" style="font-size:32px; font-weight:900; color:var(--emerald); margin:8px 0;">+$38.01 USD / mes</div>
-                    <div style="font-size:12px; color:var(--saved-text); font-weight:700;">¡Tu membresía ($9.99) se paga sola desde $222 USD!</div>
+                    <div style="font-size:12px; color:var(--saved-text); font-weight:700;">¡Tu membresía ($9.99) se paga sola desde $222 USD de ventas!</div>
                 </div>
             </div>
         </div>
@@ -3048,7 +3245,7 @@ function renderHomePage() {
                 <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800;">
                     🛡️ GARANTÍA DE TRANSPARENCIA TOTAL & SEGURIDAD
                 </div>
-                <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-top:4px;">Cero Letras Pequeñas • 100% On-Chain</h3>
+                <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-top:4px;">Cero Letras Pequeñas • Tu Dinero en tu Poder</h3>
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; font-size:13.5px; font-weight:700;">
@@ -3090,56 +3287,66 @@ function renderHomePage() {
         <div style="max-width:850px; margin:0 auto 50px;">
             <div style="text-align:center; margin-bottom:28px;">
                 <h2 style="font-size:28px; font-weight:800; color:var(--text-main); margin-bottom:6px;">Preguntas Frecuentes</h2>
-                <p style="color:var(--text-muted); font-size:15px; font-weight:600;">Todo lo que necesitas saber antes de empezar:</p>
+                <p style="color:var(--text-muted); font-size:15px; font-weight:600;">Respuestas claras para dueños de negocios y profesionales:</p>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>¿Cómo es posible que Maxi Pay cobre 0% de comisión en ventas?</span>
+                    <span>¿Necesito saber de criptomonedas o tecnología para usar Maxi Suite?</span>
                     <span class="faq-icon">▼</span>
                 </div>
                 <div class="faq-answer">
-                    Maxi Pay opera sobre infraestructura peer-to-peer y redes de Capa 2 (Base de Coinbase), donde el costo de transferir dinero es inferior a $0.001 centavos. Tu dinero va directo a tu cuenta bancaria o billetera; nuestro modelo de negocio se basa en la suscripción plana de $9.99/mes, no en quitarte porcentajes abusivos de tus ingresos.
-                </div>
-            </div>
-
-            <div class="faq-item">
-                <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>¿Mis clientes necesitan saber de criptomonedas para pagarme?</span>
-                    <span class="faq-icon">▼</span>
-                </div>
-                <div class="faq-answer">
-                    No. Cuando le envías tu enlace a un cliente en Colombia, puede pagar en 10 segundos con Nequi, Bancolombia, PSE o Tarjeta de Crédito en pesos colombianos. Si es un cliente en el extranjero, puede pagar con tarjeta internacional o escanear el QR con USDC.
+                    No, en lo absoluto. Diseñamos Maxi Suite pensando en personas y negocios del mundo real. Funciona con la misma facilidad que enviar un mensaje de WhatsApp o usar Nequi. Creas un link de cobro o muestras tu código QR y cobras en segundos.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>¿Necesito saber inglés para ganar los trabajos de Maxi Gig Finder?</span>
+                    <span>¿Cómo pagan mis clientes locales y los turistas extranjeros?</span>
                     <span class="faq-icon">▼</span>
                 </div>
                 <div class="faq-answer">
-                    No. El Asistente IA Proposal Sniper analiza los requerimientos del cliente extranjero y redacta una propuesta técnica impecable en inglés nativo (y en español) adaptada a los estándares de Web3. Solo debes copiarla y enviarla.
+                    Tus clientes en Colombia pueden pagar directamente con Nequi, Bancolombia, PSE o Tarjeta de Crédito en pesos. Si atiendes a turistas o clientes del exterior, pueden pagar con tarjeta internacional o escanear el QR con Dólares Digitales (USDC) desde su teléfono en 2 segundos sin rechazos bancarios.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>¿Dónde puedo verificar que las alertas de ballenas son reales?</span>
+                    <span>¿El dinero en dólares digitales (USDC) puede perder valor como el Bitcoin?</span>
                     <span class="faq-icon">▼</span>
                 </div>
                 <div class="faq-answer">
-                    Cada alerta en el Radar de Ballenas incluye el botón directo con el hash de la transacción en BaseScan.org, permitiéndote comprobar el volumen exacto, el contrato DEX (Uniswap, Aerodrome) y la billetera en la blockchain oficial de Base.
+                    No. El USDC es una moneda digital respaldada 1 a 1 por dólares estadounidenses auditados. 100 USDC siempre valen exactamente $100 dólares. Tu dinero no corre ningún riesgo de volatilidad ni especulación de precios.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>¿Puedo cancelar mi suscripción en cualquier momento?</span>
+                    <span>¿Cómo paso mis ganancias a mi cuenta de banco o Nequi en Colombia?</span>
                     <span class="faq-icon">▼</span>
                 </div>
                 <div class="faq-answer">
-                    Sí, absolutamente. Con un solo clic desde tu panel de usuario cancelas la renovación sin preguntas, penalizaciones ni llamadas a soporte.
+                    En cualquier momento con un solo clic puedes transferir tus fondos disponibles directamente a tu cuenta de Nequi, Daviplata o cuenta bancaria (Bancolombia, etc.). El dinero llega de forma rápida, transparente y sin trámites engorrosos.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Cómo sé que un pago es real y no un comprobante falso?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Maxi Suite valida y confirma cada transacción automáticamente en pantalla en tiempo real y te envía una notificación instantánea a tu Telegram. Ya no tienes que preocuparte por pantallazos falsos o comprobantes editados.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Puedo cancelar mi suscripción cuando quiera?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Sí, 100%. Con un solo clic desde tu panel de usuario cancelas la suscripción sin preguntas, penalizaciones ni llamadas a soporte.
                 </div>
             </div>
         </div>
@@ -3148,10 +3355,10 @@ function renderHomePage() {
         <div class="card" style="text-align:center; padding:45px 20px; background:linear-gradient(135deg, rgba(0,242,254,0.08) 0%, rgba(168,85,247,0.08) 100%); border:2px solid var(--cyan); margin-bottom:50px;">
             <div style="font-size:42px; margin-bottom:12px;">👑</div>
             <h2 style="font-size:32px; font-weight:900; color:var(--text-main); margin-bottom:10px;">
-                Empieza a Monetizar a tu Máximo Potencial Hoy
+                Empieza a Cuidar y Multiplicar tus Ingresos Hoy
             </h2>
-            <p style="color:var(--text-muted); font-size:16px; max-width:650px; margin:0 auto 26px; font-weight:600;">
-                Únete al ecosistema de creadores, freelancers y traders que ya reciben cobros sin comisiones y ganan bounties en dólares digitales.
+            <p style="color:var(--text-muted); font-size:16px; max-width:700px; margin:0 auto 26px; font-weight:600;">
+                Únete a los comerciantes, prestadores de turismo, freelancers y traders que ya cobran sin comisiones intermedias y reciben sus pagos al instante.
             </p>
             <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
                 <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:15px 36px; font-size:16px; font-weight:800; border-radius:14px;">
@@ -3175,6 +3382,22 @@ function renderHomePage() {
             const savedNet = Math.max(0, lostFee - 9.99);
             document.getElementById('calcLostFee').innerText = '-$' + lostFee.toFixed(2) + ' USD';
             document.getElementById('calcSavedNet').innerText = '+$' + savedNet.toFixed(2) + ' USD / mes';
+        }
+
+        function switchProfile(index) {
+            for (let i = 1; i <= 3; i++) {
+                const tab = document.getElementById('tabProfile' + i);
+                const content = document.getElementById('profileContent' + i);
+                if (tab && content) {
+                    if (i === index) {
+                        tab.classList.add('active');
+                        content.style.display = 'block';
+                    } else {
+                        tab.classList.remove('active');
+                        content.style.display = 'none';
+                    }
+                }
+            }
         }
 
         function toggleFaq(el) {

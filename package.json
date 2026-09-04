@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "Agente autónomo propio, inspirado en Conway Automaton (Conway-Research/automaton, MIT), corriendo en infraestructura propia.",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "main.js",
   "bin": {
-    "automaton": "dist/index.js"
+    "automaton": "main.js"
   },
   "scripts": {
     "start": "node main.js",

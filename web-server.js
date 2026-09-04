@@ -2684,189 +2684,504 @@ function renderHomePage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maxi Suite 9.0 • Ecosistema Autónomo Web3 & Fintech en Base</title>
+    <title>Maxi Suite 9.0 • El Ecosistema Definitivo de Pagos, Empleos Web3 & Trading</title>
     ${getGlobalStyles()}
+    <style>
+        .hero-glow {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(0,242,254,0.12) 0%, rgba(168,85,247,0.08) 50%, transparent 80%);
+            filter: blur(60px);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin: 35px 0;
+        }
+        .pillar-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .pillar-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--cyan);
+            box-shadow: 0 12px 35px rgba(0, 242, 254, 0.12);
+        }
+        .pillar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13.5px;
+        }
+        .matrix-table th {
+            text-align: left;
+            padding: 14px;
+            background: var(--bg-card-hover);
+            color: var(--text-main);
+            font-weight: 800;
+            border-bottom: 2px solid var(--border);
+        }
+        .matrix-table td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .matrix-table tr:hover td {
+            background: rgba(0, 242, 254, 0.02);
+        }
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: var(--bg-card);
+            overflow: hidden;
+        }
+        .faq-question {
+            padding: 16px 20px;
+            font-weight: 800;
+            font-size: 15px;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .faq-question:hover {
+            color: var(--cyan);
+        }
+        .faq-answer {
+            padding: 0 20px 16px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: 600;
+            display: none;
+        }
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+        .faq-icon {
+            transition: transform 0.2s;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
     ${getHeader('home')}
 
-    <div class="page-container">
-        <!-- Hero Section -->
-        <div style="text-align:center; padding: 40px 10px 30px; max-width: 900px; margin: 0 auto;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); padding:7px 16px; border-radius:20px; font-size:13px; font-weight:800; margin-bottom:18px;">
-                ⚡ Ecosistema Autónomo 9.0 en Red Base (Ethereum L2)
+    <div class="hero-glow"></div>
+
+    <div class="page-container" style="position:relative; z-index:1;">
+        
+        <!-- HERO SECTION -->
+        <div style="text-align:center; padding: 45px 10px 35px; max-width: 950px; margin: 0 auto;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1.5px solid rgba(0,242,254,0.35); color:var(--cyan); padding:8px 18px; border-radius:30px; font-size:13px; font-weight:800; margin-bottom:20px;">
+                ⚡ EL SISTEMA OPERATIVO DE INGRESOS PARA CREADORES, FREELANCERS & TRADERS
             </div>
-            <h1 style="font-size:clamp(32px, 5vw, 48px); font-weight:900; letter-spacing:-0.03em; line-height:1.15; margin-bottom:16px; color:var(--text-main);">
-                El Futuro de los <span class="gradient-text">Pagos & Empleos Web3</span> Sin Comisiones Bancarias
+            
+            <h1 style="font-size:clamp(34px, 5.5vw, 54px); font-weight:900; letter-spacing:-0.035em; line-height:1.12; margin-bottom:18px; color:var(--text-main);">
+                Gana más. Cobra sin comisiones.<br>
+                <span class="gradient-text">Monetiza en automático con Maxi Suite.</span>
             </h1>
-            <p style="color:var(--text-muted); font-size:clamp(16px, 2vw, 18px); font-weight:600; line-height:1.6; margin-bottom:28px;">
-                Cobra a tus clientes con tarjeta débito/crédito o cripto, encuentra bounties remotos redactados por IA, rastrea movimientos de ballenas en vivo y domina las finanzas digitales.
+            
+            <p style="color:var(--text-muted); font-size:clamp(16px, 2vw, 18.5px); font-weight:600; line-height:1.65; max-width:820px; margin:0 auto 32px;">
+                Deja de perder el <strong>20% en Upwork</strong> y el <strong>4.5% en pasarelas tradicionales</strong>. Cobra por <strong>Nequi, PSE o USDC</strong> con <strong>0% de comisión</strong>, gana bounties de <strong>$50 a $650 USD</strong> con propuestas redactadas por IA en 30 segundos y opera con el <strong>Smart Money Radar</strong> en Base.
             </p>
-            <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
-                <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:14px 28px; font-size:15px;">🚀 Crear Cuenta Gratis</a>
-                <a href="/pay" class="btn-outline" style="text-decoration:none; padding:14px 26px; font-size:15px;">💳 Probar Maxi Pay</a>
-                <a href="https://t.me/Maxi_pay_official_bot" target="_blank" class="btn-tg" style="padding:14px 24px; font-size:15px; border-radius:12px;">${ICONS.tg} Bot de Telegram</a>
+            
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+                <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:15px 32px; font-size:16px; font-weight:800; border-radius:14px; box-shadow:0 8px 25px rgba(0,242,254,0.3);">
+                    🎁 Crear Cuenta Gratis & Recibir 5 Fichas
+                </a>
+                <a href="/pay" class="btn-outline" style="text-decoration:none; padding:15px 28px; font-size:16px; font-weight:800; border-radius:14px;">
+                    💳 Probar Maxi Pay (Demo en Vivo)
+                </a>
+                <a href="https://t.me/Maxi_pay_official_bot" target="_blank" class="btn-tg" style="padding:15px 24px; font-size:15px; border-radius:14px;">
+                    ${ICONS.tg} Bot Oficial de Telegram
+                </a>
+            </div>
+
+            <div style="font-size:12.5px; color:var(--text-muted); font-weight:700;">
+                🔒 Sin contratos de permanencia • Cancela cuando quieras en 1 clic • +5 Fichas de Bienvenida
             </div>
         </div>
 
-        <!-- Live Metrics Banner -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin: 25px 0 40px;">
-            <div class="card" style="padding:18px; text-align:center; border-color:rgba(0,242,254,0.2);">
-                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Comisión por Cobro</div>
-                <div style="font-size:26px; font-weight:900; color:var(--emerald); margin-top:4px;">0.00%</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-top:2px;">Ahorra 4.5% vs PayPal/Bancos</div>
-            </div>
-            <div class="card" style="padding:18px; text-align:center; border-color:rgba(0,242,254,0.2);">
-                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Costo de Red Base</div>
-                <div style="font-size:26px; font-weight:900; color:var(--cyan); margin-top:4px;">&lt; $0.001 USD</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-top:2px;">0.005 Gwei Gas L2</div>
-            </div>
-            <div class="card" style="padding:18px; text-align:center; border-color:rgba(168,85,247,0.2);">
-                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Bounties Disponibles</div>
-                <div style="font-size:26px; font-weight:900; color:#a855f7; margin-top:4px;">$14,850 USD</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-top:2px;">Radar activo de empleos</div>
-            </div>
-            <div class="card" style="padding:18px; text-align:center; border-color:rgba(245,158,11,0.2);">
-                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Ballenas Rastreadas</div>
-                <div style="font-size:26px; font-weight:900; color:#f59e0b; margin-top:4px;">1,420+ W</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-top:2px;">Smart Money Score en vivo</div>
-            </div>
-        </div>
-
-        <!-- 6 Core Modules Grid -->
-        <div style="margin-bottom:45px;">
-            <div style="text-align:center; margin-bottom:30px;">
-                <h2 style="font-size:28px; font-weight:800; color:var(--text-main); margin-bottom:6px;">Módulos del Ecosistema Maxi</h2>
-                <p style="color:var(--text-muted); font-size:15px; font-weight:600;">Todo lo que necesitas para operar, cobrar y monetizar en una sola plataforma unificada.</p>
+        <!-- LIVE METRICS BAR (SOCIAL PROOF) -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:18px; margin: 20px 0 45px;">
+            <div class="card" style="padding:20px; text-align:center; border-color:rgba(0, 223, 137, 0.35); background:rgba(0, 223, 137, 0.03);">
+                <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase; letter-spacing:0.5px;">Comisión de Plataforma</div>
+                <div style="font-size:32px; font-weight:900; color:var(--emerald); margin:4px 0;">0.00%</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">Conservas el 100% de tus ventas</div>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:22px;">
-                <!-- 1. Maxi Pay -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(0,242,254,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,242,254,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">💳</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Maxi Pay & Checkout</h3>
-                                <span style="font-size:12px; font-weight:700; color:var(--cyan);">0% Comisiones • Auto-Detección</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Genera links de cobro universales con pasarela dual: tus clientes pueden pagar con tarjeta tradicional débito/crédito o escaneando QR con USDC en Base.
-                        </p>
-                    </div>
-                    <a href="/pay" class="btn-primary" style="text-decoration:none; text-align:center; padding:10px;">⚡ Abrir Maxi Pay</a>
-                </div>
+            <div class="card" style="padding:20px; text-align:center; border-color:rgba(0, 242, 254, 0.35); background:rgba(0, 242, 254, 0.03);">
+                <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.5px;">Tiempo de Liquidación</div>
+                <div style="font-size:32px; font-weight:900; color:var(--cyan); margin:4px 0;">~2 Segundos</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">On-Chain Base (Gas &lt; $0.001)</div>
+            </div>
 
-                <!-- 2. Trabajos IA -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(168,85,247,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(168,85,247,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">✨</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Trabajos & Gigs (IA)</h3>
-                                <span style="font-size:12px; font-weight:700; color:#a855f7;">Bounties de $50 a $650 USD</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Radar en tiempo real de tareas, redacción, programación y diseño Web3. Incluye Redactor de Propuestas Autónomo con Inteligencia Artificial para ganar clientes.
-                        </p>
-                    </div>
-                    <a href="/trabajos" class="btn-outline" style="text-decoration:none; text-align:center; padding:10px; border-color:rgba(168,85,247,0.5); color:#a855f7;">🎯 Ver Trabajos Activos</a>
-                </div>
+            <div class="card" style="padding:20px; text-align:center; border-color:rgba(168, 85, 247, 0.35); background:rgba(168, 85, 247, 0.03);">
+                <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; letter-spacing:0.5px;">Bounties Disponibles</div>
+                <div style="font-size:32px; font-weight:900; color:var(--purple); margin:4px 0;">$14,850 USD</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">Pagos directos de $50 a $650</div>
+            </div>
 
-                <!-- 3. Ballenas -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(245,158,11,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">🎯</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Radar de Ballenas (Alpha)</h3>
-                                <span style="font-size:12px; font-weight:700; color:#f59e0b;">Smart Money Score 0-100</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Monitoreo en vivo de compras masivas e inyecciones de liquidez en Base. Algoritmo de filtrado contra wash-trading y simulación de copy-trading instantáneo.
-                        </p>
-                    </div>
-                    <a href="/ballenas" class="btn-outline" style="text-decoration:none; text-align:center; padding:10px; border-color:rgba(245,158,11,0.5); color:#f59e0b;">🐋 Explorar Ballenas</a>
-                </div>
-
-                <!-- 4. Mercados -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(0,223,137,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,223,137,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">📈</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Mercados & Cotizaciones</h3>
-                                <span style="font-size:12px; font-weight:700; color:var(--emerald);">BTC • ETH • BASE • AERO</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Panel de cotizaciones en tiempo real, libro de órdenes descentralizado, tasas de financiamiento y radar de volatilidad para toma de decisiones.
-                        </p>
-                    </div>
-                    <a href="/mercados" class="btn-outline" style="text-decoration:none; text-align:center; padding:10px; border-color:rgba(0,223,137,0.5); color:var(--emerald);">📊 Ver Gráficos & Precios</a>
-                </div>
-
-                <!-- 5. Minijuegos -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(236,72,153,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(236,72,153,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">🎮</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Minijuegos On-Chain</h3>
-                                <span style="font-size:12px; font-weight:700; color:#ec4899;">Ruleta • Dados • Crash Multiplier</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Entretenimiento verificado on-chain. Apuesta tus fichas de bienvenida, multiplica tu balance y sube de nivel en el ranking global de la comunidad.
-                        </p>
-                    </div>
-                    <a href="/juegos" class="btn-outline" style="text-decoration:none; text-align:center; padding:10px; border-color:rgba(236,72,153,0.5); color:#ec4899;">🎲 Jugar Ahora</a>
-                </div>
-
-                <!-- 6. Academia -->
-                <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border-color:rgba(59,130,246,0.3);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                            <div style="width:44px; height:44px; border-radius:12px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;">🎓</div>
-                            <div>
-                                <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">Academia Master</h3>
-                                <span style="font-size:12px; font-weight:700; color:#3b82f6;">5 Guías Interactivas Paso a Paso</span>
-                            </div>
-                        </div>
-                        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; font-weight:600; margin-bottom:16px;">
-                            Aprende desde cero cómo recibir dólares en Base, cómo retirar a tu cuenta bancaria local en Colombia/Latam y cómo seguir a las ballenas cripto con seguridad.
-                        </p>
-                    </div>
-                    <a href="/tutoriales" class="btn-outline" style="text-decoration:none; text-align:center; padding:10px; border-color:rgba(59,130,246,0.5); color:#3b82f6;">📚 Abrir Guías</a>
-                </div>
+            <div class="card" style="padding:20px; text-align:center; border-color:rgba(251, 191, 36, 0.35); background:rgba(251, 191, 36, 0.03);">
+                <div style="font-size:12px; font-weight:800; color:#f59e0b; text-transform:uppercase; letter-spacing:0.5px;">Redactor IA Sniper</div>
+                <div style="font-size:32px; font-weight:900; color:#f59e0b; margin:4px 0;">30 Segundos</div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">Propuestas bilingües de alta conversión</div>
             </div>
         </div>
 
-        <!-- On-Chain Trust & Treasury Verification -->
-        <div class="card" style="background:rgba(0,242,254,0.03); border:1.5px solid rgba(0,242,254,0.3); padding:28px; margin-bottom:40px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <!-- 3 CORE PILLARS SHOWCASE -->
+        <div style="text-align:center; margin-bottom:30px;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); color:var(--cyan); padding:5px 14px; border-radius:16px; font-size:12px; font-weight:800; margin-bottom:8px;">
+                🚀 TRES LÍNEAS DE NEGOCIO EN UNA SOLA MEMBRESÍA
+            </div>
+            <h2 style="font-size:32px; font-weight:800; color:var(--text-main); margin-bottom:8px;">¿Cómo Maxi Suite Transforma tus Ingresos?</h2>
+            <p style="color:var(--text-muted); font-size:16px; max-width:750px; margin:0 auto; font-weight:600;">
+                Diseñado para resolver los mayores cuellos de botella financieros de profesionales y comercios en Latinoamérica.
+            </p>
+        </div>
+
+        <div class="bento-grid">
+            <!-- PILAR 1: MAXI PAY -->
+            <div class="pillar-card" style="border-top:4px solid var(--emerald);">
                 <div>
-                    <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:13px; font-weight:800; margin-bottom:6px;">
-                        <span class="status-dot"></span> Bóveda Pública Verificada en Base Mainnet
+                    <span class="pillar-badge" style="background:rgba(0, 223, 137, 0.15); color:var(--emerald); border:1px solid rgba(0, 223, 137, 0.3);">
+                        💳 PILAR 1 • PASARELA DE COBROS
+                    </span>
+                    <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
+                        Maxi Pay & Checkout Dual (0% Comisiones)
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                        Las pasarelas tradicionales y los datáfonos te quitan hasta un 5% de cada venta y retienen tus fondos 14 días. Con <strong>Maxi Pay</strong>, generas links de cobro universales: tus clientes pagan en <strong>Nequi, PSE o Tarjeta</strong> en Colombia, o en <strong>USDC en Base</strong> desde el exterior.
+                    </p>
+                    
+                    <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
+                        <div style="color:var(--emerald); margin-bottom:6px;">✔️ 0.00% comisión de intermediación</div>
+                        <div style="color:var(--cyan); margin-bottom:6px;">✔️ Liquidación en 2 segundos a tu wallet</div>
+                        <div style="color:var(--text-main);">✔️ Detección on-chain automática y alertas en Telegram</div>
                     </div>
-                    <h3 style="font-size:22px; font-weight:800; color:var(--text-main);">100% On-Chain y Transparente</h3>
-                    <p style="color:var(--text-muted); font-size:14px; font-weight:600; margin-top:4px;">
-                        Billetera de Tesorería Maxi: <code style="color:var(--cyan); background:rgba(0,242,254,0.1); padding:2px 8px; border-radius:6px; font-size:13px;">${MAXI_WALLET}</code>
+                </div>
+                <a href="/pay" class="btn-primary" style="text-decoration:none; text-align:center; padding:12px; background:linear-gradient(135deg, #00df89 0%, #10b981 100%);">
+                    ⚡ Generar Link de Cobro
+                </a>
+            </div>
+
+            <!-- PILAR 2: GIG FINDER -->
+            <div class="pillar-card" style="border-top:4px solid var(--cyan);">
+                <div>
+                    <span class="pillar-badge" style="background:rgba(0, 242, 254, 0.15); color:var(--cyan); border:1px solid rgba(0, 242, 254, 0.3);">
+                        💼 PILAR 2 • EMPLEOS & BOUNTIES
+                    </span>
+                    <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
+                        Maxi Gig Finder + AI Proposal Sniper
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                        No pierdas 2 horas al día revisando 10 webs distintas ni pagues el 20% en Upwork. Centralizamos los mejores bounties globales de <strong>$50 a $650 USD</strong> en diseño, programación y redacción. El <strong>AI Sniper</strong> redacta tu propuesta técnica persuasiva en 30 segundos.
+                    </p>
+
+                    <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
+                        <div style="color:var(--cyan); margin-bottom:6px;">✔️ Propuestas bilingües optimizadas en 30s</div>
+                        <div style="color:var(--emerald); margin-bottom:6px;">✔️ Acceso a convocatorias de Superteam & Gitcoin</div>
+                        <div style="color:var(--text-main);">✔️ Cobro directo en dólares sin intermediarios</div>
+                    </div>
+                </div>
+                <a href="/trabajos" class="btn-primary" style="text-decoration:none; text-align:center; padding:12px;">
+                    ✨ Explorar Trabajos Activos
+                </a>
+            </div>
+
+            <!-- PILAR 3: MAXI ALPHA -->
+            <div class="pillar-card" style="border-top:4px solid var(--purple);">
+                <div>
+                    <span class="pillar-badge" style="background:rgba(168, 85, 247, 0.15); color:var(--purple); border:1px solid rgba(168, 85, 247, 0.3);">
+                        🐋 PILAR 3 • INTELIGENCIA CUANTITATIVA
+                    </span>
+                    <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
+                        Maxi Alpha & Smart Money Score
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14px; line-height:1.6; font-weight:600; margin-bottom:16px;">
+                        Deja de perder dinero por rumores en grupos de Telegram. Nuestro motor cuantitativo rastrea compras masivas e inyecciones de liquidez en Base y calcula el <strong>Smart Money Score (0 a 100)</strong> con zonas de Entrada, Stop-Loss y Take-Profit auditadas en BaseScan.
+                    </p>
+
+                    <div style="background:var(--bg-card-hover); border-radius:12px; padding:14px; margin-bottom:18px; font-size:13px; font-weight:700;">
+                        <div style="color:var(--purple); margin-bottom:6px;">✔️ Smart Money Score (0 a 100) en tiempo real</div>
+                        <div style="color:var(--cyan); margin-bottom:6px;">✔️ Setups tácticos con ratios R:R favorables (> 1:2.5)</div>
+                        <div style="color:var(--text-main);">✔️ Enlaces directos verificables en BaseScan.org</div>
+                    </div>
+                </div>
+                <a href="/ballenas" class="btn-primary" style="text-decoration:none; text-align:center; padding:12px; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
+                    🎯 Ver Señales de Ballenas
+                </a>
+            </div>
+        </div>
+
+        <!-- COMPARATIVE MATRIX: TRADITIONAL VS MAXI SUITE -->
+        <div class="card" style="margin: 40px 0; border-color:var(--cyan);">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:6px;">
+                    ¿Por qué los Profesionales se Cambian a Maxi Suite?
+                </h2>
+                <p style="color:var(--text-muted); font-size:14.5px; font-weight:600;">
+                    Comparativa frente a las herramientas y pasarelas convencionales:
+                </p>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Característica</th>
+                            <th style="color:var(--rose);">❌ Modelo Tradicional (PayPal / Upwork)</th>
+                            <th style="color:var(--emerald); background:rgba(0,223,137,0.1);">👑 Maxi Suite Pro ($9.99/mes)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Comisión por Cobro de Clientes</strong></td>
+                            <td style="color:var(--rose);">4.5% + $0.30 USD + 3.5% spread cambiario</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">0.00% (Cero comisiones de plataforma)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Comisión sobre Trabajos Freelance</strong></td>
+                            <td style="color:var(--rose);">10% a 20% retenido por Upwork/Fiverr</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">0.00% (Cobras el 100% de tu bounty)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tiempo de Redacción de Propuestas</strong></td>
+                            <td>45 minutos manual en inglés (muchos errores)</td>
+                            <td style="color:var(--cyan); font-weight:800; background:rgba(0,223,137,0.05);">30 segundos con IA Sniper (inglés/español)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tiempo de Retiro y Liquidación</strong></td>
+                            <td>5 a 14 días hábiles con retenciones bancarias</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">2 segundos (Directo a tu billetera / cuenta)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Señales de Inversión y Trading</strong></td>
+                            <td>Rumores ruidosos en redes y pérdidas por FOMO</td>
+                            <td style="color:var(--purple); font-weight:800; background:rgba(0,223,137,0.05);">Smart Money Score 0-100 auditado en BaseScan</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Costo Total Operativo</strong></td>
+                            <td style="color:var(--rose);">+$120 USD/mes en comisiones perdidas</td>
+                            <td style="color:var(--emerald); font-weight:800; background:rgba(0,223,137,0.05);">Tarifa plana de solo $9.99 USD / mes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- INTERACTIVE ROI & SAVINGS CALCULATOR -->
+        <div class="card" style="background:var(--calc-bg); border:1.5px solid var(--calc-border); margin-bottom:45px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                    <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
+                        📈 Calculadora Matemática de Retorno de Inversión
+                    </div>
+                    <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-top:4px;">
+                        ¿Cuánto Dinero Ahorras y Ganas con Maxi Suite?
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14px; font-weight:600;">
+                        Desliza para calcular tu ahorro real en comisiones y tu ingreso potencial:
                     </p>
                 </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <a href="https://basescan.org/address/${MAXI_WALLET}" target="_blank" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
-                        🔍 Auditar en BaseScan
-                    </a>
+                <div style="text-align:right;">
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:800;">FACTURACIÓN ESTIMADA:</div>
+                    <div style="font-size:26px; font-weight:900; color:var(--cyan);" id="calcSalesDisplay">$1,000 USD / mes</div>
+                </div>
+            </div>
+
+            <input type="range" id="salesSlider" min="200" max="10000" step="100" value="1000" style="width:100%; height:12px; background:#cbd5e1; border-radius:6px; accent-color:var(--cyan); margin:15px 0 25px 0; cursor:pointer;" oninput="updateRoiCalc(this.value)">
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px;">
+                <div style="background:var(--calc-fee-bg); border:1.5px solid var(--rose); padding:20px; border-radius:14px; text-align:center;">
+                    <div style="font-size:12px; font-weight:800; color:var(--rose); text-transform:uppercase;">Comisiones Perdidas en PayPal / Bancos</div>
+                    <div id="calcLostFee" style="font-size:32px; font-weight:900; color:var(--rose); margin:8px 0;">-$48.00 USD</div>
+                    <div style="font-size:12px; color:var(--calc-fee-text); font-weight:700;">Dinero que los intermediarios te quitan al mes</div>
+                </div>
+
+                <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:20px; border-radius:14px; text-align:center;">
+                    <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Tu Ahorro Neto con Maxi Pay Pro</div>
+                    <div id="calcSavedNet" style="font-size:32px; font-weight:900; color:var(--emerald); margin:8px 0;">+$38.01 USD / mes</div>
+                    <div style="font-size:12px; color:var(--saved-text); font-weight:700;">¡Tu membresía ($9.99) se paga sola desde $222 USD!</div>
                 </div>
             </div>
         </div>
+
+        <!-- 0% LETRAS PEQUEÑAS & TRUST SEALS -->
+        <div class="card" style="background:rgba(0,242,254,0.03); border:1.5px solid rgba(0,242,254,0.3); padding:28px; margin-bottom:45px;">
+            <div style="text-align:center; margin-bottom:24px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800;">
+                    🛡️ GARANTÍA DE TRANSPARENCIA TOTAL & SEGURIDAD
+                </div>
+                <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-top:4px;">Cero Letras Pequeñas • 100% On-Chain</h3>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; font-size:13.5px; font-weight:700;">
+                <div style="background:var(--bg-card); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">🔒</span>
+                    <div>
+                        <div style="color:var(--text-main);">Certificación PCI-DSS Nivel 1</div>
+                        <div style="color:var(--text-muted); font-size:12px;">Pasarela Wompi Bancolombia</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-card); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">⛓️</span>
+                    <div>
+                        <div style="color:var(--text-main);">Base Mainnet L2 Verified</div>
+                        <div style="color:var(--text-muted); font-size:12px;">Auditable en BaseScan (Chain 8453)</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-card); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">⚡</span>
+                    <div>
+                        <div style="color:var(--text-main);">Cancela en 1 Clic</div>
+                        <div style="color:var(--text-muted); font-size:12px;">Sin contratos ni penalizaciones</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-card); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">🪙</span>
+                    <div>
+                        <div style="color:var(--text-main);">Bóveda Pública en Base</div>
+                        <div style="color:var(--text-muted); font-size:12px;"><code>${MAXI_WALLET.slice(0,6)}...${MAXI_WALLET.slice(-4)}</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FREQUENTLY ASKED QUESTIONS (FAQS) -->
+        <div style="max-width:850px; margin:0 auto 50px;">
+            <div style="text-align:center; margin-bottom:28px;">
+                <h2 style="font-size:28px; font-weight:800; color:var(--text-main); margin-bottom:6px;">Preguntas Frecuentes</h2>
+                <p style="color:var(--text-muted); font-size:15px; font-weight:600;">Todo lo que necesitas saber antes de empezar:</p>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Cómo es posible que Maxi Pay cobre 0% de comisión en ventas?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Maxi Pay opera sobre infraestructura peer-to-peer y redes de Capa 2 (Base de Coinbase), donde el costo de transferir dinero es inferior a $0.001 centavos. Tu dinero va directo a tu cuenta bancaria o billetera; nuestro modelo de negocio se basa en la suscripción plana de $9.99/mes, no en quitarte porcentajes abusivos de tus ingresos.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Mis clientes necesitan saber de criptomonedas para pagarme?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    No. Cuando le envías tu enlace a un cliente en Colombia, puede pagar en 10 segundos con Nequi, Bancolombia, PSE o Tarjeta de Crédito en pesos colombianos. Si es un cliente en el extranjero, puede pagar con tarjeta internacional o escanear el QR con USDC.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Necesito saber inglés para ganar los trabajos de Maxi Gig Finder?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    No. El Asistente IA Proposal Sniper analiza los requerimientos del cliente extranjero y redacta una propuesta técnica impecable en inglés nativo (y en español) adaptada a los estándares de Web3. Solo debes copiarla y enviarla.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Dónde puedo verificar que las alertas de ballenas son reales?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Cada alerta en el Radar de Ballenas incluye el botón directo con el hash de la transacción en BaseScan.org, permitiéndote comprobar el volumen exacto, el contrato DEX (Uniswap, Aerodrome) y la billetera en la blockchain oficial de Base.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>¿Puedo cancelar mi suscripción en cualquier momento?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Sí, absolutamente. Con un solo clic desde tu panel de usuario cancelas la renovación sin preguntas, penalizaciones ni llamadas a soporte.
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL CONVERSION BANNER (CLOSING CTA) -->
+        <div class="card" style="text-align:center; padding:45px 20px; background:linear-gradient(135deg, rgba(0,242,254,0.08) 0%, rgba(168,85,247,0.08) 100%); border:2px solid var(--cyan); margin-bottom:50px;">
+            <div style="font-size:42px; margin-bottom:12px;">👑</div>
+            <h2 style="font-size:32px; font-weight:900; color:var(--text-main); margin-bottom:10px;">
+                Empieza a Monetizar a tu Máximo Potencial Hoy
+            </h2>
+            <p style="color:var(--text-muted); font-size:16px; max-width:650px; margin:0 auto 26px; font-weight:600;">
+                Únete al ecosistema de creadores, freelancers y traders que ya reciben cobros sin comisiones y ganan bounties en dólares digitales.
+            </p>
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+                <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:15px 36px; font-size:16px; font-weight:800; border-radius:14px;">
+                    🚀 Activar Maxi Pro por $9.99 USD (+100 Fichas)
+                </a>
+                <a href="/pay" class="btn-outline" style="text-decoration:none; padding:15px 28px; font-size:16px; font-weight:800; border-radius:14px;">
+                    💳 Ver Pasarela de Pagos
+                </a>
+            </div>
+        </div>
+
     </div>
 
     ${getFooter()}
+
+    <script>
+        function updateRoiCalc(val) {
+            const sales = parseFloat(val);
+            document.getElementById('calcSalesDisplay').innerText = '$' + sales.toLocaleString() + ' USD / mes';
+            const lostFee = (sales * 0.045) + 3.00;
+            const savedNet = Math.max(0, lostFee - 9.99);
+            document.getElementById('calcLostFee').innerText = '-$' + lostFee.toFixed(2) + ' USD';
+            document.getElementById('calcSavedNet').innerText = '+$' + savedNet.toFixed(2) + ' USD / mes';
+        }
+
+        function toggleFaq(el) {
+            const parent = el.parentElement;
+            parent.classList.toggle('active');
+        }
+    </script>
 </body>
 </html>`;
 }

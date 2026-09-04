@@ -3375,15 +3375,15 @@ const server = http.createServer(async (req, res) => {
                     let targetPlan = 'Maxi Pay Pro';
                     let addCredits = 100;
 
-                    if (amountCop >= 190000) {
+                    if (amountCop >= 110000) {
                         targetPlan = 'Maxi Alpha VIP';
                         addCredits = 500;
-                    } else if (amountCop >= 40000) {
-                        targetPlan = 'Maxi Pay Pro';
-                        addCredits = 200;
+                    } else if (amountCop >= 55000) {
+                        targetPlan = 'Gig Finder VIP';
+                        addCredits = 300;
                     } else {
-                        targetPlan = 'Maxi Pay Pro (Test Real)';
-                        addCredits = 50;
+                        targetPlan = 'Maxi Pay Pro';
+                        addCredits = 100;
                     }
 
                     let user = null;

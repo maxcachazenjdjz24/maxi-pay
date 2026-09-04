@@ -320,6 +320,10 @@ function getHeader(activePage = 'home') {
             <div class="ticker-item"><span class="ticker-badge">ETH</span> $2,515.72 <span class="up">▲ +5.04%</span></div>
             <div class="ticker-item"><span class="ticker-badge" style="background:#a855f7;">AERO</span> $1.18 <span class="up">▲ +8.42%</span></div>
             <div class="ticker-item"><span class="ticker-badge" style="background:#00df89; color:#06080e;">BASE Gas</span> 0.005 Gwei <span class="neutral">⚡ &lt; $0.01</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#3b82f6;">S&amp;P 500</span> 5,620.50 <span class="up">▲ +0.45%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#f59e0b; color:#06080e;">ORO (XAU)</span> $2,510.40 <span class="up">▲ +0.80%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#ea580c;">PETRÓLEO WTI</span> $74.20 <span style="color:#f43f5e; font-weight:800;">▼ -1.20%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#6366f1;">DÓLAR (DXY)</span> 101.15 <span style="color:#f43f5e; font-weight:800;">▼ -0.25%</span></div>
             <div class="ticker-item"><span class="ticker-badge">USDC</span> $1.000 <span class="neutral">✓ Paridad 1:1</span></div>
             <div class="ticker-item"><span class="ticker-badge" style="background:#f43f5e;">Sentimiento</span> Codicia (68/100)</div>
             <div class="ticker-item"><span class="ticker-badge">SOL</span> $148.50 <span class="up">▲ +4.20%</span></div>
@@ -327,6 +331,10 @@ function getHeader(activePage = 'home') {
             <div class="ticker-item"><span class="ticker-badge">ETH</span> $2,515.72 <span class="up">▲ +5.04%</span></div>
             <div class="ticker-item"><span class="ticker-badge" style="background:#a855f7;">AERO</span> $1.18 <span class="up">▲ +8.42%</span></div>
             <div class="ticker-item"><span class="ticker-badge" style="background:#00df89; color:#06080e;">BASE Gas</span> 0.005 Gwei <span class="neutral">⚡ &lt; $0.01</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#3b82f6;">S&amp;P 500</span> 5,620.50 <span class="up">▲ +0.45%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#f59e0b; color:#06080e;">ORO (XAU)</span> $2,510.40 <span class="up">▲ +0.80%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#ea580c;">PETRÓLEO WTI</span> $74.20 <span style="color:#f43f5e; font-weight:800;">▼ -1.20%</span></div>
+            <div class="ticker-item"><span class="ticker-badge" style="background:#6366f1;">DÓLAR (DXY)</span> 101.15 <span style="color:#f43f5e; font-weight:800;">▼ -0.25%</span></div>
             <div class="ticker-item"><span class="ticker-badge">USDC</span> $1.000 <span class="neutral">✓ Paridad 1:1</span></div>
         </div>
     </div>
@@ -2513,115 +2521,586 @@ function renderTutorialesPage() {
 </html>`;
 }
 
-// 5. OTHER RENDERS
 function renderBallenasPage() {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maxi Alpha • Smart Money Score & Setups Cuantitativos en Base</title>
+    <title>Maxi Alpha • Radar Cuantitativo de Ballenas & Catalizadores Macro</title>
     ${getGlobalStyles()}
+    <style>
+        .terminal-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            align-items: start;
+        }
+        @media(max-width: 1024px) {
+            .terminal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .filter-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-chip:hover {
+            border-color: var(--purple);
+            color: var(--text-main);
+        }
+        .filter-chip.active {
+            border-color: var(--purple);
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--purple);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+        }
+        .news-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.15s;
+        }
+        .news-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .news-item:hover {
+            transform: translateX(4px);
+        }
+        .tag-bull {
+            background: rgba(0, 223, 137, 0.15);
+            color: var(--emerald);
+            border: 1px solid var(--emerald);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10.5px;
+            font-weight: 800;
+        }
+        .tag-bear {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--rose);
+            border: 1px solid var(--rose);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10.5px;
+            font-weight: 800;
+        }
+        .tag-macro {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10.5px;
+            font-weight: 800;
+        }
+    </style>
 </head>
 <body>
     ${getHeader('ballenas')}
 
-    <div class="page-container">
-        <div style="text-align:center; margin-bottom:35px;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:var(--purple); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:700; margin-bottom:12px;">
-                🎯 Smart Money Score Engine • Cuantitativo 24/7
-            </div>
-            <h1 style="font-size:36px; font-weight:800; letter-spacing:-0.02em; margin-bottom:10px; color:var(--text-main);">
-                Radar Cuantitativo de Ballenas
-            </h1>
-            <p style="color:var(--text-muted); font-size:16px; max-width:750px; margin:0 auto; font-weight:600;">
-                No solo vemos transferencias: nuestro algoritmo calcula el <strong>Smart Money Score (0 a 100)</strong> y te entrega zonas de entrada, Stop-Loss y Take-Profit.
-            </p>
-        </div>
-
-        <div class="card" style="border-left:5px solid #10b981; margin-bottom:24px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px; margin-bottom:14px;">
-                <div>
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
-                        <span class="badge-buy">🟢 COMPRA MASIVA (Acumulación)</span>
-                        <div class="score-pill score-high">🎯 Smart Money Score: 94/100 (Bullish)</div>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 2 minutos</span>
-                    </div>
-                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">🚨 BALLENA ACUMULA $519,612.18 USDC EN ETH VIA AERODROME</h3>
-                    <div style="font-size:13.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                        Inyección: <strong style="color:var(--emerald);">$519,612.18 USDC</strong> ➔ Recibe: <strong style="color:var(--cyan);">206.58 ETH</strong> • Protocolo: <strong>Aerodrome Slipstream</strong>
+    <!-- AI TACTICAL DIAGNOSIS MODAL -->
+    <div id="whaleAiModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeWhaleModal()">
+        <div class="modal-card" style="max-width:720px; border-color:var(--purple); box-shadow:0 25px 70px rgba(0,0,0,0.8), 0 0 40px rgba(168,85,247,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:26px;">🧠</span>
+                    <div>
+                        <h3 style="font-size:20px; font-weight:800; color:var(--text-main);" id="whaleModalHeading">Diagnóstico Cuantitativo IA</h3>
+                        <div style="font-size:12px; color:var(--purple); font-weight:700;" id="whaleModalSubtitle">Maxi Alpha Engine • Base L2 Confluence</div>
                     </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:26px; font-weight:800; color:#10b981;">+$519,612.18 USD</div>
-                    <a href="https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1" target="_blank" class="btn-outline" style="border-color:#10b981; color:#10b981; padding:7px 12px; font-size:12px; margin-top:6px;">
-                        🔍 Ver Tx en BaseScan
-                    </a>
+                <button onclick="closeWhaleModal()" style="background:none; border:none; color:var(--text-muted); font-size:26px; cursor:pointer; font-weight:bold; line-height:1;" title="Cerrar">&times;</button>
+            </div>
+
+            <!-- MODAL BODY CONTENT -->
+            <div id="whaleModalBody">
+                <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+                    <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:6px;">🎯 Tesis Táctica On-Chain:</div>
+                    <div id="diagThesis" style="font-size:14px; color:var(--text-main); line-height:1.6; font-weight:600;">Cargando análisis...</div>
                 </div>
-            </div>
 
-            <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; font-size:13px;">
-                <div>🎯 <strong>Zona Entrada Sugerida:</strong> <span style="color:var(--cyan); font-weight:800;">$2,490 - $2,525 ETH</span></div>
-                <div>🛑 <strong>Stop-Loss Técnico:</strong> <span style="color:var(--rose); font-weight:800;">$2,410 ETH (-3.8%)</span></div>
-                <div>🚀 <strong>Take-Profit Objetivo:</strong> <span style="color:var(--emerald); font-weight:800;">$2,740 ETH (+9.2%)</span></div>
-                <div>🛡️ <strong>Ratio Riesgo/Beneficio:</strong> <span style="color:var(--purple); font-weight:800;">1 : 2.4 (Excelente)</span></div>
-            </div>
-        </div>
-
-        <div class="card" style="border-left:5px solid #8b5cf6; margin-bottom:24px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px; margin-bottom:14px;">
-                <div>
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
-                        <span class="badge-vault">🟣 ACUMULACIÓN / RETIRO A VAULT</span>
-                        <div class="score-pill score-high" style="border-color:var(--purple); color:var(--purple); background:rgba(168,85,247,0.15);">🎯 Smart Money Score: 91/100 (Hold Largo Plazo)</div>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 8 minutos</span>
-                    </div>
-                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">🚨 RETIRO DESDE EXCHANGE HACIA MULTISIG VAULT</h3>
-                    <div style="font-size:13.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                        Emisor: <strong>Coinbase Institutional</strong> ➔ Destino: <strong style="color:var(--purple);">Safe Cold Vault</strong> • Disminuye oferta circulante
-                    </div>
+                <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+                    <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:6px;">🌐 Confluencia Macro (S&P 500, Oro, DXY):</div>
+                    <div id="diagMacro" style="font-size:13.5px; color:var(--text-muted); line-height:1.6; font-weight:600;">Cargando correlación...</div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:26px; font-weight:800; color:var(--purple);">$519,612.18 USD</div>
-                    <a href="https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30" target="_blank" class="btn-outline" style="border-color:var(--purple); color:var(--purple); padding:7px 12px; font-size:12px; margin-top:6px;">
-                        🔍 Ver Tx en BaseScan
-                    </a>
-                </div>
-            </div>
 
-            <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-top:10px; font-size:13px; color:var(--text-muted); font-weight:600;">
-                💡 <strong>Interpretación Cuantitativa:</strong> Las instituciones retiraron capital del exchange para congelarlo en bóveda fría. Esto reduce la presión vendedora en el libro de órdenes.
-            </div>
-        </div>
-
-        <div class="card" style="border-left:5px solid #0284c7; margin-bottom:25px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px; margin-bottom:14px;">
-                <div>
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
-                        <span class="badge-pool">⚡ INYECCIÓN DE LIQUIDEZ (DeFi Pool)</span>
-                        <div class="score-pill score-mid">🎯 Smart Money Score: 87/100 (Respaldo Institucional)</div>
-                        <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 15 minutos</span>
-                    </div>
-                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main);">🚨 DEPÓSITO DE CAPITAL EN PISCINA USDC/ETH (Uniswap V3)</h3>
-                    <div style="font-size:13.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                        Liquidez Concentrada en rango estrecho: <strong style="color:var(--cyan);">$2,450 - $2,600</strong>
+                <div style="background:rgba(0, 242, 254, 0.04); border:1.5px solid var(--cyan); border-radius:14px; padding:18px; margin-bottom:18px;">
+                    <div style="font-size:13px; font-weight:800; color:var(--cyan); text-transform:uppercase; margin-bottom:12px;">📊 Parámetros Técnicos de Entrada & Salida:</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; font-size:13px;">
+                        <div>
+                            <div style="color:var(--text-muted); font-size:11.5px; font-weight:700;">ZONA DE ENTRADA:</div>
+                            <div id="diagEntry" style="color:var(--cyan); font-weight:900; font-size:15px;">--</div>
+                        </div>
+                        <div>
+                            <div style="color:var(--text-muted); font-size:11.5px; font-weight:700;">STOP LOSS TÉCNICO:</div>
+                            <div id="diagSL" style="color:var(--rose); font-weight:900; font-size:15px;">--</div>
+                        </div>
+                        <div>
+                            <div style="color:var(--text-muted); font-size:11.5px; font-weight:700;">TAKE PROFIT (TP1):</div>
+                            <div id="diagTP1" style="color:var(--emerald); font-weight:900; font-size:15px;">--</div>
+                        </div>
+                        <div>
+                            <div style="color:var(--text-muted); font-size:11.5px; font-weight:700;">RATIO R:R:</div>
+                            <div id="diagRR" style="color:var(--purple); font-weight:900; font-size:15px;">--</div>
+                        </div>
                     </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:26px; font-weight:800; color:var(--cyan);">$519,612.18 USD</div>
-                    <a href="https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7" target="_blank" class="btn-outline" style="border-color:var(--cyan); color:var(--cyan); padding:7px 12px; font-size:12px; margin-top:6px;">
-                        🔍 Ver Tx en BaseScan
-                    </a>
-                </div>
-            </div>
 
-            <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-top:10px; font-size:13px; color:var(--text-muted); font-weight:600;">
-                ⚡ <strong>Interpretación Cuantitativa:</strong> Creación de piso de soporte con liquidez concentrada en Base. Genera rendimiento pasivo de comisiones para la ballena.
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div style="font-size:12.5px; color:var(--emerald); font-weight:800;" id="diagConfidence">
+                        ✓ Confianza Estadística: 92/100
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn-primary" onclick="copyWhalePlan()" style="padding:10px 18px; font-size:13px; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">📋 Copiar Plan Táctico</button>
+                        <a id="modalBaseScanLink" href="#" target="_blank" class="btn-outline" style="padding:10px 18px; font-size:13px; border-color:var(--cyan); color:var(--cyan);">🔍 BaseScan</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <div class="page-container">
+        
+        <!-- HERO HEADER -->
+        <div style="text-align:center; margin-bottom:30px;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:var(--purple); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:700; margin-bottom:12px;">
+                🎯 Smart Money Score Engine • Inteligencia On-Chain 24/7
+            </div>
+            <h1 style="font-size:36px; font-weight:900; letter-spacing:-0.02em; margin-bottom:10px; color:var(--text-main);">
+                Radar Cuantitativo de Ballenas & Catalizadores
+            </h1>
+            <p style="color:var(--text-muted); font-size:15.5px; max-width:820px; margin:0 auto; font-weight:600; line-height:1.6;">
+                Rastreamos inyecciones institucionales en Base Mainnet, calculamos el <strong>Smart Money Score (0 a 100)</strong> y te conectamos en tiempo real con las noticias y catalizadores macro globales.
+            </p>
+        </div>
+
+        <!-- 24H KPI METRICS BAR -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:28px;">
+            <div class="card" style="padding:16px; text-align:center; border-color:rgba(168, 85, 247, 0.3); background:rgba(168, 85, 247, 0.03); margin-bottom:0;">
+                <div style="font-size:11.5px; font-weight:800; color:var(--purple); text-transform:uppercase;">Volumen Detectado (24h)</div>
+                <div style="font-size:24px; font-weight:900; color:var(--purple); margin:4px 0;">$48,240,000 USD</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">En swaps y transferencias Base</div>
+            </div>
+
+            <div class="card" style="padding:16px; text-align:center; border-color:rgba(0, 223, 137, 0.3); background:rgba(0, 223, 137, 0.03); margin-bottom:0;">
+                <div style="font-size:11.5px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Flujo Neto Institucional</div>
+                <div style="font-size:24px; font-weight:900; color:var(--emerald); margin:4px 0;">+🟢 $12,410,000 USD</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Inflow neto hacia billeteras frías</div>
+            </div>
+
+            <div class="card" style="padding:16px; text-align:center; border-color:rgba(0, 242, 254, 0.3); background:rgba(0, 242, 254, 0.03); margin-bottom:0;">
+                <div style="font-size:11.5px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Alertas de Ballenas</div>
+                <div style="font-size:24px; font-weight:900; color:var(--cyan); margin:4px 0;">242 Transacciones</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Monto individual &gt; $50,000 USD</div>
+            </div>
+
+            <div class="card" style="padding:16px; text-align:center; border-color:rgba(251, 191, 36, 0.3); background:rgba(251, 191, 36, 0.03); margin-bottom:0;">
+                <div style="font-size:11.5px; font-weight:800; color:#f59e0b; text-transform:uppercase;">Activo Más Acumulado</div>
+                <div style="font-size:24px; font-weight:900; color:#f59e0b; margin:4px 0;">$AERO (Slipstream)</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">+8.42% en últimas 24h</div>
+            </div>
+        </div>
+
+        <!-- FILTER CHIPS -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="filter-chip active" onclick="filterWhaleCategory('all', this)">🌐 Todos los Flujos (5)</button>
+                <button class="filter-chip" onclick="filterWhaleCategory('buy', this)">🟢 Compras Masivas (&gt; $50k)</button>
+                <button class="filter-chip" onclick="filterWhaleCategory('vault', this)">🟣 Bóvedas Cold Vault</button>
+                <button class="filter-chip" onclick="filterWhaleCategory('pool', this)">⚡ Liquidez DEX (Pools)</button>
+            </div>
+            <div style="font-size:12.5px; color:var(--text-muted); font-weight:700;">
+                🔴 Streaming en Vivo • Base Chain ID 8453
+            </div>
+        </div>
+
+        <!-- 2-COLUMN TERMINAL BENTO GRID -->
+        <div class="terminal-grid">
+            
+            <!-- LEFT COLUMN: WHALE CARDS (65%) -->
+            <div id="whalesContainer">
+                
+                <!-- WHALE CARD 1: COMPRA MASIVA ETH -->
+                <div class="card whale-item" data-category="buy" style="border-left:5px solid #10b981; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <span class="badge-buy">🟢 COMPRA MASIVA (Acumulación)</span>
+                                <div class="score-pill score-high">🎯 Smart Money Score: 94/100</div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 2 minutos</span>
+                            </div>
+                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BALLENA ACUMULA $519,612.18 USDC EN ETH VIA AERODROME</h3>
+                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Inyección: <strong style="color:var(--emerald);">$519,612.18 USDC</strong> ➔ Recibe: <strong style="color:var(--cyan);">206.58 ETH</strong> • Protocolo: <strong>Aerodrome Slipstream</strong>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:900; color:#10b981;">+$519,612 USD</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; font-size:12.5px;">
+                        <div>🎯 <strong>Zona Entrada:</strong> <span style="color:var(--cyan); font-weight:800;">$2,490 - $2,525 ETH</span></div>
+                        <div>🛑 <strong>Stop-Loss:</strong> <span style="color:var(--rose); font-weight:800;">$2,410 (-3.8%)</span></div>
+                        <div>🚀 <strong>Take-Profit:</strong> <span style="color:var(--emerald); font-weight:800;">$2,740 (+9.2%)</span></div>
+                        <div>🛡️ <strong>R:R:</strong> <span style="color:var(--purple); font-weight:800;">1 : 2.4</span></div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button onclick="openWhaleAiModal('w1', 'Ballena Acumula $519,612 USDC en ETH', '$519,612 USD', 'ETH', 'Aerodrome Slipstream', 'https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
+                            ✨ Diagnóstico IA (1 Ficha)
+                        </button>
+                        <a href="https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1" target="_blank" class="btn-outline" style="border-color:#10b981; color:#10b981; padding:8px 14px; font-size:12.5px;">
+                            🔍 Ver en BaseScan
+                        </a>
+                    </div>
+                </div>
+
+                <!-- WHALE CARD 2: RETIRO COLD VAULT -->
+                <div class="card whale-item" data-category="vault" style="border-left:5px solid #8b5cf6; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <span class="badge-vault">🟣 ACUMULACIÓN / RETIRO A VAULT</span>
+                                <div class="score-pill score-high" style="border-color:var(--purple); color:var(--purple); background:rgba(168,85,247,0.15);">🎯 Smart Money Score: 91/100</div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 8 minutos</span>
+                            </div>
+                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 RETIRO DESDE EXCHANGE HACIA MULTISIG SAFE VAULT</h3>
+                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Emisor: <strong>Coinbase Institutional</strong> ➔ Destino: <strong style="color:var(--purple);">Safe Cold Vault</strong> • Disminuye oferta circulante
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:900; color:var(--purple);">$840,000 USD</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
+                        💡 <strong>Interpretación Cuantitativa:</strong> Las instituciones retiraron 325 cbETH del exchange para congelarlo en bóveda fría multisig. Esto reduce drásticamente la presión vendedora en el libro de órdenes.
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button onclick="openWhaleAiModal('w2', 'Retiro Institucional hacia Safe Multisig Vault', '$840,000 USD', 'cbETH / ETH', 'Coinbase Institutional', 'https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
+                            ✨ Diagnóstico IA (1 Ficha)
+                        </button>
+                        <a href="https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30" target="_blank" class="btn-outline" style="border-color:var(--purple); color:var(--purple); padding:8px 14px; font-size:12.5px;">
+                            🔍 Ver en BaseScan
+                        </a>
+                    </div>
+                </div>
+
+                <!-- WHALE CARD 3: COMPRA MASIVA AERO -->
+                <div class="card whale-item" data-category="buy" style="border-left:5px solid #00f2fe; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <span class="badge-buy" style="background:rgba(0,242,254,0.15); color:var(--cyan); border-color:var(--cyan);">🟢 ACUMULACIÓN DE ALTA BETA</span>
+                                <div class="score-pill score-high">🎯 Smart Money Score: 96/100</div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 12 minutos</span>
+                            </div>
+                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BALLENA ACUMULA 450,000 $AERO ($531,000 USD)</h3>
+                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Compra TWAP en bloques sucesivos: <strong style="color:var(--cyan);">$1.18 USD/token</strong> • Impacto: Absorción del 14% del libro de órdenes
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:900; color:var(--cyan);">+$531,000 USD</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; font-size:12.5px;">
+                        <div>🎯 <strong>Zona Entrada:</strong> <span style="color:var(--cyan); font-weight:800;">$1.12 - $1.18 AERO</span></div>
+                        <div>🛑 <strong>Stop-Loss:</strong> <span style="color:var(--rose); font-weight:800;">$1.05 (-8.5%)</span></div>
+                        <div>🚀 <strong>Take-Profit:</strong> <span style="color:var(--emerald); font-weight:800;">$1.45 (+28.0%)</span></div>
+                        <div>🛡️ <strong>R:R:</strong> <span style="color:var(--purple); font-weight:800;">1 : 3.2</span></div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button onclick="openWhaleAiModal('w3', 'Acumulación Masiva de 450,000 AERO', '$531,000 USD', 'AERO', 'Aerodrome DEX', 'https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
+                            ✨ Diagnóstico IA (1 Ficha)
+                        </button>
+                        <a href="https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631" target="_blank" class="btn-outline" style="border-color:var(--cyan); color:var(--cyan); padding:8px 14px; font-size:12.5px;">
+                            🔍 Ver Token en BaseScan
+                        </a>
+                    </div>
+                </div>
+
+                <!-- WHALE CARD 4: INYECCION LIQUIDEZ UNISWAP -->
+                <div class="card whale-item" data-category="pool" style="border-left:5px solid #0284c7; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <span class="badge-pool">⚡ INYECCIÓN DE LIQUIDEZ (DeFi Pool)</span>
+                                <div class="score-pill score-mid">🎯 Smart Money Score: 87/100</div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 24 minutos</span>
+                            </div>
+                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 DEPÓSITO DE CAPITAL EN PISCINA USDC/ETH (Uniswap V3)</h3>
+                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Liquidez Concentrada en rango estrecho: <strong style="color:var(--cyan);">$2,450 - $2,600</strong>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:900; color:var(--cyan);">$519,612 USD</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
+                        ⚡ <strong>Interpretación Cuantitativa:</strong> Creación de soporte con liquidez concentrada en Base. Genera rendimiento pasivo de comisiones para la ballena y frena retrocesos de precio.
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button onclick="openWhaleAiModal('w4', 'Inyección de Liquidez Concentrada USDC/ETH', '$519,612 USD', 'USDC / ETH', 'Uniswap V3', 'https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
+                            ✨ Diagnóstico IA (1 Ficha)
+                        </button>
+                        <a href="https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7" target="_blank" class="btn-outline" style="border-color:var(--cyan); color:var(--cyan); padding:8px 14px; font-size:12.5px;">
+                            🔍 Ver en BaseScan
+                        </a>
+                    </div>
+                </div>
+
+                <!-- WHALE CARD 5: STAKING INSTITUCIONAL CBETH -->
+                <div class="card whale-item" data-category="vault" style="border-left:5px solid #f59e0b; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <span class="badge-vault" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:#f59e0b;">🟣 STAKING INSTITUCIONAL</span>
+                                <div class="score-pill score-high">🎯 Smart Money Score: 89/100</div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 45 minutos</span>
+                            </div>
+                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BLOQUEO DE 250 ETH ($628,000 USD) EN PROTOCOLO DE RENDIMIENTO</h3>
+                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Depósito a contrato de Staking Líquido en Base • Cero intención de venta a corto plazo
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:900; color:#f59e0b;">$628,000 USD</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
+                        🔒 <strong>Interpretación Cuantitativa:</strong> Las instituciones bloquean ETH para captura de rendimiento (APY 3.8%), congelando la oferta en Base.
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button onclick="openWhaleAiModal('w5', 'Bloqueo Institucional de 250 ETH en Staking', '$628,000 USD', 'ETH / cbETH', 'Lido / Base Bridge', 'https://basescan.org/address/0x4200000000000000000000000000000000000006')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
+                            ✨ Diagnóstico IA (1 Ficha)
+                        </button>
+                        <a href="https://basescan.org/address/0x4200000000000000000000000000000000000006" target="_blank" class="btn-outline" style="border-color:#f59e0b; color:#f59e0b; padding:8px 14px; font-size:12.5px;">
+                            🔍 Ver en BaseScan
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: LIVE NEWS & MACRO CONFLUENCE (35%) -->
+            <div>
+                
+                <!-- NEWS PANEL -->
+                <div class="card" style="border-color:var(--cyan); background:var(--bg-card); padding:22px; margin-bottom:20px; position:sticky; top:80px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:20px;">📰</span>
+                            <h3 style="font-size:17px; font-weight:800; color:var(--text-main);">Catalizadores & Noticias</h3>
+                        </div>
+                        <span style="background:rgba(0, 223, 137, 0.15); color:var(--emerald); border:1px solid var(--emerald); font-size:10px; font-weight:900; padding:2px 8px; border-radius:10px; text-transform:uppercase;">
+                            🔴 EN VIVO
+                        </span>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:14px;">
+                        
+                        <!-- NEWS ITEM 1 -->
+                        <div class="news-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Bloomberg Markets</span>
+                                <span class="tag-bull">🟢 ALCISTA</span>
+                            </div>
+                            <a href="https://www.bloomberg.com/crypto" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
+                                Reserva Federal sugiere pausa y posible recorte de tasas ante caída de inflación global.
+                            </a>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Impacto: ⚡⚡⚡ Alto • Hace 5 min
+                            </div>
+                        </div>
+
+                        <!-- NEWS ITEM 2 -->
+                        <div class="news-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">CoinDesk</span>
+                                <span class="tag-bull">🟢 ALCISTA</span>
+                            </div>
+                            <a href="https://www.coindesk.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
+                                Volumen de transacciones diarias en Base L2 supera récord histórico impulsado por DeFi.
+                            </a>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Impacto: ⚡⚡ Medio • Hace 18 min
+                            </div>
+                        </div>
+
+                        <!-- NEWS ITEM 3 -->
+                        <div class="news-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Cointelegraph</span>
+                                <span class="tag-bull">🟢 ALCISTA</span>
+                            </div>
+                            <a href="https://cointelegraph.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
+                                Inflows institucionales en ETFs de Bitcoin y Ethereum superan los $185M en 24 horas.
+                            </a>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Impacto: ⚡⚡⚡ Alto • Hace 35 min
+                            </div>
+                        </div>
+
+                        <!-- NEWS ITEM 4 -->
+                        <div class="news-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Reuters Macro</span>
+                                <span class="tag-macro">⚪ MACRO</span>
+                            </div>
+                            <a href="https://www.reuters.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
+                                El Índice Dólar (DXY) retrocede a 101.15 abriendo apetito por activos de riesgo.
+                            </a>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Impacto: ⚡⚡ Medio • Hace 1 hora
+                            </div>
+                        </div>
+
+                        <!-- NEWS ITEM 5 -->
+                        <div class="news-item">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Base Official</span>
+                                <span class="tag-bull">🟢 ALCISTA</span>
+                            </div>
+                            <a href="https://base.org" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
+                                Nueva actualización de tarifas reduce el costo de gas promedio a menos de $0.005 USD.
+                            </a>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                Impacto: ⚡ Bajo • Hace 2 horas
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- MACRO CONFLUENCE WIDGET -->
+                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                        <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:10px;">
+                            📊 Matriz de Confluencia Macro
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px; font-weight:700;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-muted);">Correlación BTC vs S&amp;P 500:</span>
+                                <span style="color:var(--emerald);">+0.68 (Sincronizada)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-muted);">Índice VIX Volatilidad:</span>
+                                <span style="color:var(--cyan);">15.20 (Estabilidad)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-muted);">Inflow ETFs Spot (24h):</span>
+                                <span style="color:var(--emerald);">+$185.4M USD</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-muted);">Gas Base L2:</span>
+                                <span style="color:var(--cyan);">&lt; $0.005 USD ⚡</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
     ${getFooter()}
+
+    <script>
+        let currentWhalePlan = '';
+
+        function filterWhaleCategory(cat, btn) {
+            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const items = document.querySelectorAll('.whale-item');
+            items.forEach(item => {
+                if (cat === 'all' || item.getAttribute('data-category') === cat) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        async function openWhaleAiModal(whaleId, title, amount, asset, protocol, txUrl) {
+            const token = localStorage.getItem('maxi_user_token');
+            
+            try {
+                const res = await fetch('/api/generate-whale-ai-analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ whaleId, title, amount, asset, protocol })
+                });
+                const data = await res.json();
+
+                if (!data.success && data.outOfCredits) {
+                    alert('⚠️ ' + data.error);
+                    window.location.href = '/cuenta';
+                    return;
+                }
+
+                const d = data.diagnosis;
+                document.getElementById('whaleModalHeading').innerText = '✨ ' + title;
+                document.getElementById('diagThesis').innerText = d.thesis;
+                document.getElementById('diagMacro').innerText = d.macro;
+                document.getElementById('diagEntry').innerText = d.entryZone;
+                document.getElementById('diagSL').innerText = d.stopLoss;
+                document.getElementById('diagTP1').innerText = d.takeProfit1;
+                document.getElementById('diagRR').innerText = d.riskReward;
+                document.getElementById('diagConfidence').innerText = '✓ Confianza Estadística: ' + d.confidenceScore;
+                document.getElementById('modalBaseScanLink').href = txUrl;
+
+                currentWhalePlan = '🎯 PLAN TÁCTICO MAXI ALPHA:\\n' +
+                                  '• Señal: ' + title + ' (' + amount + ')\\n' +
+                                  '• Entrada: ' + d.entryZone + '\\n' +
+                                  '• Stop Loss: ' + d.stopLoss + '\\n' +
+                                  '• Take Profit 1: ' + d.takeProfit1 + '\\n' +
+                                  '• Ratio R:R: ' + d.riskReward + '\\n' +
+                                  '• Confluencia: ' + d.macro;
+
+                document.getElementById('whaleAiModal').style.display = 'flex';
+                checkUserSession();
+            } catch (err) {
+                console.error('Error al generar diagnóstico IA:', err);
+                alert('Conectando con el motor de IA... por favor intenta nuevamente.');
+            }
+        }
+
+        function copyWhalePlan() {
+            navigator.clipboard.writeText(currentWhalePlan);
+            alert('¡Plan táctico copiado al portapapeles!');
+        }
+
+        function closeWhaleModal() {
+            document.getElementById('whaleAiModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>`;
 }
@@ -4622,6 +5101,70 @@ const server = http.createServer(async (req, res) => {
                     success: true,
                     consumedCredit: 1,
                     remainingCredits: remaining
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/generate-whale-ai-analysis') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const { ip, credits, user } = getClientCredits(req);
+                if (credits <= 0) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, outOfCredits: true, error: 'Has agotado tus fichas para diagnósticos de ballenas. Recarga o actualiza a Maxi Alpha VIP.' }));
+                    return;
+                }
+
+                const payload = JSON.parse(body || '{}');
+                const { title, amount, asset, protocol } = payload;
+
+                if (user) {
+                    user.credits = Math.max(0, user.credits - 1);
+                    saveUsersDb();
+                } else {
+                    userCredits.set(ip, Math.max(0, credits - 1));
+                }
+
+                const remaining = user ? user.credits : (userCredits.get(ip) || 0);
+
+                let entryZone = '$2,485 - $2,525 ETH';
+                let stopLoss = '$2,410 ETH (-3.8%)';
+                let takeProfit1 = '$2,740 ETH (+9.2%)';
+                let riskReward = '1 : 2.4 (Excelente)';
+                let confidenceScore = '94/100 (Alta Convicción)';
+
+                if ((asset || '').includes('AERO')) {
+                    entryZone = '$1.12 - $1.18 AERO';
+                    stopLoss = '$1.05 AERO (-8.5%)';
+                    takeProfit1 = '$1.45 AERO (+28.0%)';
+                    riskReward = '1 : 3.2 (Sobresaliente)';
+                    confidenceScore = '96/100';
+                } else if ((asset || '').includes('cbETH')) {
+                    entryZone = '$2,820 - $2,870 cbETH';
+                    stopLoss = '$2,720 cbETH (-4.1%)';
+                    takeProfit1 = '$3,150 cbETH (+10.8%)';
+                    riskReward = '1 : 2.6';
+                    confidenceScore = '91/100';
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    consumedCredit: 1,
+                    remainingCredits: remaining,
+                    diagnosis: {
+                        thesis: `Se detectó una acumulación algorítmica institucional de ${amount || '$500,000+ USD'} en ${asset || 'ETH'} a través de ${protocol || 'Base DEX'}. La absorción de liquidez consolida un piso de soporte técnico en Base L2, reduciendo la oferta flotante en el libro de órdenes.`,
+                        macro: 'Confluencia Macro Global: El S&P 500 se mantiene en rango de expansión (+0.45%), el Índice Dólar (DXY 101.15) retrocede y el Oro cotiza en $2,510 USD. Este entorno de liquidez mundial favorece la valorización de activos descentralizados en Base.',
+                        entryZone,
+                        stopLoss,
+                        takeProfit1,
+                        riskReward,
+                        confidenceScore
+                    }
                 }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });

@@ -1223,49 +1223,36 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
                 <!-- METHOD 1: TRADITIONAL CARD PAY / WOMPI -->
                 <div id="cardPaySection" style="text-align:left;">
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px;">
-                        <button type="button" class="btn-primary" onclick="openWompiCheckout()" style="width:100%; justify-content:center; padding:14px; font-size:15px; margin-bottom:10px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; border:none; box-shadow:0 6px 20px rgba(0,223,137,0.35);">
-                            🇨🇴 Pagar con Wompi (Nequi, PSE, Bancolombia, Tarjeta)
-                        </button>
-                        <button type="button" class="btn-secondary" onclick="openWompiCheckout(1500)" style="width:100%; justify-content:center; padding:11px; font-size:13.5px; margin-bottom:14px; background:rgba(0,242,254,0.08); color:var(--cyan); border:1px dashed var(--cyan); font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                            🧪 Probar Pago Real con Nequi ($1.500 COP)
-                        </button>
-
-                        <div style="display:flex; align-items:center; gap:10px; margin: 14px 0 16px;">
-                            <div style="flex:1; height:1px; background:var(--border);"></div>
-                            <span style="font-size:11px; color:var(--text-muted); font-weight:800; letter-spacing:0.5px;">O PAGO RÁPIDO CON TARJETA DE PRUEBA</span>
-                            <div style="flex:1; height:1px; background:var(--border);"></div>
-                        </div>
-
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                            <span style="font-size:13px; font-weight:800; color:var(--text-main);">Datos de Tarjeta Segura (256-bit SSL)</span>
-                            <span style="font-size:18px;">💳 🔒</span>
-                        </div>
-
-                        <label style="display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--text-main);">Nombre del Titular:</label>
-                        <input type="text" id="cardHolder" class="input-box" placeholder="Ej: Juan David Jaramillo" value="Juan David">
-
-                        <label style="display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--text-main);">Número de Tarjeta (Visa / Mastercard):</label>
-                        <input type="text" id="cardNumber" class="input-box" placeholder="•••• •••• •••• 4242" value="4000 1234 5678 9010" maxlength="19">
-
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:24px; margin-bottom:16px;">
+                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+                            <div style="width:40px; height:40px; border-radius:10px; background:rgba(0, 223, 137, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px;">🇨🇴</div>
                             <div>
-                                <label style="display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--text-main);">Expiración (MM/AA):</label>
-                                <input type="text" id="cardExp" class="input-box" placeholder="12/28" value="12/28" maxlength="5">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--text-main);">CVV / CVC:</label>
-                                <input type="password" id="cardCvc" class="input-box" placeholder="•••" value="888" maxlength="4">
+                                <h3 style="font-size:16.5px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Pasarela Oficial Wompi Bancolombia</h3>
+                                <p style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Pagos en línea 100% seguros y encriptados</p>
                             </div>
                         </div>
 
-                        <button class="btn-primary" id="btnCardSubmit" onclick="processCardPayment()" style="width:100%; justify-content:center; padding:13px; font-size:15px; margin-top:6px;">
-                            💳 Pagar $${amount}.00 USD con Tarjeta
+                        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:18px;">
+                            <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Métodos de Pago Disponibles:</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                <span style="background:rgba(0, 242, 254, 0.1); color:var(--cyan); border:1px solid rgba(0,242,254,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">📱 Nequi</span>
+                                <span style="background:rgba(0, 223, 137, 0.1); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">🏦 Bancolombia</span>
+                                <span style="background:rgba(168, 85, 247, 0.1); color:var(--purple); border:1px solid rgba(168,85,247,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">🔄 PSE (Todos los Bancos)</span>
+                                <span style="background:rgba(251, 191, 36, 0.1); color:#f59e0b; border:1px solid rgba(251,191,36,0.3); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700;">💳 Tarjetas Débito / Crédito</span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="openWompiCheckout()" style="width:100%; justify-content:center; padding:15px; font-size:15.5px; margin-bottom:12px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; border:none; box-shadow:0 6px 22px rgba(0,223,137,0.35); cursor:pointer;">
+                            🇨🇴 Pagar $${(parseFloat(amount) * 4000).toLocaleString()} COP con Wompi
+                        </button>
+
+                        <button type="button" class="btn-secondary" onclick="openWompiCheckout(1500)" style="width:100%; justify-content:center; padding:11px; font-size:13px; background:rgba(0,242,254,0.08); color:var(--cyan); border:1px dashed var(--cyan); font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            🧪 Probar Transacción Real con Nequi ($1.500 COP)
                         </button>
                     </div>
 
-                    <div style="text-align:center; font-size:12px; color:var(--text-muted); font-weight:600;">
-                        🔒 Pagos protegidos con encriptación bancaria y conversión automática a USDC.
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:var(--text-muted); font-weight:600;">
+                        <span>🔒 Certificación PCI-DSS Nivel 1</span> • <span>0% Comisiones de Plataforma</span>
                     </div>
                 </div>
 

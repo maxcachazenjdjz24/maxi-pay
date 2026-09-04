@@ -1245,10 +1245,6 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                         <button type="button" class="btn-primary" onclick="openWompiCheckout()" style="width:100%; justify-content:center; padding:15px; font-size:15.5px; margin-bottom:12px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; border:none; box-shadow:0 6px 22px rgba(0,223,137,0.35); cursor:pointer;">
                             🇨🇴 Pagar $${(parseFloat(amount) * 4000).toLocaleString()} COP con Wompi
                         </button>
-
-                        <button type="button" class="btn-secondary" onclick="openWompiCheckout(1500)" style="width:100%; justify-content:center; padding:11px; font-size:13px; background:rgba(0,242,254,0.08); color:var(--cyan); border:1px dashed var(--cyan); font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                            🧪 Probar Transacción Real con Nequi ($1.500 COP)
-                        </button>
                     </div>
 
                     <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; color:var(--text-muted); font-weight:600;">
@@ -1362,9 +1358,8 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             if (txId) document.getElementById('succTx').innerText = txId;
         }
 
-        async function openWompiCheckout(forceCop) {
-            let amountCop = forceCop || Math.round(parseFloat('${amount}') * 4000);
-            if (amountCop < 1500) amountCop = 1500;
+        async function openWompiCheckout() {
+            let amountCop = Math.round(parseFloat('${amount}') * 4000);
             const amountInCents = amountCop * 100;
             const ref = '${orderId}' + '-' + Math.floor(1000 + Math.random() * 9000);
 

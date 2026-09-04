@@ -8,8 +8,11 @@
     "automaton": "dist/index.js"
   },
   "scripts": {
+    "start": "node main.js",
+    "start:web": "node web-server.js",
+    "start:bot": "node telegram-bot.js",
+    "start:automaton": "node dist/index.js --run",
     "build": "tsc",
-    "start": "node dist/index.js --run",
     "setup": "node dist/index.js --setup",
     "status": "node dist/index.js --status",
     "approvals": "node dist/approvals-cli.js"

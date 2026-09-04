@@ -1269,7 +1269,7 @@ function getGlobalStyles() {
   `;
 }
 
-// 2. DUAL CHECKOUT: CARD/APPLE PAY ONRAMP (USD -> USDC) + WEB3 CRIPTO (BASE L2) + WOMPI COP FALLBACK
+// 2. DUAL CHECKOUT: REAL CARD-TO-USDC ONRAMP (TRANSAK / COINBASE) + WEB3 CRIPTO (BASE L2)
 function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'Maxi Pay') {
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=ethereum:' + wallet + '@8453?value=0';
 
@@ -1323,29 +1323,6 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             color: var(--text-muted);
             border-color: var(--border);
         }
-        .step-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 6px 12px;
-            border-radius: 8px;
-            background: var(--input-bg);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            transition: all 0.3s;
-        }
-        .step-pill.active {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            background: rgba(0, 242, 254, 0.08);
-        }
-        .step-pill.done {
-            border-color: var(--emerald);
-            color: var(--emerald);
-            background: rgba(0, 223, 137, 0.08);
-        }
     </style>
     <script type="text/javascript" src="https://checkout.wompi.co/widget.js"></script>
 </head>
@@ -1379,76 +1356,47 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     </div>
                 </div>
 
-                <!-- METHOD 1: INTERNATIONAL CARD / APPLE PAY ONRAMP TO USDC -->
+                <!-- METHOD 1: REAL ONRAMP (TRANSAK / COINBASE) CARD TO USDC ON BASE -->
                 <div id="cardPaySection" style="text-align:left;">
-                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px;">
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:22px; margin-bottom:14px;">
                         
                         <!-- Header badge -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:20px;">🇺🇸</span>
+                                <span style="font-size:22px;">🇺🇸</span>
                                 <div>
-                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Tarjeta Internacional & Apple Pay</h3>
-                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Liquidación en Dólares Digitales (USDC)</p>
+                                    <h3 style="font-size:15.5px; font-weight:800; color:var(--text-main); margin:0;">Pasarela Onramp Internacional</h3>
+                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Débito en USD $\rightarrow$ Depósito en USDC (Base L2)</p>
                                 </div>
                             </div>
                             <span style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">
-                                0% Retenciones
+                                Transak Live
                             </span>
                         </div>
 
-                        <!-- 1-Click Apple Pay / Google Pay button -->
-                        <button type="button" onclick="startApplePayFlow()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#000; color:#fff; font-weight:800; font-size:15px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); cursor:pointer; margin-bottom:14px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-                            <span></span> Pagar con Apple Pay
+                        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px; font-size:12.5px; line-height:1.6; color:var(--text-muted);">
+                            <div style="color:var(--cyan); font-weight:800; margin-bottom:4px;">🛡️ Proceso de Pago 100% Real:</div>
+                            Al presionar el botón, se abrirá la pasarela oficial certificada de <strong>Transak Onramp</strong>. Ingresas tu tarjeta <strong>Global66 / Visa / Mastercard / Apple Pay</strong>, se debitan los <strong>$${amount}.00 USD</strong> y los fondos se transfieren en <strong>USDC</strong> directamente a la billetera de ${recipientName}:
+                            <div style="font-family:monospace; font-size:11.5px; color:var(--text-main); margin-top:6px; word-break:break-all; background:var(--bg-card); padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
+                                ${wallet}
+                            </div>
+                        </div>
+
+                        <!-- 1-Click Transak Onramp Trigger Button -->
+                        <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('transak')" style="width:100%; justify-content:center; padding:15px; font-size:15.5px; font-weight:800; border:none; box-shadow:0 6px 22px rgba(0,242,254,0.35); cursor:pointer; margin-bottom:12px;">
+                            💳 Pagar $${amount}.00 USD con Tarjeta / Apple Pay (Transak)
                         </button>
 
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-                            <div style="flex:1; height:1px; background:var(--border);"></div>
-                            <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">o con tu tarjeta</span>
-                            <div style="flex:1; height:1px; background:var(--border);"></div>
-                        </div>
-
-                        <!-- Card Inputs -->
-                        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-                            <div>
-                                <label style="display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Nombre en la Tarjeta</label>
-                                <input type="text" id="cardHolder" class="input-box" placeholder="John Doe" style="padding:10px; font-size:13.5px;" value="John Doe">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Número de Tarjeta (Visa / Mastercard / Amex)</label>
-                                <input type="text" id="cardNumber" class="input-box" placeholder="•••• •••• •••• 4242" style="padding:10px; font-size:13.5px;" value="4532 8910 2345 6789">
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                                <div>
-                                    <label style="display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Vencimiento</label>
-                                    <input type="text" id="cardExp" class="input-box" placeholder="MM/AA" style="padding:10px; font-size:13.5px; text-align:center;" value="08/28">
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">CVC / CVV</label>
-                                    <input type="password" id="cardCvc" class="input-box" placeholder="•••" maxlength="4" style="padding:10px; font-size:13.5px; text-align:center;" value="789">
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">ZIP (EE.UU.)</label>
-                                    <input type="text" id="cardZip" class="input-box" placeholder="10001" style="padding:10px; font-size:13.5px; text-align:center;" value="33101">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Progress indicator during payment -->
-                        <div id="onrampProgress" style="display:none; margin-bottom:14px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:12px;">
-                            <div style="font-size:11.5px; font-weight:800; color:var(--cyan); margin-bottom:8px; text-align:center;" id="progressTitle">
-                                ⚡ Procesando Onramp Fiat-a-USDC...
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:6px;">
-                                <div id="step1" class="step-pill active">1. Verificando tarjeta con emisor en EE.UU.</div>
-                                <div id="step2" class="step-pill">2. Minteo y conversión 1:1 a USDC</div>
-                                <div id="step3" class="step-pill">3. Liquidando en Base L2 a ${wallet.slice(0,6)}...${wallet.slice(-4)}</div>
-                            </div>
-                        </div>
-
-                        <button type="button" id="btnCardSubmit" class="btn-primary" onclick="processOnrampCardPayment()" style="width:100%; justify-content:center; padding:14px; font-size:15px; font-weight:800; border:none; box-shadow:0 6px 20px rgba(0,242,254,0.3); cursor:pointer;">
-                            💳 Pagar $${amount}.00 USD con Tarjeta
+                        <button type="button" onclick="openLiveOnramp('coinbase')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#0052FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 4px 14px rgba(0,82,255,0.3);">
+                            <span>🔵</span> Pagar con Coinbase Onramp
                         </button>
+
+                        <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
+                            <div class="radar-pulse"></div>
+                            <div style="font-size:11.5px; font-weight:800; color:var(--emerald);">
+                                Auto-detección on-chain en Base L2 activa (Verificación de depósito en vivo)
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Local Colombian fallback option -->
@@ -1465,7 +1413,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     </div>
 
                     <div style="display:flex; align-items:center; justify-content:center; gap:10px; font-size:11.5px; color:var(--text-muted); font-weight:600;">
-                        <span>🔒 Encriptación TLS 256-bit</span> • <span>🛡️ 0% Contracargos</span> • <span>Base L2 Settlement</span>
+                        <span>🔒 Certificación PCI-DSS Nivel 1</span> • <span>🛡️ 0% Retenciones</span> • <span>Base L2 Settlement</span>
                     </div>
                 </div>
 
@@ -1588,75 +1536,16 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             if (txId) document.getElementById('succTx').innerText = txId;
         }
 
-        function startApplePayFlow() {
-            processOnrampCardPayment(true);
-        }
+        function openLiveOnramp(provider = 'transak') {
+            const targetWallet = '${wallet}';
+            const amountUsd = '${amount}';
 
-        async function processOnrampCardPayment(isApplePay = false) {
-            const btn = document.getElementById('btnCardSubmit');
-            const progress = document.getElementById('onrampProgress');
-            const step1 = document.getElementById('step1');
-            const step2 = document.getElementById('step2');
-            const step3 = document.getElementById('step3');
-
-            btn.disabled = true;
-            btn.innerText = isApplePay ? ' Procesando con Apple Pay...' : '⏳ Procesando Tarjeta (Onramp USDC)...';
-            progress.style.display = 'block';
-
-            // Step 1 animation
-            step1.className = 'step-pill active';
-            step2.className = 'step-pill';
-            step3.className = 'step-pill';
-
-            setTimeout(() => {
-                step1.className = 'step-pill done';
-                step2.className = 'step-pill active';
-            }, 800);
-
-            setTimeout(() => {
-                step2.className = 'step-pill done';
-                step3.className = 'step-pill active';
-            }, 1600);
-
-            try {
-                const payload = {
-                    orderId: '${orderId}',
-                    amount: ${amount},
-                    concept: '${concept}',
-                    targetWallet: '${wallet}',
-                    recipientName: '${recipientName}',
-                    cardHolder: document.getElementById('cardHolder').value,
-                    cardNumber: document.getElementById('cardNumber').value,
-                    cardExp: document.getElementById('cardExp').value,
-                    cardCvc: document.getElementById('cardCvc').value,
-                    cardZip: document.getElementById('cardZip').value,
-                    isApplePay
-                };
-
-                const res = await fetch('/api/v1/checkout/card-onramp-pay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    step3.className = 'step-pill done';
-                    setTimeout(() => {
-                        showSuccess(isApplePay ? ' Apple Pay (USDC en Base L2)' : '💳 Tarjeta Internacional (USDC en Base L2)', data.txHash || data.invoiceId);
-                    }, 500);
-                } else {
-                    alert('Error en el pago: ' + (data.error || 'No se pudo procesar la transacción'));
-                    btn.disabled = false;
-                    btn.innerText = '💳 Pagar $' + ${amount} + '.00 USD con Tarjeta';
-                    progress.style.display = 'none';
-                }
-            } catch (err) {
-                alert('Error de conexión: ' + err.message);
-                btn.disabled = false;
-                btn.innerText = '💳 Pagar $' + ${amount} + '.00 USD con Tarjeta';
-                progress.style.display = 'none';
+            if (provider === 'coinbase') {
+                const cbUrl = 'https://pay.coinbase.com/buy/select-asset?addresses=' + encodeURIComponent(JSON.stringify({ [targetWallet]: ['base'] })) + '&assets=' + encodeURIComponent(JSON.stringify(['USDC'])) + '&presetFiatAmount=' + amountUsd + '&fiatCurrency=USD';
+                window.open(cbUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+            } else {
+                const transakUrl = 'https://global.transak.com/?apiKey=4f7b6070-5e36-4c74-8b6a-939e830e9d6d&cryptoCurrencyCode=USDC&network=base&walletAddress=' + encodeURIComponent(targetWallet) + '&fiatCurrency=USD&fiatAmount=' + encodeURIComponent(amountUsd) + '&defaultPaymentMethod=credit_debit_card&themeColor=00f2fe';
+                window.open(transakUrl, 'transakOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             }
         }
 

@@ -81,6 +81,53 @@ function saveUsersDb() {
 
 loadUsersDb();
 
+const PLAN_CATALOG = {
+  'maxi_pay_pro': {
+    id: 'maxi_pay_pro',
+    name: 'Maxi Pay Pro',
+    promoUsd: 5.00,
+    promoCop: 20000,
+    regularUsd: 10.00,
+    regularCop: 40000,
+    credits: 100,
+    tag: 'PASARELA DE COBROS',
+    badge: '50% DCTO 1er MES'
+  },
+  'gig_finder_vip': {
+    id: 'gig_finder_vip',
+    name: 'Gig Finder VIP',
+    promoUsd: 5.00,
+    promoCop: 20000,
+    regularUsd: 10.00,
+    regularCop: 40000,
+    credits: 200,
+    tag: 'TRABAJOS & BOUNTIES',
+    badge: '50% DCTO 1er MES'
+  },
+  'maxi_alpha_vip': {
+    id: 'maxi_alpha_vip',
+    name: 'Maxi Alpha VIP',
+    promoUsd: 10.00,
+    promoCop: 40000,
+    regularUsd: 20.00,
+    regularCop: 80000,
+    credits: 300,
+    tag: 'RADAR DE BALLENAS',
+    badge: '50% DCTO 1er MES'
+  },
+  'maxi_all_access': {
+    id: 'maxi_all_access',
+    name: 'Maxi Suite All-Access',
+    promoUsd: 15.00,
+    promoCop: 60000,
+    regularUsd: 25.00,
+    regularCop: 100000,
+    credits: 500,
+    tag: '👑 PAQUETE COMPLETO (TODO INCLUIDO)',
+    badge: '👑 MÁS POPULAR • AHORRA $15 USD'
+  }
+};
+
 const userCredits = new Map();
 const processedPayments = new Set();
 
@@ -1572,86 +1619,152 @@ function renderCuentaPage() {
                 </div>
             </div>
 
-            <!-- MEMBERSHIP CATALOG (ALL-IN-ONE PASS) -->
+            <!-- MEMBERSHIP CATALOG (4 TIERS) -->
             <div id="planes" style="margin-top:30px;">
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
-                        💎 MEMBRESÍA TODO INCLUIDO
+                        💎 PLANES & MEMBRESÍAS MAXI SUITE
                     </div>
                     <h3 style="font-size:26px; font-weight:800; color:var(--text-main); margin-top:4px;">
-                        Planes & Membresías Maxi Suite Pro
+                        Elige tu Suscripción con Descuento del Primer Mes
                     </h3>
                     <p style="color:var(--text-muted); font-size:14px; font-weight:600;">
-                        Una sola suscripción para desbloquear Maxi Pay (0% comisiones), el Buscador de Trabajos con IA y el Radar de Ballenas.
+                        Adquiere el módulo que necesitas o desbloquea toda la Maxi Suite con el plan Todo Incluido.
                     </p>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
                     
-                    <!-- PRO MENSUAL: 50% OFF PROMO (HERO) -->
-                    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border:2px solid var(--emerald); background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); position:relative; box-shadow:0 10px 30px rgba(0, 223, 137, 0.12);">
-                        <div style="position:absolute; top:-12px; right:18px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; font-size:11px; font-weight:900; padding:3px 12px; border-radius:20px; text-transform:uppercase;">
-                            🔥 50% DCTO 1er MES
-                        </div>
-
+                    <!-- PLAN 1: MAXI PAY PRO -->
+                    <div class="card" style="border:1.5px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
                         <div>
-                            <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase; margin-bottom:4px;">👑 PLAN RECOMENDADO (TODO INCLUIDO)</div>
-                            <h4 style="font-size:24px; font-weight:900; margin:4px 0; color:var(--text-main);">Maxi Suite Pro Mensual</h4>
-                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:12px;">Acceso total a cobros 0%, buscador de trabajos con IA y radar de ballenas.</p>
+                            <div style="display:inline-block; background:rgba(0, 223, 137, 0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                                💳 PASARELA DE COBROS
+                            </div>
+                            <h4 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Pay Pro</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">Para comercios, turismo y cobros sin intermediarios.</p>
                             
-                            <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0 4px 0;">
-                                <span style="font-size:18px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$9.99</span>
-                                <span style="font-size:36px; font-weight:900; color:var(--emerald);">$4.99 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">USD 1er Mes</span></span>
+                            <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                                <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$10</span>
+                                <span style="font-size:32px; font-weight:900; color:var(--emerald);">$5 USD</span>
+                                <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
                             </div>
-                            <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
-                                🇨🇴 ~$19.980 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $9.99 USD / $39.960 COP/mes)</span>
+                            <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$20.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $10 USD / $40.000 COP)</span>
                             </div>
 
-                            <ul style="color:var(--text-muted); font-size:13px; font-weight:600; line-height:1.75; margin-bottom:20px; padding-left:18px;">
-                                <li><strong style="color:var(--emerald);">Maxi Pay Ilimitado:</strong> 0.00% comisión en ventas locales e internacionales.</li>
-                                <li><strong style="color:var(--cyan);">+100 Fichas IA Sniper Mensuales:</strong> propuestas técnicas en 30 segundos.</li>
-                                <li><strong style="color:var(--text-main);">Bounties & Trabajos Web3:</strong> convocatorias de $50 a $650 USD diarios.</li>
-                                <li><strong style="color:var(--purple);">Radar de Ballenas:</strong> Smart Money Score en vivo y enlaces a BaseScan.</li>
-                                <li><strong style="color:var(--text-main);">Enlace de Cobro Personalizado:</strong> con tu nombre de marca.</li>
-                                <li><strong style="color:var(--emerald);">Cancela en 1 clic:</strong> cuando quieras desde este panel.</li>
-                            </ul>
+                            <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                                <div style="color:var(--emerald);">✔️ <strong>0.00% comisión</strong> de por vida</div>
+                                <div style="color:var(--text-main);">✔️ Enlace de cobro personalizado</div>
+                                <div style="color:var(--text-main);">✔️ Códigos QR ilimitados para mostrador</div>
+                                <div style="color:var(--cyan);">✔️ <strong>+100 Fichas de crédito</strong></div>
+                                <div style="color:var(--text-muted);">✔️ Alertas instantáneas en Telegram</div>
+                            </div>
                         </div>
-
-                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite Pro', 4.99)" style="justify-content:center; padding:14px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
-                            🚀 Activar Maxi Pro con 50% OFF ($4.99 USD / $19.980 COP)
+                        
+                        <button class="btn-outline" onclick="openPaymentModal('Maxi Pay Pro', 5, 'pay')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px;">
+                            ⚡ Activar Maxi Pay ($5 USD)
                         </button>
                     </div>
 
-                    <!-- PRO ANUAL: 2 MESES GRATIS -->
-                    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; border:1.5px solid var(--purple); background:linear-gradient(180deg, rgba(168,85,247,0.06) 0%, var(--bg-card) 100%); position:relative;">
-                        <div style="position:absolute; top:-12px; right:18px; background:linear-gradient(135deg, #a855f7, #6366f1); color:white; font-size:11px; font-weight:900; padding:3px 12px; border-radius:20px; text-transform:uppercase;">
-                            🎉 2 MESES GRATIS (AHORRA 33%)
+                    <!-- PLAN 2: GIG FINDER VIP -->
+                    <div class="card" style="border:1.5px solid var(--cyan); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
+                        <div>
+                            <div style="display:inline-block; background:rgba(0, 242, 254, 0.15); color:var(--cyan); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                                💼 TRABAJOS & BOUNTIES
+                            </div>
+                            <h4 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Gig Finder VIP</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">Para freelancers y creadores que buscan ingresos en USD.</p>
+                            
+                            <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                                <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$10</span>
+                                <span style="font-size:32px; font-weight:900; color:var(--cyan);">$5 USD</span>
+                                <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                            </div>
+                            <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$20.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $10 USD / $40.000 COP)</span>
+                            </div>
+
+                            <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                                <div style="color:var(--cyan);">✔️ <strong>+200 Fichas IA Sniper Mensuales</strong></div>
+                                <div style="color:var(--text-main);">✔️ Propuestas técnicas en 30 segundos</div>
+                                <div style="color:var(--text-main);">✔️ Bounties activos de $50 a $650 USD</div>
+                                <div style="color:var(--emerald);">✔️ Cobros directos sin el 20% de Upwork</div>
+                                <div style="color:var(--text-muted);">✔️ Alertas de vacantes en Telegram</div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-outline" onclick="openPaymentModal('Gig Finder VIP', 5, 'gig')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--cyan); color:var(--cyan);">
+                            🎯 Activar Gig Finder ($5 USD)
+                        </button>
+                    </div>
+
+                    <!-- PLAN 3: MAXI ALPHA VIP -->
+                    <div class="card" style="border:1.5px solid var(--purple); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
+                        <div>
+                            <div style="display:inline-block; background:rgba(168, 85, 247, 0.15); color:var(--purple); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                                🐋 RADAR DE BALLENAS
+                            </div>
+                            <h4 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Alpha VIP</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">Para traders e inversionistas con análisis cuantitativo.</p>
+                            
+                            <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                                <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$20</span>
+                                <span style="font-size:32px; font-weight:900; color:var(--purple);">$10 USD</span>
+                                <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                            </div>
+                            <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$40.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $20 USD / $80.000 COP)</span>
+                            </div>
+
+                            <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                                <div style="color:var(--purple);">✔️ <strong>+300 Fichas IA Sniper Mensuales</strong></div>
+                                <div style="color:var(--text-main);">✔️ Smart Money Score (0 a 100) en vivo</div>
+                                <div style="color:var(--text-main);">✔️ Inyecciones de liquidez en BaseScan</div>
+                                <div style="color:var(--emerald);">✔️ Setups cuantitativos con Entry, SL, TP</div>
+                                <div style="color:var(--text-muted);">✔️ Canal VIP de alertas de trading</div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-outline" onclick="openPaymentModal('Maxi Alpha VIP', 10, 'alpha')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--purple); color:var(--purple);">
+                            🔮 Activar Alpha VIP ($10 USD)
+                        </button>
+                    </div>
+
+                    <!-- PLAN 4: MAXI SUITE ALL-ACCESS (HERO BUNDLE 👑) -->
+                    <div class="card" style="border:2px solid var(--emerald); display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(180deg, rgba(0,223,137,0.08) 0%, var(--bg-card) 100%); padding:26px; position:relative; box-shadow:0 12px 35px rgba(0, 223, 137, 0.18);">
+                        <div style="position:absolute; top:-12px; right:16px; background:linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color:white; font-size:10.5px; font-weight:900; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:0 4px 12px rgba(245,158,11,0.4);">
+                            🔥 MÁS POPULAR • 40% OFF
                         </div>
 
                         <div>
-                            <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:4px;">💎 MÁXIMO AHORRO ANUAL</div>
-                            <h4 style="font-size:24px; font-weight:900; margin:4px 0; color:var(--text-main);">Maxi Suite Pro Anual</h4>
-                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:12px;">Para negocios y freelancers que quieren garantizar su rentabilidad todo el año.</p>
-                            
-                            <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0 4px 0;">
-                                <span style="font-size:18px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$119.88</span>
-                                <span style="font-size:36px; font-weight:900; color:var(--purple);">$79.99 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">USD / año</span></span>
+                            <div style="display:inline-block; background:rgba(0,223,137,0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                                👑 TODO INCLUIDO • ACCESO TOTAL
                             </div>
-                            <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
-                                🇨🇴 ~$319.000 COP / año <span style="color:var(--text-muted); font-weight:normal;">(Equivale a solo $6.66 USD/mes)</span>
+                            <h4 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:4px;">Maxi Suite All-Access</h4>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">El paquete definitivo con todas las herramientas ilimitadas.</p>
+                            
+                            <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                                <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$25</span>
+                                <span style="font-size:34px; font-weight:900; color:var(--emerald);">$15 USD</span>
+                                <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                            </div>
+                            <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                                🇨🇴 ~$60.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $25 USD / $100.000 COP)</span>
                             </div>
 
-                            <ul style="color:var(--text-muted); font-size:13px; font-weight:600; line-height:1.75; margin-bottom:20px; padding-left:18px;">
-                                <li><strong style="color:var(--emerald);">Todo lo incluido en el Plan Pro</strong> garantizado por 365 días.</li>
-                                <li><strong style="color:var(--cyan);">1,200 Fichas IA Sniper</strong> distribuidas a lo largo del año.</li>
-                                <li><strong style="color:var(--purple);">Acceso prioritario a nuevas herramientas</strong> y lanzamientos Alpha.</li>
-                                <li><strong style="color:var(--text-main);">Soporte VIP 24/7 directo por WhatsApp & Telegram.</strong></li>
-                                <li><strong style="color:var(--emerald);">Cero preocupación por renovaciones mensuales.</strong></li>
-                            </ul>
+                            <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                                <div style="color:var(--emerald);">🌟 <strong>Maxi Pay Pro Ilimitado (0% comisiones)</strong></div>
+                                <div style="color:var(--cyan);">🌟 <strong>+500 Fichas IA Sniper Mensuales</strong></div>
+                                <div style="color:var(--text-main);">🌟 <strong>Gig Finder VIP + Propuestas Ilimitadas</strong></div>
+                                <div style="color:var(--purple);">🌟 <strong>Maxi Alpha VIP + Radar de Ballenas</strong></div>
+                                <div style="color:var(--text-main);">🌟 <strong>Enlace Personalizado con Insignia VIP</strong></div>
+                                <div style="color:var(--emerald);">🌟 <strong>Soporte Prioritario 24/7 & Academia</strong></div>
+                            </div>
                         </div>
 
-                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite Pro Anual', 79.99)" style="justify-content:center; padding:14px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
-                            👑 Activar Plan Anual ($79.99 USD / año)
+                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite All-Access', 15, 'all_access')" style="width:100%; justify-content:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3);">
+                            🚀 Activar All-Access ($15 USD / $60.000 COP)
                         </button>
                     </div>
 
@@ -1846,8 +1959,9 @@ function renderCuentaPage() {
             }
         }
 
-        function openPaymentModal(planName, amount) {
-            const orderId = 'PLAN-' + Math.floor(100000 + Math.random() * 900000);
+        function openPaymentModal(planName, amount, planId) {
+            const prefix = planId ? ('PLAN-' + planId.toUpperCase()) : 'PLAN';
+            const orderId = prefix + '-' + Math.floor(100000 + Math.random() * 900000);
             window.location.href = '/checkout?order_id=' + orderId + '&amount=' + amount + '&concept=' + encodeURIComponent('Membresia ' + planName) + '&wallet=${MAXI_WALLET}';
         }
 
@@ -3322,86 +3436,160 @@ function renderHomePage() {
             </div>
         </div>
 
-        <!-- DEDICATED PRICING & MEMBERSHIP SECTION (ALL-IN-ONE PASS) -->
-        <div id="planes" class="card" style="margin: 45px 0; border: 2px solid var(--cyan); background: linear-gradient(180deg, rgba(0,242,254,0.03) 0%, rgba(15,22,36,0.95) 100%); padding: 35px 25px;">
+        <!-- DEDICATED 4-TIER PRICING & MEMBERSHIP SECTION -->
+        <div id="planes" class="card" style="margin: 45px 0; border: 2px solid var(--cyan); background: linear-gradient(180deg, rgba(0,242,254,0.03) 0%, rgba(15,22,36,0.95) 100%); padding: 35px 20px;">
             <div style="text-align:center; margin-bottom:30px;">
                 <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
                     💎 PLANES & PRECIOS TRANSPARENTES
                 </div>
                 <h2 style="font-size:32px; font-weight:900; color:var(--text-main); margin-top:6px;">
-                    Una Sola Membresía Todo Incluido. Cero Letras Pequeñas.
+                    Elige el Plan Perfecto para tu Negocio o Actividad
                 </h2>
-                <p style="color:var(--text-muted); font-size:15px; max-width:700px; margin:0 auto; font-weight:600;">
-                    No pagues por cada herramienta por separado. Accede a <strong>Maxi Pay (0% comisiones)</strong>, al <strong>Buscador de Trabajos con IA Sniper</strong> y al <strong>Radar de Ballenas</strong> bajo una sola membresía integral.
+                <p style="color:var(--text-muted); font-size:15px; max-width:750px; margin:0 auto; font-weight:600;">
+                    Adquiere cada módulo por separado o llévate la <strong>Maxi Suite All-Access (Todo Incluido)</strong> con el mayor descuento.
                 </p>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px; max-width:960px; margin:0 auto 30px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px; margin-bottom:30px;">
                 
-                <!-- TIER 1: STARTER FREE -->
-                <div class="card" style="border:1.5px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:28px;">
+                <!-- PLAN 1: MAXI PAY PRO -->
+                <div class="card" style="border:1.5px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
                     <div>
-                        <div style="display:inline-block; background:rgba(255,255,255,0.08); color:var(--text-muted); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
-                            PLAN INICIAL
+                        <div style="display:inline-block; background:rgba(0, 223, 137, 0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                            💳 PASARELA DE COBROS
                         </div>
-                        <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Starter Gratis</h3>
-                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:16px;">
-                            Para explorar el ecosistema y probar las herramientas sin riesgo.
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Pay Pro</h3>
+                        <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">
+                            Para comercios, turismo y cobros sin intermediarios.
                         </p>
-                        <div style="font-size:36px; font-weight:900; color:var(--text-main); margin-bottom:20px;">
-                            $0 <span style="font-size:14px; color:var(--text-muted); font-weight:600;">/ gratis para siempre</span>
-                        </div>
                         
-                        <div style="border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; font-size:13.5px; font-weight:700; display:flex; flex-direction:column; gap:10px;">
-                            <div style="color:var(--text-main);">✔️ <strong>5 Fichas IA Gratis</strong> de bienvenida</div>
-                            <div style="color:var(--text-main);">✔️ Cobros de prueba en Maxi Pay</div>
-                            <div style="color:var(--text-main);">✔️ Acceso visual al Radar de Trabajos</div>
-                            <div style="color:var(--text-main);">✔️ Cotizaciones de mercado en tiempo real</div>
-                            <div style="color:var(--text-muted);">🔒 Sin tarjeta de crédito requerida</div>
+                        <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                            <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$10</span>
+                            <span style="font-size:32px; font-weight:900; color:var(--emerald);">$5 USD</span>
+                            <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                        </div>
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                            🇨🇴 ~$20.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $10 USD / $40.000 COP)</span>
+                        </div>
+
+                        <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                            <div style="color:var(--emerald);">✔️ <strong>0.00% comisión</strong> de por vida</div>
+                            <div style="color:var(--text-main);">✔️ Enlace de cobro personalizado</div>
+                            <div style="color:var(--text-main);">✔️ Códigos QR ilimitados para mostrador</div>
+                            <div style="color:var(--cyan);">✔️ <strong>+100 Fichas de crédito</strong></div>
+                            <div style="color:var(--text-muted);">✔️ Alertas instantáneas en Telegram</div>
                         </div>
                     </div>
                     
-                    <a href="/cuenta" class="btn-outline" style="text-decoration:none; text-align:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px;">
-                        🎁 Crear Cuenta Gratis (5 Fichas)
+                    <a href="/checkout?order_id=PLAN-PAY-PROMO&amount=5&concept=Membresia%20Maxi%20Pay%20Pro%20(50%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-outline" style="text-decoration:none; text-align:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px;">
+                        ⚡ Activar Maxi Pay ($5 USD)
                     </a>
                 </div>
 
-                <!-- TIER 2: MAXI SUITE PRO (ALL-IN-ONE HERO) -->
-                <div class="card" style="border:2px solid var(--emerald); display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); padding:28px; position:relative; box-shadow:0 12px 35px rgba(0, 223, 137, 0.15);">
-                    <div style="position:absolute; top:-14px; right:20px; background:linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color:white; font-size:11px; font-weight:900; padding:4px 14px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:0 4px 12px rgba(245,158,11,0.4);">
-                        🔥 50% OFF • 1er MES DE PRUEBA
+                <!-- PLAN 2: GIG FINDER VIP -->
+                <div class="card" style="border:1.5px solid var(--cyan); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(0, 242, 254, 0.15); color:var(--cyan); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                            💼 TRABAJOS & BOUNTIES
+                        </div>
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Gig Finder VIP</h3>
+                        <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">
+                            Para freelancers y creadores que buscan ingresos en USD.
+                        </p>
+                        
+                        <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                            <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$10</span>
+                            <span style="font-size:32px; font-weight:900; color:var(--cyan);">$5 USD</span>
+                            <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                        </div>
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                            🇨🇴 ~$20.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $10 USD / $40.000 COP)</span>
+                        </div>
+
+                        <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                            <div style="color:var(--cyan);">✔️ <strong>+200 Fichas IA Sniper Mensuales</strong></div>
+                            <div style="color:var(--text-main);">✔️ Propuestas técnicas en 30 segundos</div>
+                            <div style="color:var(--text-main);">✔️ Bounties activos de $50 a $650 USD</div>
+                            <div style="color:var(--emerald);">✔️ Cobros directos sin el 20% de Upwork</div>
+                            <div style="color:var(--text-muted);">✔️ Alertas de vacantes en Telegram</div>
+                        </div>
+                    </div>
+                    
+                    <a href="/checkout?order_id=PLAN-GIG-PROMO&amount=5&concept=Membresia%20Gig%20Finder%20VIP%20(50%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-outline" style="text-decoration:none; text-align:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--cyan); color:var(--cyan);">
+                        🎯 Activar Gig Finder ($5 USD)
+                    </a>
+                </div>
+
+                <!-- PLAN 3: MAXI ALPHA VIP -->
+                <div class="card" style="border:1.5px solid var(--purple); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
+                    <div>
+                        <div style="display:inline-block; background:rgba(168, 85, 247, 0.15); color:var(--purple); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+                            🐋 RADAR DE BALLENAS
+                        </div>
+                        <h3 style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Alpha VIP</h3>
+                        <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">
+                            Para traders e inversionistas con análisis cuantitativo.
+                        </p>
+                        
+                        <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                            <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$20</span>
+                            <span style="font-size:32px; font-weight:900; color:var(--purple);">$10 USD</span>
+                            <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
+                        </div>
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                            🇨🇴 ~$40.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $20 USD / $80.000 COP)</span>
+                        </div>
+
+                        <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                            <div style="color:var(--purple);">✔️ <strong>+300 Fichas IA Sniper Mensuales</strong></div>
+                            <div style="color:var(--text-main);">✔️ Smart Money Score (0 a 100) en vivo</div>
+                            <div style="color:var(--text-main);">✔️ Inyecciones de liquidez en BaseScan</div>
+                            <div style="color:var(--emerald);">✔️ Setups cuantitativos con Entry, SL, TP</div>
+                            <div style="color:var(--text-muted);">✔️ Canal VIP de alertas de trading</div>
+                        </div>
+                    </div>
+                    
+                    <a href="/checkout?order_id=PLAN-ALPHA-PROMO&amount=10&concept=Membresia%20Maxi%20Alpha%20VIP%20(50%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-outline" style="text-decoration:none; text-align:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--purple); color:var(--purple);">
+                        🔮 Activar Alpha VIP ($10 USD)
+                    </a>
+                </div>
+
+                <!-- PLAN 4: MAXI SUITE ALL-ACCESS (HERO BUNDLE 👑) -->
+                <div class="card" style="border:2px solid var(--emerald); display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(180deg, rgba(0,223,137,0.08) 0%, var(--bg-card) 100%); padding:26px; position:relative; box-shadow:0 12px 35px rgba(0, 223, 137, 0.18);">
+                    <div style="position:absolute; top:-12px; right:16px; background:linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color:white; font-size:10.5px; font-weight:900; padding:4px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; box-shadow:0 4px 12px rgba(245,158,11,0.4);">
+                        🔥 MÁS POPULAR • 40% OFF
                     </div>
 
                     <div>
-                        <div style="display:inline-block; background:rgba(0,223,137,0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11.5px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
+                        <div style="display:inline-block; background:rgba(0,223,137,0.15); color:var(--emerald); padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
                             👑 TODO INCLUIDO • ACCESO TOTAL
                         </div>
-                        <h3 style="font-size:24px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Maxi Suite Pro</h3>
-                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:16px;">
-                            Pasarela de cobros + Trabajos con IA + Radar de Ballenas en un solo pase.
+                        <h3 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:4px;">Maxi Suite All-Access</h3>
+                        <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin-bottom:14px;">
+                            El paquete definitivo con todas las herramientas ilimitadas.
                         </p>
                         
-                        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
-                            <span style="font-size:20px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$9.99</span>
-                            <span style="font-size:38px; font-weight:900; color:var(--emerald);">$4.99 USD</span>
+                        <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
+                            <span style="font-size:16px; color:var(--text-muted); text-decoration:line-through; font-weight:700;">$25</span>
+                            <span style="font-size:34px; font-weight:900; color:var(--emerald);">$15 USD</span>
+                            <span style="font-size:12px; color:var(--text-muted);">/ 1er mes</span>
                         </div>
-                        <div style="font-size:13px; font-weight:800; color:var(--cyan); margin-bottom:20px;">
-                            🇨🇴 ~$19.980 COP Primer Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $9.99 USD / $39.960 COP/mes)</span>
+                        <div style="font-size:12px; font-weight:800; color:var(--cyan); margin-bottom:16px;">
+                            🇨🇴 ~$60.000 COP 1er Mes <span style="color:var(--text-muted); font-weight:normal;">(Luego $25 USD / $100.000 COP)</span>
                         </div>
 
-                        <div style="border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; font-size:13.5px; font-weight:700; display:flex; flex-direction:column; gap:10px;">
-                            <div style="color:var(--emerald);">✔️ <strong>Maxi Pay Ilimitado (0.00% comisión de por vida)</strong></div>
-                            <div style="color:var(--cyan);">✔️ <strong>+100 Fichas IA Sniper Mensuales</strong> para propuestas</div>
-                            <div style="color:var(--text-main);">✔️ <strong>Bounties & Trabajos</strong> de $50 a $650 USD diarios</div>
-                            <div style="color:var(--purple);">✔️ <strong>Radar de Ballenas</strong> con Smart Money Score y BaseScan</div>
-                            <div style="color:var(--text-main);">✔️ <strong>Enlace de Cobro Personalizado</strong> con tu nombre</div>
-                            <div style="color:var(--text-main);">✔️ Alertas instantáneas 24/7 en tu Bot de Telegram</div>
-                            <div style="color:var(--emerald);">✔️ Cancela en 1 clic cuando quieras sin penalización</div>
+                        <div style="border-top:1px solid var(--border); padding-top:14px; margin-bottom:20px; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:8px;">
+                            <div style="color:var(--emerald);">🌟 <strong>Maxi Pay Pro Ilimitado (0% comisiones)</strong></div>
+                            <div style="color:var(--cyan);">🌟 <strong>+500 Fichas IA Sniper Mensuales</strong></div>
+                            <div style="color:var(--text-main);">🌟 <strong>Gig Finder VIP + Propuestas Ilimitadas</strong></div>
+                            <div style="color:var(--purple);">🌟 <strong>Maxi Alpha VIP + Radar de Ballenas</strong></div>
+                            <div style="color:var(--text-main);">🌟 <strong>Enlace Personalizado con Insignia VIP</strong></div>
+                            <div style="color:var(--emerald);">🌟 <strong>Soporte Prioritario 24/7 & Academia</strong></div>
                         </div>
                     </div>
 
-                    <a href="/checkout?order_id=PLAN-PRO-PROMO&amount=4.99&concept=Membresia%20Maxi%20Suite%20Pro%20(50%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-primary" style="text-decoration:none; text-align:center; padding:15px; font-weight:800; border-radius:12px; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3);">
-                        🚀 Activar Maxi Pro con 50% OFF ($4.99 USD / $19.980 COP)
+                    <a href="/checkout?order_id=PLAN-ALL-ACCESS-PROMO&amount=15&concept=Membresia%20Maxi%20Suite%20All-Access%20(40%25%20OFF%201er%20Mes)&wallet=${MAXI_WALLET}" class="btn-primary" style="text-decoration:none; text-align:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3);">
+                        🚀 Activar All-Access ($15 USD / $60.000 COP)
                     </a>
                 </div>
 
@@ -3409,7 +3597,7 @@ function renderHomePage() {
 
             <!-- BENEFIT GUARANTEE BANNER -->
             <div style="text-align:center; font-size:13px; color:var(--text-muted); font-weight:700;">
-                🔒 Pago seguro con Nequi, PSE, Tarjeta o Cripto • Activación instantánea • Sin contratos de permanencia
+                🔒 Pago seguro con Nequi, PSE, Tarjeta o Cripto • Activación instantánea • Cancela en 1 clic cuando quieras
             </div>
         </div>
 
@@ -3996,9 +4184,10 @@ const server = http.createServer(async (req, res) => {
             
             let totalRevenue = 0;
             userList.forEach(u => {
-                if (u.plan === 'Maxi Pay Pro') totalRevenue += 9.99;
-                else if (u.plan === 'Gig Finder VIP') totalRevenue += 14.99;
-                else if (u.plan === 'Maxi Alpha VIP') totalRevenue += 29.99;
+                if (u.plan === 'Maxi Pay Pro') totalRevenue += 10.00;
+                else if (u.plan === 'Gig Finder VIP') totalRevenue += 10.00;
+                else if (u.plan === 'Maxi Alpha VIP') totalRevenue += 20.00;
+                else if (u.plan === 'Maxi Suite All-Access') totalRevenue += 25.00;
             });
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -4074,12 +4263,16 @@ const server = http.createServer(async (req, res) => {
                     let targetPlan = 'Maxi Pay Pro';
                     let addCredits = 100;
 
-                    if (amountCop >= 110000) {
-                        targetPlan = 'Maxi Alpha VIP';
+                    const refLower = ref.toLowerCase();
+                    if (refLower.includes('all-access') || refLower.includes('all_access') || amountCop >= 55000) {
+                        targetPlan = 'Maxi Suite All-Access';
                         addCredits = 500;
-                    } else if (amountCop >= 55000) {
-                        targetPlan = 'Gig Finder VIP';
+                    } else if (refLower.includes('alpha') || amountCop >= 35000) {
+                        targetPlan = 'Maxi Alpha VIP';
                         addCredits = 300;
+                    } else if (refLower.includes('gig')) {
+                        targetPlan = 'Gig Finder VIP';
+                        addCredits = 200;
                     } else {
                         targetPlan = 'Maxi Pay Pro';
                         addCredits = 100;
@@ -4178,13 +4371,25 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 let targetPlan = 'Maxi Pay Pro';
-                if (concept.includes('Gig Finder')) targetPlan = 'Gig Finder VIP';
-                else if (concept.includes('Alpha')) targetPlan = 'Maxi Alpha VIP';
-                else if (concept.includes('Maxi Pay')) targetPlan = 'Maxi Pay Pro';
+                let addCredits = 100;
+                const conceptLower = (concept || '').toLowerCase();
+                if (conceptLower.includes('all-access') || conceptLower.includes('all_access') || conceptLower.includes('todo incluido')) {
+                    targetPlan = 'Maxi Suite All-Access';
+                    addCredits = 500;
+                } else if (conceptLower.includes('alpha')) {
+                    targetPlan = 'Maxi Alpha VIP';
+                    addCredits = 300;
+                } else if (conceptLower.includes('gig')) {
+                    targetPlan = 'Gig Finder VIP';
+                    addCredits = 200;
+                } else {
+                    targetPlan = 'Maxi Pay Pro';
+                    addCredits = 100;
+                }
 
                 if (buyerUser) {
                     buyerUser.plan = targetPlan;
-                    buyerUser.credits = (buyerUser.credits || 0) + 100;
+                    buyerUser.credits = (buyerUser.credits || 0) + addCredits;
                 }
 
                 const invoiceId = 'CARD-TX-' + Date.now();

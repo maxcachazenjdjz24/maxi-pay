@@ -5,7 +5,7 @@
       "name": "Juan David Jaramillo Zapata",
       "email": "jdavidjaramillo@hotmail.com",
       "phone": "+573147546359",
-      "wallet": "0x83291e0976FE79ED76b956cd1d6ed4B454153e38",
+      "wallet": null,
       "credits": 55,
       "plan": "Maxi Pay Pro",
       "createdAt": "2026-09-04T14:37:02.594Z",
@@ -15,11 +15,12 @@
         "date": "2026-09-04T15:02:18.058Z",
         "txId": "1526018-1788534094-90406"
       },
-      "privateKey": "0x36c8228f645f8f3cefe1a49f297e1f85faee9e073f932f79337f005a02f42f45"
+      "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735"
     }
   },
   "sessions": {
-    "f5d35c4e0d672ad7e1d27b25d6cdc8c424c694465a92fac1": "jdavidjaramillo@hotmail.com"
+    "f5d35c4e0d672ad7e1d27b25d6cdc8c424c694465a92fac1": "jdavidjaramillo@hotmail.com",
+    "389f0bd37fa7afc69f9bbbbd9b951afc799e8ac1c031e9f8": "jdavidjaramillo@hotmail.com"
   },
   "adminSessions": {},
   "invoices": {

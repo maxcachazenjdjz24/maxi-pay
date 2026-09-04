@@ -5,6 +5,21 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 
+// COOKIE PARSER HELPER
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      if (parts.length >= 2) {
+        list[parts.shift().trim()] = decodeURIComponent(parts.join('=').trim());
+      }
+    });
+  }
+  return list;
+}
+
 const BASE_RPC_URL = 'https://mainnet.base.org';
 const MAXI_WALLET = '0xc94927fF92091A738406329E130E930E3bA788D6'.toLowerCase();
 const BASE_USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'.toLowerCase();
@@ -132,13 +147,18 @@ const userCredits = new Map();
 const processedPayments = new Set();
 
 function getClientCredits(req) {
-  const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+  const cookies = parseCookies(req);
+  const token = cookies.maxi_user_session || cookies.maxi_user_token || req.headers['authorization']?.replace('Bearer ', '').trim();
   if (token && usersDb.sessions[token]) {
     const email = usersDb.sessions[token];
     const user = usersDb.users[email];
     if (user) {
       return { ip: email, credits: user.credits, user };
     }
+  }
+  if (cookies.maxi_user_email && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
+    const user = usersDb.users[cookies.maxi_user_email.toLowerCase()];
+    return { ip: user.email, credits: user.credits, user };
   }
 
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'guest_user';
@@ -1573,15 +1593,8 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 </html>`;
 }
 
-// 3. PAGE: CUENTA (SERVER-SIDE RENDERED FOR INSTANT ACCESSIBILITY)
+// 3. PAGE: CUENTA (SERVER-SIDE RENDERED WITH AUTH COOKIE SUPPORT & ZERO-POPUPS MODALS)
 function renderCuentaPage(user = null, invoices = []) {
-  if (!user) {
-    user = usersDb.users['jdavidjaramillo@hotmail.com'] || Object.values(usersDb.users || {})[0] || null;
-  }
-  if (!invoices || invoices.length === 0) {
-    invoices = Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === (user?.email || 'jdavidjaramillo@hotmail.com').toLowerCase());
-  }
-
   const isUserAuthenticated = !!user;
   const userName = user?.name || 'Juan David Jaramillo Zapata';
   const userEmail = user?.email || 'jdavidjaramillo@hotmail.com';
@@ -1595,7 +1608,7 @@ function renderCuentaPage(user = null, invoices = []) {
   const userSlug = encodeURIComponent(userName.toLowerCase().replace(/\s+/g, '-'));
   const userCustomPayLink = hasCustomWallet ? `https://maxi-pay.onrender.com/pay/${userSlug}/10?concept=Curso%20Online&wallet=${encodeURIComponent(walletAddress)}` : '';
 
-  // Invoices pre-rendered HTML
+  // Pre-render Invoices Table
   let invoicesTableHtml = '';
   if (invoices && invoices.length > 0) {
     invoicesTableHtml = `<table style="width:100%; border-collapse:collapse; font-size:13.5px; text-align:left;">
@@ -1637,25 +1650,97 @@ function renderCuentaPage(user = null, invoices = []) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Cuenta & Billetera • Maxi Suite</title>
     ${getGlobalStyles()}
+    <style>
+        /* TOAST NOTIFICATION CONTAINER */
+        #cuentaToast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast-item {
+            pointer-events: auto;
+            min-width: 280px;
+            max-width: 400px;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1.5px solid var(--emerald);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            animation: slideToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+        .toast-item.info { border-color: var(--cyan); }
+        .toast-item.error { border-color: var(--rose); color: var(--rose); }
+        @keyframes slideToastIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeToastOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
 </head>
 <body>
+    <div id="cuentaToast"></div>
     ${getHeader('cuenta')}
 
     <div class="page-container">
-        <!-- AUTH REGISTRATION / LOGIN (HIDDEN BY DEFAULT IF AUTHENTICATED) -->
+        <!-- AUTH REGISTRATION / LOGIN (SHOWN IF USER IS NOT LOGGED IN) -->
         <div id="authForms" style="${isUserAuthenticated ? 'display:none;' : 'display:block;'} max-width:520px; margin:0 auto;">
             <div class="card" style="box-shadow:0 15px 45px rgba(0, 242, 254, 0.1);">
                 <div style="display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; gap:8px;">
-                    <button id="tabBtnRegister" onclick="switchAuthTab('register')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); cursor:pointer;">
-                        👤 Crear Cuenta
-                    </button>
-                    <button id="tabBtnLogin" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); cursor:pointer;">
+                    <button id="tabBtnLogin" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); cursor:pointer;">
                         🔑 Iniciar Sesión
+                    </button>
+                    <button id="tabBtnRegister" onclick="switchAuthTab('register')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); cursor:pointer;">
+                        👤 Crear Cuenta
                     </button>
                 </div>
 
+                <!-- LOGIN FORM (DEFAULT) -->
+                <div id="formLoginSection">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión en tu Cuenta</h2>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                            Accede a tu panel, tus fichas de crédito y tu billetera personal.
+                        </p>
+                    </div>
+
+                    <div id="loginError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
+
+                    <!-- 1-CLICK FOUNDER LOGIN BUTTON -->
+                    <button class="btn-primary" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="width:100%; justify-content:center; padding:14px; font-weight:800; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
+                        ⚡ Iniciar Sesión como Juan David (1 Clic)
+                    </button>
+
+                    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+                        <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-muted);">O escribe tu correo registrado:</label>
+                        <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
+
+                        <button class="btn-outline" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:8px; padding:10px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
+                            🔑 Entrar con este Correo
+                        </button>
+                    </div>
+
+                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
+                        ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Crear Cuenta Gratis</a>
+                    </div>
+                </div>
+
                 <!-- REGISTER FORM -->
-                <div id="formRegisterSection">
+                <div id="formRegisterSection" style="display:none;">
                     <div style="text-align:center; margin-bottom:20px;">
                         <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
                         <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
@@ -1674,50 +1759,18 @@ function renderCuentaPage(user = null, invoices = []) {
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
                     <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
 
-                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Billetera Base (Opcional):</label>
-                    <input type="text" id="regWallet" class="input-box" placeholder="0x... (EVM Wallet)">
-
-                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:10px;">
+                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer;">
                         🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
                     </button>
 
                     <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="color:var(--emerald); font-weight:800; text-decoration:underline; font-size:14px;">⚡ Iniciar Sesión con tu Correo (Entrar Ahora)</a>
-                    </div>
-                </div>
-
-                <!-- LOGIN FORM -->
-                <div id="formLoginSection" style="display:none;">
-                    <div style="text-align:center; margin-bottom:20px;">
-                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión</h2>
-                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
-                            Accede a tu panel, saldo de fichas y billetera personal en 1 solo clic.
-                        </p>
-                    </div>
-
-                    <div id="loginError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
-
-                    <button class="btn-primary" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="width:100%; justify-content:center; padding:14px; font-weight:800; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
-                        ⚡ Iniciar Sesión como Juan David (1 Clic)
-                    </button>
-
-                    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
-                        <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-muted);">O ingresa con otro correo:</label>
-                        <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
-
-                        <button class="btn-outline" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:8px; padding:10px; font-weight:800;">
-                            🔑 Entrar con este Correo
-                        </button>
-                    </div>
-
-                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                        ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Regístrate aquí</a>
+                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--emerald); font-weight:800; text-decoration:underline;">Iniciar Sesión</a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- AUTHENTICATED USER PROFILE (SERVER-SIDE RENDERED AND INSTANTLY VISIBLE) -->
+        <!-- AUTHENTICATED USER PROFILE (SERVER-SIDE RENDERED) -->
         <div id="userProfile" style="${isUserAuthenticated ? 'display:block;' : 'display:none;'}">
             <div class="card" style="border-color:var(--cyan);">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -1738,7 +1791,7 @@ function renderCuentaPage(user = null, invoices = []) {
                     <div style="text-align:right;">
                         <div style="font-size:13px; color:var(--text-muted); font-weight:800;">SALDO DISPONIBLE:</div>
                         <div style="font-size:36px; font-weight:800; color:var(--cyan);" id="profCredits">${userCredits} Fichas</div>
-                        <button onclick="logout()" class="btn-outline" style="padding:6px 14px; font-size:12px; margin-top:6px;">Cerrar Sesión</button>
+                        <button onclick="logout()" class="btn-outline" style="padding:6px 14px; font-size:12px; margin-top:6px; cursor:pointer;">🚪 Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
@@ -1778,13 +1831,13 @@ function renderCuentaPage(user = null, invoices = []) {
                         <span id="walletStatusBadge" style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:var(--emerald); background:var(--calc-saved-bg); padding:4px 10px; border-radius:12px; border:1px solid var(--emerald);">
                             <span style="width:7px; height:7px; background:var(--emerald); border-radius:50%; display:inline-block;"></span> EN VIVO ON-CHAIN
                         </span>
-                        <button onclick="refreshUserWalletData()" class="icon-btn" title="Refrescar Saldo On-Chain" style="width:34px; height:34px; border-radius:8px;">
+                        <button onclick="refreshUserWalletData()" class="icon-btn" title="Refrescar Saldo On-Chain" style="width:34px; height:34px; border-radius:8px; cursor:pointer;">
                             🔄
                         </button>
                     </div>
                 </div>
 
-                <!-- STATE 1: NO WALLET YET (BUTTON TO CREATE) -->
+                <!-- STATE 1: NO WALLET YET (DEFAULT IF WALLET IS NULL) -->
                 <div id="noWalletSection" style="${hasCustomWallet ? 'display:none;' : 'display:block;'} text-align:center; padding:32px 20px; background:linear-gradient(135deg, rgba(0,242,254,0.06) 0%, rgba(0,223,137,0.08) 100%); border-radius:16px; border:2px dashed var(--cyan); margin-bottom:15px;">
                     <div style="font-size:44px; margin-bottom:10px;">✨💼</div>
                     <h4 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:6px;">
@@ -1797,7 +1850,7 @@ function renderCuentaPage(user = null, invoices = []) {
                         <button id="btnCreateWalletMain" class="btn-primary" onclick="generateUserPersonalWallet()" style="padding:14px 28px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
                             ⚡ Crear / Generar Mi Billetera Digital
                         </button>
-                        <button class="btn-outline" onclick="promptLinkExternalWallet()" style="padding:14px 22px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
+                        <button class="btn-outline" onclick="openChangeWalletModal()" style="padding:14px 22px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
                             🔗 Vincular Billetera Existente (MetaMask / Coinbase)
                         </button>
                     </div>
@@ -1826,25 +1879,25 @@ function renderCuentaPage(user = null, invoices = []) {
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-                                <button class="btn-outline" onclick="copyUserWallet()" style="padding:6px 12px; font-size:12px; font-weight:800;">📋 Copiar Dirección</button>
-                                <a id="userBasescanLink" href="${hasCustomWallet ? ('https://basescan.org/address/' + walletAddress) : '#'}" target="_blank" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 Ver en BaseScan</a>
-                                <button class="btn-outline" onclick="generateUserPersonalWallet(true)" style="padding:6px 12px; font-size:12px; font-weight:800; border-color:var(--purple); color:var(--purple);" title="Generar una nueva dirección criptográfica">🔄 Nueva Billetera</button>
+                                <button class="btn-outline" onclick="copyUserWallet()" style="padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer;">📋 Copiar Dirección</button>
+                                <a id="userBasescanLink" href="${hasCustomWallet ? ('https://basescan.org/address/' + walletAddress) : '#'}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 Ver en BaseScan</a>
+                                <button class="btn-outline" onclick="openNewWalletModal()" style="padding:6px 12px; font-size:12px; font-weight:800; border-color:var(--purple); color:var(--purple); cursor:pointer;" title="Generar una nueva dirección criptográfica">🔄 Nueva Billetera</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- ACTION BUTTONS -->
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <button class="btn-primary" onclick="openWithdrawModal()" style="padding:12px 20px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                        <button class="btn-primary" onclick="openWithdrawModal()" style="padding:12px 20px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; cursor:pointer;">
                             📲 Retirar Saldo a Nequi / Bancolombia
                         </button>
-                        <button class="btn-outline" onclick="openDepositModal()" style="padding:12px 18px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan);">
+                        <button class="btn-outline" onclick="openDepositModal()" style="padding:12px 18px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
                             📥 Recibir Depósito Cripto (QR)
                         </button>
                         <a href="/pay" class="btn-outline" style="padding:12px 18px; font-size:14px; font-weight:800; text-decoration:none;">
                             ⚡ Crear Cobro en Maxi Pay
                         </a>
-                        <button class="btn-outline" onclick="promptLinkExternalWallet()" style="padding:12px 18px; font-size:13.5px; font-weight:700; color:var(--text-muted);">
+                        <button class="btn-outline" onclick="openChangeWalletModal()" style="padding:12px 18px; font-size:13.5px; font-weight:700; color:var(--text-muted); cursor:pointer;">
                             🔗 Cambiar Dirección
                         </button>
                     </div>
@@ -1859,8 +1912,8 @@ function renderCuentaPage(user = null, invoices = []) {
                     <div id="userCustomLink" style="font-family:monospace; font-size:14px; color:var(--cyan); background:var(--input-bg); padding:10px 14px; border-radius:8px; border:1px solid var(--border); flex:1; overflow-x:auto;">
                         ${hasCustomWallet ? userCustomPayLink : '<span style="color:var(--text-muted);">⚠️ Genera tu Billetera Digital arriba para activar tu Enlace de Cobro Personal.</span>'}
                     </div>
-                    <button class="btn-primary" onclick="copyUserCustomLink()" style="padding:10px 16px; font-size:13px;">📋 Copiar</button>
-                    <button class="btn-outline" style="background:#25D366; color:#06080e; border:none; font-weight:bold; font-size:13px;" onclick="shareMyLinkWhatsapp()">📲 WhatsApp</button>
+                    <button class="btn-primary" onclick="copyUserCustomLink()" style="padding:10px 16px; font-size:13px; cursor:pointer;">📋 Copiar</button>
+                    <button class="btn-outline" style="background:#25D366; color:#06080e; border:none; font-weight:bold; font-size:13px; cursor:pointer;" onclick="shareMyLinkWhatsapp()">📲 WhatsApp</button>
                 </div>
             </div>
 
@@ -1895,7 +1948,6 @@ function renderCuentaPage(user = null, invoices = []) {
                 </div>
 
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
-                    
                     <!-- PLAN 1: MAXI PAY PRO -->
                     <div class="card" style="border:1.5px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; background:var(--bg-card); padding:24px;">
                         <div>
@@ -1923,7 +1975,7 @@ function renderCuentaPage(user = null, invoices = []) {
                             </div>
                         </div>
                         
-                        <button class="btn-outline" onclick="openPaymentModal('Maxi Pay Pro', 5, 'pay')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px;">
+                        <button class="btn-outline" onclick="openPaymentModal('Maxi Pay Pro', 5, 'pay')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; cursor:pointer;">
                             ⚡ Activar Maxi Pay ($5 USD)
                         </button>
                     </div>
@@ -1955,7 +2007,7 @@ function renderCuentaPage(user = null, invoices = []) {
                             </div>
                         </div>
                         
-                        <button class="btn-outline" onclick="openPaymentModal('Gig Finder VIP', 5, 'gig')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--cyan); color:var(--cyan);">
+                        <button class="btn-outline" onclick="openPaymentModal('Gig Finder VIP', 5, 'gig')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
                             🎯 Activar Gig Finder ($5 USD)
                         </button>
                     </div>
@@ -1987,7 +2039,7 @@ function renderCuentaPage(user = null, invoices = []) {
                             </div>
                         </div>
                         
-                        <button class="btn-outline" onclick="openPaymentModal('Maxi Alpha VIP', 10, 'alpha')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--purple); color:var(--purple);">
+                        <button class="btn-outline" onclick="openPaymentModal('Maxi Alpha VIP', 10, 'alpha')" style="width:100%; justify-content:center; padding:12px; font-weight:800; border-radius:12px; font-size:14px; border-color:var(--purple); color:var(--purple); cursor:pointer;">
                             🔮 Activar Alpha VIP ($10 USD)
                         </button>
                     </div>
@@ -2024,11 +2076,10 @@ function renderCuentaPage(user = null, invoices = []) {
                             </div>
                         </div>
 
-                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite All-Access', 15, 'all_access')" style="width:100%; justify-content:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3);">
+                        <button class="btn-primary" onclick="openPaymentModal('Maxi Suite All-Access', 15, 'all_access')" style="width:100%; justify-content:center; padding:14px; font-weight:800; border-radius:12px; font-size:14.5px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.3); cursor:pointer;">
                             🚀 Activar All-Access ($15 USD / $60.000 COP)
                         </button>
                     </div>
-
                 </div>
             </div>
 
@@ -2050,8 +2101,8 @@ function renderCuentaPage(user = null, invoices = []) {
         </div>
     </div>
 
-    <!-- MODAL RETIRO A NEQUI -->
-    <div id="modalRetiroNequi" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+    <!-- MODAL 1: RETIRO A NEQUI -->
+    <div id="modalRetiroNequi" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
         <div class="card" style="max-width:480px; width:100%; border-color:var(--emerald); box-shadow:0 20px 60px rgba(0,223,137,0.25); position:relative;">
             <button onclick="closeWithdrawModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
             <div style="text-align:center; margin-bottom:20px;">
@@ -2084,15 +2135,15 @@ function renderCuentaPage(user = null, invoices = []) {
             <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Nequi / Bancolombia a la Mano:</label>
             <input type="tel" id="withdrawPhoneInput" class="input-box" value="${userPhone}" placeholder="Ej: 314 754 6359">
 
-            <button class="btn-primary" onclick="submitNequiWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-size:14.5px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+            <button class="btn-primary" onclick="submitNequiWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-size:14.5px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; cursor:pointer;">
                 ⚡ Confirmar Retiro a Nequi
             </button>
         </div>
     </div>
 
-    <!-- MODAL DEPÓSITO DIRECTO QR -->
-    <div id="modalDepositoQr" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
-        <div class="card" style="max-width:440px; width:100%; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,223,137,0.25); text-align:center; position:relative;">
+    <!-- MODAL 2: DEPÓSITO DIRECTO QR -->
+    <div id="modalDepositoQr" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:440px; width:100%; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.25); text-align:center; position:relative;">
             <button onclick="closeDepositModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
             <div style="font-size:38px; margin-bottom:6px;">📥</div>
             <h3 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:4px;">Recibir Fondos en Dólares (USDC)</h3>
@@ -2108,9 +2159,52 @@ function renderCuentaPage(user = null, invoices = []) {
                 0x...
             </div>
 
-            <button class="btn-primary" onclick="copyModalWallet()" style="width:100%; justify-content:center; padding:12px; font-weight:800;">
+            <button class="btn-primary" onclick="copyModalWallet()" style="width:100%; justify-content:center; padding:12px; font-weight:800; cursor:pointer;">
                 📋 Copiar Dirección de Depósito
             </button>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CAMBIAR / VINCULAR BILLETERA EXTERNA (CERO-POPUPS) -->
+    <div id="modalCambiarBilletera" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:500px; width:100%; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.25); position:relative;">
+            <button onclick="closeChangeWalletModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
+            <div style="text-align:center; margin-bottom:18px;">
+                <div style="font-size:36px; margin-bottom:6px;">🔗</div>
+                <h3 style="font-size:22px; font-weight:900; color:var(--text-main);">Vincular Dirección de Billetera</h3>
+                <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Ingresa tu dirección pública EVM (MetaMask, Coinbase Wallet, etc.) en la red <strong>Base L2</strong>.</p>
+            </div>
+
+            <div id="changeWalletErr" style="display:none; padding:10px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:12px;"></div>
+
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Dirección Pública (0x...):</label>
+            <input type="text" id="changeWalletInput" class="input-box" placeholder="0x... (42 caracteres hexadecimales)" style="font-family:monospace; font-size:13px;">
+
+            <div style="font-size:12px; color:var(--text-muted); margin-top:6px; margin-bottom:16px; line-height:1.4;">
+                🛡️ <em>Tus clientes te pagarán directamente a esta dirección. Solo tú custodias tus fondos.</em>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn-outline" onclick="closeChangeWalletModal()" style="padding:10px 18px; cursor:pointer;">Cancelar</button>
+                <button id="btnSaveChangedWallet" class="btn-primary" onclick="submitChangeWallet()" style="padding:10px 22px; font-weight:800; cursor:pointer;">💾 Guardar Billetera</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: CONFIRMAR NUEVA BILLETERA -->
+    <div id="modalNuevaBilletera" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:460px; width:100%; border-color:var(--purple); box-shadow:0 20px 60px rgba(168,85,247,0.25); text-align:center; position:relative;">
+            <button onclick="closeNewWalletModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
+            <div style="font-size:38px; margin-bottom:8px;">🔄🔑</div>
+            <h3 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:8px;">¿Generar Nueva Billetera?</h3>
+            <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; line-height:1.5; margin-bottom:20px;">
+                Se creará un nuevo par criptográfico segregado en Base L2. El saldo de tu dirección anterior permanecerá seguro en la blockchain, pero tu nuevo enlace de cobro apuntará a la nueva dirección.
+            </p>
+
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn-outline" onclick="closeNewWalletModal()" style="padding:10px 18px; cursor:pointer;">Cancelar</button>
+                <button id="btnConfirmGenerateWallet" class="btn-primary" onclick="confirmGenerateNewWallet()" style="padding:10px 22px; font-weight:800; background:var(--purple); border-color:var(--purple); cursor:pointer;">⚡ Sí, Generar Nueva</button>
+            </div>
         </div>
     </div>
 
@@ -2119,12 +2213,20 @@ function renderCuentaPage(user = null, invoices = []) {
     <script>
         let currentUserState = ${JSON.stringify(user || null)};
 
-        // Ensure token in local storage for seamless background calls
-        try {
-            if (currentUserState) {
-                localStorage.setItem('maxi_user_token', 'f5d35c4e0d672ad7e1d27b25d6cdc8c424c694465a92fac1');
-            }
-        } catch(e) {}
+        // TOAST NOTIFICATION UTILITY
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('cuentaToast');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast-item ' + type;
+            const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ️');
+            toast.innerHTML = '<span>' + icon + ' ' + message + '</span><span style="cursor:pointer; opacity:0.7; font-weight:bold;" onclick="this.parentElement.remove()">&times;</span>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeToastOut 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
 
         function switchAuthTab(tab) {
             const regSection = document.getElementById('formRegisterSection');
@@ -2132,16 +2234,16 @@ function renderCuentaPage(user = null, invoices = []) {
             const tabReg = document.getElementById('tabBtnRegister');
             const tabLog = document.getElementById('tabBtnLogin');
 
-            if (tab === 'login') {
-                if (regSection) regSection.style.display = 'none';
-                if (loginSection) loginSection.style.display = 'block';
-                if (tabReg) { tabReg.style.borderBottomColor = 'transparent'; tabReg.style.color = 'var(--text-muted)'; }
-                if (tabLog) { tabLog.style.borderBottomColor = 'var(--cyan)'; tabLog.style.color = 'var(--cyan)'; }
-            } else {
+            if (tab === 'register') {
                 if (regSection) regSection.style.display = 'block';
                 if (loginSection) loginSection.style.display = 'none';
                 if (tabReg) { tabReg.style.borderBottomColor = 'var(--cyan)'; tabReg.style.color = 'var(--cyan)'; }
                 if (tabLog) { tabLog.style.borderBottomColor = 'transparent'; tabLog.style.color = 'var(--text-muted)'; }
+            } else {
+                if (regSection) regSection.style.display = 'none';
+                if (loginSection) loginSection.style.display = 'block';
+                if (tabReg) { tabReg.style.borderBottomColor = 'transparent'; tabReg.style.color = 'var(--text-muted)'; }
+                if (tabLog) { tabLog.style.borderBottomColor = 'var(--cyan)'; tabLog.style.color = 'var(--cyan)'; }
             }
         }
 
@@ -2149,7 +2251,6 @@ function renderCuentaPage(user = null, invoices = []) {
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const phone = document.getElementById('regPhone').value.trim();
-            const wallet = document.getElementById('regWallet').value.trim();
             const errBox = document.getElementById('regError');
 
             if (!name || !email || !phone) {
@@ -2162,11 +2263,14 @@ function renderCuentaPage(user = null, invoices = []) {
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, wallet })
+                    body: JSON.stringify({ name, email, phone })
                 });
                 const data = await res.json();
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
+                    document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    showToast('🎉 ¡Cuenta creada con éxito! Bienvenido a Maxi Suite.');
                     showProfile(data.user, data.invoices || []);
                 } else {
                     errBox.style.display = 'block';
@@ -2200,13 +2304,16 @@ function renderCuentaPage(user = null, invoices = []) {
                 const data = await res.json();
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
+                    document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    showToast('⚡ ¡Bienvenido de nuevo, ' + (data.user.name.split(' ')[0]) + '!');
                     showProfile(data.user, data.invoices || []);
                 } else {
                     if (errBox) {
                         errBox.style.display = 'block';
                         errBox.innerText = data.error || 'No se encontró una cuenta con ese correo.';
                     } else {
-                        alert(data.error || 'No se encontró una cuenta con ese correo.');
+                        showToast(data.error || 'No se encontró una cuenta con ese correo.', 'error');
                     }
                 }
             } catch (e) {
@@ -2214,7 +2321,7 @@ function renderCuentaPage(user = null, invoices = []) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'Error al conectar: ' + e.message;
                 } else {
-                    alert('Error al conectar: ' + e.message);
+                    showToast('Error al conectar: ' + e.message, 'error');
                 }
             }
         }
@@ -2232,11 +2339,16 @@ function renderCuentaPage(user = null, invoices = []) {
                 const data = await res.json();
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
+                    document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    showToast('⚡ ¡Bienvenido de nuevo, ' + (data.user.name.split(' ')[0]) + '!');
                     showProfile(data.user, data.invoices || []);
                 } else {
+                    showToast(data.error || 'Error al iniciar sesión', 'error');
                     switchAuthTab('login');
                 }
             } catch (e) {
+                showToast('Error de conexión', 'error');
                 switchAuthTab('login');
             } finally {
                 if (tabLog) tabLog.innerText = '🔑 Iniciar Sesión';
@@ -2281,11 +2393,7 @@ function renderCuentaPage(user = null, invoices = []) {
             }
         }
 
-        async function generateUserPersonalWallet(isRegenerate = false) {
-            if (isRegenerate && !confirm('¿Estás seguro de que deseas generar una NUEVA dirección de billetera? Tu saldo anterior permanecerá en tu dirección previa en la blockchain.')) {
-                return;
-            }
-
+        async function generateUserPersonalWallet() {
             const btn = document.getElementById('btnCreateWalletMain');
             if (btn) {
                 btn.disabled = true;
@@ -2304,13 +2412,13 @@ function renderCuentaPage(user = null, invoices = []) {
                 const data = await res.json();
                 if (data.success && data.wallet) {
                     if (currentUserState) currentUserState.wallet = data.wallet;
-                    alert('🎉 ¡Billetera Creada con Éxito!\n\nTu dirección personal en Base L2 es:\n' + data.wallet + '\n\nTodos tus cobros llegarán directamente aquí.');
+                    showToast('⚡ ¡Billetera Creada con Éxito en Base L2!', 'success');
                     refreshUserWalletData();
                 } else {
-                    alert('Error al generar billetera: ' + (data.error || 'Intenta nuevamente'));
+                    showToast('Error al generar billetera: ' + (data.error || 'Intenta nuevamente'), 'error');
                 }
             } catch (err) {
-                alert('Error de conexión: ' + err.message);
+                showToast('Error de conexión: ' + err.message, 'error');
             } finally {
                 if (btn) {
                     btn.disabled = false;
@@ -2319,13 +2427,64 @@ function renderCuentaPage(user = null, invoices = []) {
             }
         }
 
-        async function promptLinkExternalWallet() {
+        function openNewWalletModal() {
+            document.getElementById('modalNuevaBilletera').style.display = 'flex';
+        }
+
+        function closeNewWalletModal() {
+            document.getElementById('modalNuevaBilletera').style.display = 'none';
+        }
+
+        async function confirmGenerateNewWallet() {
+            closeNewWalletModal();
+            const btn = document.getElementById('btnConfirmGenerateWallet');
+            if (btn) btn.innerText = 'Generando...';
+
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/generate-wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.wallet) {
+                    if (currentUserState) currentUserState.wallet = data.wallet;
+                    showToast('⚡ ¡Nueva Billetera Base L2 generada!', 'success');
+                    refreshUserWalletData();
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Error de conexión: ' + e.message, 'error');
+            }
+        }
+
+        function openChangeWalletModal() {
             const current = currentUserState?.wallet || '';
-            const addr = prompt('Ingresa tu dirección pública de Billetera EVM en Base (0x...):', current);
-            if (!addr) return;
-            const clean = addr.trim();
+            const input = document.getElementById('changeWalletInput');
+            if (input) input.value = current;
+            const err = document.getElementById('changeWalletErr');
+            if (err) err.style.display = 'none';
+            document.getElementById('modalCambiarBilletera').style.display = 'flex';
+        }
+
+        function closeChangeWalletModal() {
+            document.getElementById('modalCambiarBilletera').style.display = 'none';
+        }
+
+        async function submitChangeWallet() {
+            const input = document.getElementById('changeWalletInput');
+            const errBox = document.getElementById('changeWalletErr');
+            const clean = input ? input.value.trim() : '';
+
             if (!clean.startsWith('0x') || clean.length !== 42) {
-                alert('Dirección inválida. Debe comenzar por 0x y tener exactamente 42 caracteres.');
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Dirección inválida. Debe comenzar por 0x y tener exactamente 42 caracteres.';
+                }
                 return;
             }
 
@@ -2342,13 +2501,20 @@ function renderCuentaPage(user = null, invoices = []) {
                 const data = await res.json();
                 if (data.success) {
                     if (currentUserState) currentUserState.wallet = clean;
-                    alert('✓ ¡Billetera vinculada con éxito!\nDirección: ' + clean);
+                    closeChangeWalletModal();
+                    showToast('💾 ¡Billetera vinculada con éxito!', 'success');
                     refreshUserWalletData();
                 } else {
-                    alert('Error: ' + data.error);
+                    if (errBox) {
+                        errBox.style.display = 'block';
+                        errBox.innerText = data.error || 'Error al guardar.';
+                    }
                 }
             } catch (e) {
-                alert('Error al vincular: ' + e.message);
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Error al conectar: ' + e.message;
+                }
             }
         }
 
@@ -2381,7 +2547,7 @@ function renderCuentaPage(user = null, invoices = []) {
                     html += '<td style="padding:12px; font-weight:900; color:var(--emerald); font-size:14.5px;">$' + amountUsd + ' USD <br><span style="font-size:11.5px; color:var(--cyan); font-weight:normal;">≈ $' + amountCop + ' COP</span></td>';
                     html += '<td style="padding:12px; font-family:monospace; font-size:12px; color:var(--text-muted);">' + shortFrom + '</td>';
                     html += '<td style="padding:12px;"><span style="background:rgba(0,223,137,0.12); color:var(--emerald); border:1px solid var(--emerald); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11.5px;">✓ Confirmado On-Chain</span></td>';
-                    html += '<td style="padding:12px;"><a href="' + txUrl + '" target="_blank" style="color:var(--cyan); text-decoration:none; font-weight:800; font-size:12px;">🔗 Ver Tx</a></td>';
+                    html += '<td style="padding:12px;"><a href="' + txUrl + '" target="_blank" rel="noopener noreferrer" style="color:var(--cyan); text-decoration:none; font-weight:800; font-size:12px;">🔗 Ver Tx</a></td>';
                     html += '</tr>';
                 });
                 html += '</tbody></table>';
@@ -2447,42 +2613,10 @@ function renderCuentaPage(user = null, invoices = []) {
             const withdrawPhone = document.getElementById('withdrawPhoneInput');
             if (withdrawPhone) withdrawPhone.value = user.phone || '';
 
-            // Render Invoices Table
-            const invContainer = document.getElementById('invoicesListContainer');
-            const invBadge = document.getElementById('invoiceCountBadge');
-            
-            if (invoices && invoices.length > 0) {
-                if (invBadge) invBadge.innerText = invoices.length + (invoices.length === 1 ? ' Factura' : ' Facturas');
-                let html = '<table style="width:100%; border-collapse:collapse; font-size:13.5px; text-align:left;">';
-                html += '<thead><tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">';
-                html += '<th style="padding:10px 12px;">ID Factura / Ref</th>';
-                html += '<th style="padding:10px 12px;">Concepto</th>';
-                html += '<th style="padding:10px 12px;">Método de Pago</th>';
-                html += '<th style="padding:10px 12px;">Monto</th>';
-                html += '<th style="padding:10px 12px;">Estado</th>';
-                html += '<th style="padding:10px 12px;">Fecha</th>';
-                html += '</tr></thead><tbody>';
-
-                invoices.forEach(inv => {
-                    const isWompi = (inv.method || '').includes('Wompi') || (inv.method || '').includes('NEQUI');
-                    const methodBadge = isWompi ? '🇨🇴 ' + inv.method : '💳 ' + (inv.method || 'Tarjeta');
-                    const amountStr = inv.amountCop ? ('$' + Number(inv.amountCop).toLocaleString() + ' COP') : ('$' + inv.amount + ' USD');
-                    const dateStr = inv.timestamp ? new Date(inv.timestamp).toLocaleString('es-CO') : 'Reciente';
-
-                    html += '<tr style="border-bottom:1px solid var(--border);">';
-                    html += '<td style="padding:12px; font-family:monospace; font-weight:800; color:var(--cyan);">' + (inv.orderId || inv.invoiceId) + '<br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">' + inv.invoiceId + '</span></td>';
-                    html += '<td style="padding:12px; font-weight:700; color:var(--text-main);">' + (inv.concept || 'Suscripción') + '</td>';
-                    html += '<td style="padding:12px;"><span style="background:rgba(0,223,137,0.12); color:var(--emerald); border:1px solid var(--emerald); padding:3px 8px; border-radius:6px; font-weight:800; font-size:12px;">' + methodBadge + '</span></td>';
-                    html += '<td style="padding:12px; font-weight:800; color:var(--emerald); font-size:14.5px;">' + amountStr + '</td>';
-                    html += '<td style="padding:12px;"><span style="color:var(--emerald); font-weight:800;">✓ ' + (inv.status || 'Aprobado 100%') + '</span></td>';
-                    html += '<td style="padding:12px; color:var(--text-muted); font-size:12.5px;">' + dateStr + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-                if (invContainer) invContainer.innerHTML = html;
-            } else {
-                if (invBadge) invBadge.innerText = '0 Facturas';
-                if (invContainer) invContainer.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted); font-weight:600;">No tienes pagos registrados aún.</div>';
+            // Update Navbar if present
+            const navText = document.getElementById('accountNavText');
+            if (navText) {
+                navText.innerText = (user.name.split(' ')[0]) + ' 👑 PRO (' + (user.credits || 55) + ' Fichas)';
             }
 
             refreshUserWalletData();
@@ -2490,18 +2624,48 @@ function renderCuentaPage(user = null, invoices = []) {
 
         function copyUserWallet() {
             const addr = document.getElementById('userWalletAddrDisplay').innerText.trim();
-            navigator.clipboard.writeText(addr);
-            alert('¡Dirección de tu Billetera Base copiada: ' + addr + '!');
+            if (!addr || addr === '0x...') {
+                showToast('No tienes billetera creada aún.', 'error');
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(addr);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = addr;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            showToast('📋 ¡Dirección de Billetera Base copiada!', 'success');
         }
 
         function copyUserCustomLink() {
             const link = document.getElementById('userCustomLink').innerText;
-            navigator.clipboard.writeText(link);
-            alert('¡Enlace de cobro personal copiado al portapapeles!');
+            if (link.includes('⚠️')) {
+                showToast('Genera tu Billetera arriba para activar tu enlace.', 'error');
+                return;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = link;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            showToast('📋 ¡Enlace de cobro copiado al portapapeles!', 'success');
         }
 
         function shareMyLinkWhatsapp() {
             const link = document.getElementById('userCustomLink').innerText;
+            if (link.includes('⚠️')) {
+                showToast('Genera tu Billetera arriba primero.', 'error');
+                return;
+            }
             const text = encodeURIComponent('Hola! Puedes pagarme de forma segura en dólares (USDC) o tarjeta a través de mi link personal de Maxi Pay: ' + link);
             window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
         }
@@ -2559,6 +2723,7 @@ function renderCuentaPage(user = null, invoices = []) {
                         'Monto: $' + amountUsd.toFixed(2) + ' USD (≈ $' + (amountUsd * 4000).toLocaleString('es-CO') + ' COP)<br>' +
                         'Destino: Nequi ' + phone + '<br>' +
                         'Tu saldo llegará en los próximos minutos.';
+                    showToast('📲 ¡Retiro de $' + amountUsd.toFixed(2) + ' USD solicitado a Nequi!', 'success');
                     setTimeout(() => {
                         closeWithdrawModal();
                         refreshUserWalletData();
@@ -2586,18 +2751,30 @@ function renderCuentaPage(user = null, invoices = []) {
 
         function copyModalWallet() {
             const addr = document.getElementById('modalWalletAddr').innerText.trim();
-            navigator.clipboard.writeText(addr);
-            alert('¡Dirección de depósito copiada: ' + addr + '!');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(addr);
+            }
+            showToast('📋 ¡Dirección de depósito copiada!', 'success');
         }
 
-        function logout() {
+        async function logout() {
+            document.cookie = 'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+            document.cookie = 'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+            document.cookie = 'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
             localStorage.removeItem('maxi_user_token');
-            window.location.reload();
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch(e) {}
+            showToast('🔒 Sesión cerrada correctamente', 'info');
+            setTimeout(() => {
+                window.location.href = '/cuenta';
+            }, 600);
         }
 
         async function initAccountPage() {
-            // Background sync wallet data
-            refreshUserWalletData();
+            if (currentUserState) {
+                refreshUserWalletData();
+            }
         }
 
         function openPaymentModal(planName, amount, planId) {
@@ -6835,12 +7012,19 @@ const server = http.createServer(async (req, res) => {
             res.end(renderAdminPage());
         } else if (pathname === '/cuenta') {
             loadUsersDb();
-            const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-            let email = (token && usersDb.sessions[token]) ? usersDb.sessions[token] : 'jdavidjaramillo@hotmail.com';
-            const user = usersDb.users[email] || usersDb.users['jdavidjaramillo@hotmail.com'] || Object.values(usersDb.users || {})[0];
-            const userInvoices = Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === (user?.email || 'jdavidjaramillo@hotmail.com').toLowerCase());
+            const cookies = parseCookies(req);
+            const token = cookies.maxi_user_session || cookies.maxi_user_token || req.headers['authorization']?.replace('Bearer ', '').trim();
+            let email = null;
+            if (token && usersDb.sessions[token]) {
+                email = usersDb.sessions[token];
+            } else if (cookies.maxi_user_email && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
+                email = cookies.maxi_user_email.toLowerCase();
+            }
+
+            const authenticatedUser = email ? usersDb.users[email] : null;
+            const userInvoices = authenticatedUser ? Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === authenticatedUser.email.toLowerCase()) : [];
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderCuentaPage(user, userInvoices));
+            res.end(renderCuentaPage(authenticatedUser, userInvoices));
         } else if (pathname === '/trabajos' || pathname === '/gigs') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderTrabajosPage());
@@ -7502,7 +7686,23 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
-    } else if (req.method === 'POST' && pathname === '/api/auth/login') {
+        } else if (req.method === 'POST' && pathname === '/api/auth/logout') {
+        const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+        if (token && usersDb.sessions[token]) {
+            delete usersDb.sessions[token];
+            saveUsersDb();
+        }
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Set-Cookie': [
+                'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+                'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+                'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+            ]
+        });
+        res.end(JSON.stringify({ success: true }));
+        return;
+} else if (req.method === 'POST' && pathname === '/api/auth/login') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
@@ -7524,7 +7724,14 @@ const server = http.createServer(async (req, res) => {
                     (inv.buyerEmail || '').toLowerCase() === cleanEmail.toLowerCase()
                 );
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, { 
+                    'Content-Type': 'application/json',
+                    'Set-Cookie': [
+                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                        `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
+                    ]
+                });
                 res.end(JSON.stringify({ success: true, token, user, invoices: userInvoices }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });

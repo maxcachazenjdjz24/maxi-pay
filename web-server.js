@@ -1680,7 +1680,7 @@ function renderCuentaPage() {
                     </div>
 
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:var(--emerald); background:var(--calc-saved-bg); padding:4px 10px; border-radius:12px; border:1px solid var(--emerald);">
+                        <span id="walletStatusBadge" style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:var(--emerald); background:var(--calc-saved-bg); padding:4px 10px; border-radius:12px; border:1px solid var(--emerald);">
                             <span style="width:7px; height:7px; background:var(--emerald); border-radius:50%; display:inline-block;"></span> EN VIVO ON-CHAIN
                         </span>
                         <button onclick="refreshUserWalletData()" class="icon-btn" title="Refrescar Saldo On-Chain" style="width:34px; height:34px; border-radius:8px;">
@@ -1689,44 +1689,70 @@ function renderCuentaPage() {
                     </div>
                 </div>
 
-                <!-- DUAL BALANCE DISPLAY (USD / COP) -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
-                    <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px;">
-                        <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">SALDO DISPONIBLE EN DÓLARES (USDC)</div>
-                        <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
-                            <span style="font-size:36px; font-weight:900; color:var(--emerald);" id="walletUsdBal">$0.00</span>
-                            <span style="font-size:15px; font-weight:800; color:var(--text-muted);">USD</span>
-                        </div>
-                        <div style="font-size:13px; font-weight:700; color:var(--cyan); margin-top:4px;" id="walletCopBal">
-                            ≈ $0 COP (TRM $4.000 COP)
-                        </div>
-                    </div>
-
-                    <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px; display:flex; flex-direction:column; justify-content:space-between;">
-                        <div>
-                            <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">DIRECCIÓN DE TU BILLETERA (BASE MAINNET)</div>
-                            <div style="font-family:monospace; font-size:13px; font-weight:800; color:var(--cyan); word-break:break-all; margin-top:6px; background:var(--bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--border);" id="userWalletAddrDisplay">
-                                ${MAXI_WALLET}
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:8px; margin-top:10px;">
-                            <button class="btn-outline" onclick="copyUserWallet()" style="padding:6px 12px; font-size:12px; font-weight:800;">📋 Copiar Dirección</button>
-                            <a id="userBasescanLink" href="https://basescan.org/address/${MAXI_WALLET}" target="_blank" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 Ver en BaseScan</a>
-                        </div>
+                <!-- STATE 1: NO WALLET YET (BUTTON TO CREATE) -->
+                <div id="noWalletSection" style="display:none; text-align:center; padding:32px 20px; background:linear-gradient(135deg, rgba(0,242,254,0.06) 0%, rgba(0,223,137,0.08) 100%); border-radius:16px; border:2px dashed var(--cyan); margin-bottom:15px;">
+                    <div style="font-size:44px; margin-bottom:10px;">✨💼</div>
+                    <h4 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:6px;">
+                        Crea tu Billetera Digital Personal en 1 Clic
+                    </h4>
+                    <p style="color:var(--text-muted); font-size:14px; max-width:620px; margin:0 auto 20px auto; font-weight:600; line-height:1.5;">
+                        Como suscriptor de Maxi Suite, puedes generar tu propia billetera digital independiente y segura en la red Base L2. El dinero de tus ventas entrará directamente a tu poder y nunca se mezclará con los fondos de Maxi Suite.
+                    </p>
+                    <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                        <button id="btnCreateWalletMain" class="btn-primary" onclick="generateUserPersonalWallet()" style="padding:14px 28px; font-size:15px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
+                            ⚡ Crear / Generar Mi Billetera Digital
+                        </button>
+                        <button class="btn-outline" onclick="promptLinkExternalWallet()" style="padding:14px 22px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
+                            🔗 Vincular Billetera Existente (MetaMask / Coinbase)
+                        </button>
                     </div>
                 </div>
 
-                <!-- ACTION BUTTONS -->
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <button class="btn-primary" onclick="openWithdrawModal()" style="padding:12px 20px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
-                        📲 Retirar Saldo a Nequi / Bancolombia
-                    </button>
-                    <button class="btn-outline" onclick="openDepositModal()" style="padding:12px 18px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan);">
-                        📥 Recibir Depósito Cripto (QR)
-                    </button>
-                    <a href="/pay" class="btn-outline" style="padding:12px 18px; font-size:14px; font-weight:800; text-decoration:none;">
-                        ⚡ Crear Cobro en Maxi Pay
-                    </a>
+                <!-- STATE 2: WALLET ACTIVE -->
+                <div id="activeWalletSection" style="display:none;">
+                    <!-- DUAL BALANCE DISPLAY (USD / COP) -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
+                        <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px;">
+                            <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">SALDO DISPONIBLE EN DÓLARES (USDC)</div>
+                            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+                                <span style="font-size:36px; font-weight:900; color:var(--emerald);" id="walletUsdBal">$0.00</span>
+                                <span style="font-size:15px; font-weight:800; color:var(--text-muted);">USD</span>
+                            </div>
+                            <div style="font-size:13px; font-weight:700; color:var(--cyan); margin-top:4px;" id="walletCopBal">
+                                ≈ $0 COP (TRM $4.000 COP)
+                            </div>
+                        </div>
+
+                        <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div>
+                                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">DIRECCIÓN DE TU BILLETERA (BASE MAINNET)</div>
+                                <div style="font-family:monospace; font-size:13px; font-weight:800; color:var(--cyan); word-break:break-all; margin-top:6px; background:var(--bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--border);" id="userWalletAddrDisplay">
+                                    0x...
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                                <button class="btn-outline" onclick="copyUserWallet()" style="padding:6px 12px; font-size:12px; font-weight:800;">📋 Copiar Dirección</button>
+                                <a id="userBasescanLink" href="#" target="_blank" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 Ver en BaseScan</a>
+                                <button class="btn-outline" onclick="generateUserPersonalWallet(true)" style="padding:6px 12px; font-size:12px; font-weight:800; border-color:var(--purple); color:var(--purple);" title="Generar una nueva dirección criptográfica">🔄 Nueva Billetera</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button class="btn-primary" onclick="openWithdrawModal()" style="padding:12px 20px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                            📲 Retirar Saldo a Nequi / Bancolombia
+                        </button>
+                        <button class="btn-outline" onclick="openDepositModal()" style="padding:12px 18px; font-size:14px; font-weight:800; border-color:var(--cyan); color:var(--cyan);">
+                            📥 Recibir Depósito Cripto (QR)
+                        </button>
+                        <a href="/pay" class="btn-outline" style="padding:12px 18px; font-size:14px; font-weight:800; text-decoration:none;">
+                            ⚡ Crear Cobro en Maxi Pay
+                        </a>
+                        <button class="btn-outline" onclick="promptLinkExternalWallet()" style="padding:12px 18px; font-size:13.5px; font-weight:700; color:var(--text-muted);">
+                            🔗 Cambiar Dirección
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -2061,15 +2087,104 @@ function renderCuentaPage() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    document.getElementById('walletUsdBal').innerText = '$' + (data.usdcBalance || '0.00');
-                    document.getElementById('walletCopBal').innerText = '≈ ' + (data.copBalance || '$0 COP') + ' (TRM $4.000 COP)';
-                    document.getElementById('userWalletAddrDisplay').innerText = data.wallet;
-                    document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + data.wallet;
+                    const noWalletBox = document.getElementById('noWalletSection');
+                    const activeWalletBox = document.getElementById('activeWalletSection');
+                    const customLinkDiv = document.getElementById('userCustomLink');
+                    
+                    if (!data.hasWallet || !data.wallet) {
+                        if (noWalletBox) noWalletBox.style.display = 'block';
+                        if (activeWalletBox) activeWalletBox.style.display = 'none';
+                        if (customLinkDiv) customLinkDiv.innerHTML = '<span style="color:var(--text-muted);">⚠️ Genera tu Billetera Digital arriba para activar tu Enlace de Cobro Personal.</span>';
+                    } else {
+                        if (noWalletBox) noWalletBox.style.display = 'none';
+                        if (activeWalletBox) activeWalletBox.style.display = 'block';
+                        
+                        document.getElementById('walletUsdBal').innerText = '$' + (data.usdcBalance || '0.00');
+                        document.getElementById('walletCopBal').innerText = '≈ ' + (data.copBalance || '$0 COP') + ' (TRM $4.000 COP)';
+                        document.getElementById('userWalletAddrDisplay').innerText = data.wallet;
+                        document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + data.wallet;
+                        
+                        const userName = currentUserState?.name || 'Juan David';
+                        const userSlug = encodeURIComponent(userName.toLowerCase().replace(/\s+/g, '-'));
+                        const customLink = window.location.origin + '/pay/' + userSlug + '/10?concept=Curso%20Online&wallet=' + encodeURIComponent(data.wallet);
+                        if (customLinkDiv) customLinkDiv.innerText = customLink;
+                    }
                     
                     renderSalesTable(data.sales || []);
                 }
             } catch (e) {
                 console.error('Error refreshing wallet data:', e);
+            }
+        }
+
+        async function generateUserPersonalWallet(isRegenerate = false) {
+            if (isRegenerate && !confirm('¿Estás seguro de que deseas generar una NUEVA dirección de billetera? Tu saldo anterior permanecerá en tu dirección previa en la blockchain.')) {
+                return;
+            }
+
+            const btn = document.getElementById('btnCreateWalletMain');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⚡ Generando Llaves Criptográficas Segregadas...';
+            }
+
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/generate-wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.wallet) {
+                    if (currentUserState) currentUserState.wallet = data.wallet;
+                    alert('🎉 ¡Billetera Creada con Éxito!\n\nTu dirección personal en Base L2 es:\n' + data.wallet + '\n\nTodos tus cobros llegarán directamente aquí.');
+                    refreshUserWalletData();
+                } else {
+                    alert('Error al generar billetera: ' + (data.error || 'Intenta nuevamente'));
+                }
+            } catch (err) {
+                alert('Error de conexión: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '⚡ Crear / Generar Mi Billetera Digital';
+                }
+            }
+        }
+
+        async function promptLinkExternalWallet() {
+            const current = currentUserState?.wallet || '';
+            const addr = prompt('Ingresa tu dirección pública de Billetera EVM en Base (0x...):', current);
+            if (!addr) return;
+            const clean = addr.trim();
+            if (!clean.startsWith('0x') || clean.length !== 42) {
+                alert('Dirección inválida. Debe comenzar por 0x y tener exactamente 42 caracteres.');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/set-wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ wallet: clean })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (currentUserState) currentUserState.wallet = clean;
+                    alert('✓ ¡Billetera vinculada con éxito!\nDirección: ' + clean);
+                    refreshUserWalletData();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error al vincular: ' + e.message);
             }
         }
 
@@ -2131,12 +2246,27 @@ function renderCuentaPage() {
                 document.getElementById('proFeaturesSection').style.display = 'block';
             }
 
-            const userSlug = encodeURIComponent(user.name.toLowerCase().replace(/\\s+/g, '-'));
-            const customLink = window.location.origin + '/pay/' + userSlug + '/10?concept=Curso%20Online&wallet=' + encodeURIComponent(user.wallet || '${MAXI_WALLET}');
-            document.getElementById('userCustomLink').innerText = customLink;
+            const noWalletBox = document.getElementById('noWalletSection');
+            const activeWalletBox = document.getElementById('activeWalletSection');
+            const customLinkDiv = document.getElementById('userCustomLink');
+            const hasCustomWallet = !!user.wallet && user.wallet.trim().toLowerCase() !== '${MAXI_WALLET.toLowerCase()}';
 
-            document.getElementById('userWalletAddrDisplay').innerText = user.wallet || '${MAXI_WALLET}';
-            document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + (user.wallet || '${MAXI_WALLET}');
+            if (!hasCustomWallet) {
+                if (noWalletBox) noWalletBox.style.display = 'block';
+                if (activeWalletBox) activeWalletBox.style.display = 'none';
+                if (customLinkDiv) customLinkDiv.innerHTML = '<span style="color:var(--text-muted);">⚠️ Genera tu Billetera Digital arriba para activar tu Enlace de Cobro Personal.</span>';
+            } else {
+                if (noWalletBox) noWalletBox.style.display = 'none';
+                if (activeWalletBox) activeWalletBox.style.display = 'block';
+                
+                const userSlug = encodeURIComponent(user.name.toLowerCase().replace(/\s+/g, '-'));
+                const customLink = window.location.origin + '/pay/' + userSlug + '/10?concept=Curso%20Online&wallet=' + encodeURIComponent(user.wallet);
+                if (customLinkDiv) customLinkDiv.innerText = customLink;
+
+                document.getElementById('userWalletAddrDisplay').innerText = user.wallet;
+                document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + user.wallet;
+            }
+
             document.getElementById('withdrawPhoneInput').value = user.phone || '';
 
             // Render Invoices Table
@@ -6625,14 +6755,19 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
-            const walletAddr = user.wallet || MAXI_WALLET;
-            const usdcBalance = await getWalletUsdcBalance(walletAddr);
+            const hasCustomWallet = !!user.wallet && user.wallet.trim().toLowerCase() !== MAXI_WALLET.toLowerCase();
+            const walletAddr = hasCustomWallet ? user.wallet : null;
+            let usdcBalance = '0.00';
+            if (walletAddr) {
+                usdcBalance = await getWalletUsdcBalance(walletAddr);
+            }
             const numUsd = parseFloat(usdcBalance) || 0;
             const copBalance = Math.round(numUsd * 4000).toLocaleString('es-CO');
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 success: true,
+                hasWallet: hasCustomWallet,
                 wallet: walletAddr,
                 usdcBalance,
                 copBalance: '$' + copBalance + ' COP',

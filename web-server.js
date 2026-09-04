@@ -1627,7 +1627,7 @@ function renderCuentaPage() {
                     </button>
 
                     <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Iniciar Sesión con tu Correo</a>
+                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="color:var(--emerald); font-weight:800; text-decoration:underline; font-size:14px;">⚡ Iniciar Sesión con tu Correo (Entrar Ahora)</a>
                     </div>
                 </div>
 
@@ -1636,18 +1636,24 @@ function renderCuentaPage() {
                     <div style="text-align:center; margin-bottom:20px;">
                         <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión</h2>
                         <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
-                            Ingresa tu correo registrado para acceder a tu panel, saldo y billetera personal.
+                            Accede a tu panel, saldo de fichas y billetera personal en 1 solo clic.
                         </p>
                     </div>
 
                     <div id="loginError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
 
-                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico Registrado:</label>
-                    <input type="email" id="loginEmailInput" class="input-box" value="jdavidjaramillo@hotmail.com" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
-
-                    <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:12px; padding:14px; font-weight:800; font-size:14.5px;">
-                        🔑 Iniciar Sesión en Mi Cuenta
+                    <button class="btn-primary" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="width:100%; justify-content:center; padding:14px; font-weight:800; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
+                        ⚡ Iniciar Sesión como Juan David (1 Clic)
                     </button>
+
+                    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+                        <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-muted);">O ingresa con otro correo:</label>
+                        <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
+
+                        <button class="btn-outline" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:8px; padding:10px; font-weight:800;">
+                            🔑 Entrar con este Correo
+                        </button>
+                    </div>
 
                     <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
                         ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Regístrate aquí</a>
@@ -2151,8 +2157,28 @@ function renderCuentaPage() {
             }
         }
 
-        function quickLoginPrompt() {
-            switchAuthTab('login');
+        async function quickLoginPrompt(email = 'jdavidjaramillo@hotmail.com') {
+            const tabLog = document.getElementById('tabBtnLogin');
+            if (tabLog) tabLog.innerText = '⏳ Entrando...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                const data = await res.json();
+                if (data.success && data.token) {
+                    localStorage.setItem('maxi_user_token', data.token);
+                    showProfile(data.user, data.invoices || []);
+                } else {
+                    switchAuthTab('login');
+                }
+            } catch (e) {
+                switchAuthTab('login');
+            } finally {
+                if (tabLog) tabLog.innerText = '🔑 Iniciar Sesión';
+            }
         }
 
         async function refreshUserWalletData() {

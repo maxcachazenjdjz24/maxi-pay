@@ -2531,14 +2531,14 @@ function renderTrabajosPage() {
             <div>
                 <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">🎨 Diseño de Banner & Interfaz Web3 (UI/UX)</h3>
                 <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Bountycaster</strong></span>
+                    <span>🏢 Plataforma: <strong>Superteam Earn</strong></span>
                     <span>🏷️ Categoría: <strong>Diseño Gráfico / Figma</strong></span>
                     <span>⏱️ Hace 15 minutos</span>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$150.00 USDC</div>
-                <button onclick="openAiProposalModal('Diseño de Banner & Interfaz Web3 (UI/UX)', '150', 'design', 'https://www.bountycaster.xyz/')" class="btn-primary">
+                <button onclick="openAiProposalModal('Diseño de Banner & Interfaz Web3 (UI/UX)', '150', 'design', 'https://earn.superteam.fun/bounties/')" class="btn-primary">
                     ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>
@@ -2582,14 +2582,14 @@ function renderTrabajosPage() {
             <div>
                 <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">🛡️ Auditoría de Seguridad de Smart Contracts (Solidity)</h3>
                 <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Superteam Earn</strong></span>
+                    <span>🏢 Plataforma: <strong>Web3 Career</strong></span>
                     <span>🏷️ Categoría: <strong>Seguridad / Auditoría</strong></span>
                     <span>⏱️ Hace 2 horas</span>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <div style="font-size:22px; font-weight:800; color:var(--emerald);">$650.00 USDC</div>
-                <button onclick="openAiProposalModal('Auditoría de Seguridad de Smart Contracts', '650', 'security', 'https://earn.superteam.fun/')" class="btn-primary">
+                <button onclick="openAiProposalModal('Auditoría de Seguridad de Smart Contracts', '650', 'security', 'https://web3.career/security-jobs')" class="btn-primary">
                     ✨ Postularme con IA (1 Ficha)
                 </button>
             </div>

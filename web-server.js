@@ -2313,214 +2313,6 @@ function renderAdminPage() {
 </html>`;
 }
 
-function renderTutorialesPage() {
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academia Maxi • Guías Maestras y Tutoriales Paso a Paso</title>
-    ${getGlobalStyles()}
-</head>
-<body>
-    ${getHeader('tutoriales')}
-
-    <div class="page-container">
-        <div style="text-align:center; margin-bottom:40px;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,242,254,0.1); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); padding:6px 16px; border-radius:18px; font-size:13px; font-weight:700; margin-bottom:12px;">
-                🎓 Centro de Aprendizaje Oficial & Academia Maxi
-            </div>
-            <h1 style="font-size:38px; font-weight:800; letter-spacing:-0.02em; margin-bottom:12px; color:var(--text-main);">
-                Aprende a Dominar Todo el Ecosistema
-            </h1>
-            <p style="color:var(--text-muted); font-size:16.5px; max-width:750px; margin:0 auto; font-weight:600;">
-                Guías detalladas con ejemplos visuales para usar el bot de Telegram, navegar en BaseScan, verificar pagos on-chain, postularte con IA y entender las señales de ballenas.
-            </p>
-        </div>
-
-        <!-- GUÍA 1: BOT DE TELEGRAM -->
-        <div class="card" style="border-left:5px solid #0088cc; margin-bottom:30px;">
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:15px;">
-                <div class="step-badge" style="background:linear-gradient(135deg, #0088cc 0%, #00c6ff 100%); color:white;">📱</div>
-                <div>
-                    <h2 style="font-size:22px; font-weight:800; color:var(--text-main);">1. Guía Completa del Bot de Telegram (@Maxi_pay_official_bot)</h2>
-                    <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Tu copiloto financiero 24/7 en tu bolsillo.</p>
-                </div>
-            </div>
-
-            <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:15px;">
-                El bot oficial te permite cobrar, recibir alertas sonoras de ballenas y ver nuevas ofertas de trabajo sin entrar al computador:
-            </p>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:18px;">
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <div style="font-weight:800; color:var(--cyan); font-size:14px; margin-bottom:4px;">1. Vincular Billetera</div>
-                    <div class="code-snippet">/wallet 0xTuDireccionEVM</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Asocia tu wallet para recibir pagos directos sin comisiones.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <div style="font-weight:800; color:var(--emerald); font-size:14px; margin-bottom:4px;">2. Generar Factura QR</div>
-                    <div class="code-snippet">/cobrar 50 Diseño de Logo</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Crea un código QR de $50 USDC al instante para mandárselo a tu cliente.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <div style="font-weight:800; color:#10b981; font-size:14px; margin-bottom:4px;">3. Consultar Trabajos Web3</div>
-                    <div class="code-snippet">/gigs</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Muestra los últimos bounties de $50 a $650 USD disponibles.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <div style="font-weight:800; color:var(--purple); font-size:14px; margin-bottom:4px;">4. Radar de Ballenas</div>
-                    <div class="code-snippet">/alpha</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Alerta sonoras cuando una ballena compra o inyecta liquidez en Base.</div>
-                </div>
-            </div>
-
-            <a href="https://t.me/Maxi_pay_official_bot" target="_blank" class="btn-primary" style="background:linear-gradient(135deg, #0088cc 0%, #00a2ff 100%); color:white;">
-                📱 Abrir Bot de Telegram Oficial
-            </a>
-        </div>
-
-        <!-- GUÍA 2: BASESCAN MASTERCLASS -->
-        <div class="card" style="border-left:5px solid var(--purple); margin-bottom:30px;">
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:15px;">
-                <div class="step-badge" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">🔍</div>
-                <div>
-                    <h2 style="font-size:22px; font-weight:800; color:var(--text-main);">2. Guía Maestra de BaseScan.org: ¿Qué mirar cuando se abre?</h2>
-                    <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Aprende a navegar y verificar transacciones de ballenas como un profesional.</p>
-                </div>
-            </div>
-
-            <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:15px;">
-                Cuando tocas el botón <strong>«🔍 Ver Tx en BaseScan»</strong> en nuestra web o en Telegram, esto es lo que debes comprobar:
-            </p>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:20px;">
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid var(--border);">
-                    <div style="font-size:13px; font-weight:800; color:var(--emerald);">1. ESTADO (Status)</div>
-                    <div style="font-size:16px; font-weight:800; margin:6px 0; color:var(--text-main);">✅ Success (Confirmado)</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Verifica que tenga el visto verde. Significa que el dinero ya se grabó de forma irreversible en el bloque.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid var(--border);">
-                    <div style="font-size:13px; font-weight:800; color:var(--cyan);">2. TOKENS TRANSFERIDOS</div>
-                    <div style="font-size:16px; font-weight:800; margin:6px 0; color:var(--text-main);">ERC-20 Tokens Transferred</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Muestra exactamente cuántos dólares (USDC) o criptomonedas (ETH) se entregaron y recibieron.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid var(--border);">
-                    <div style="font-size:13px; font-weight:800; color:var(--purple);">3. BOTÓN CLAVE A OPRIMIR</div>
-                    <div style="font-size:16px; font-weight:800; margin:6px 0; color:var(--text-main);">«Click to see More»</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600;">Al presionar este botón al final de BaseScan, se despliega el método (ej: <code>swapExactTokens</code> o <code>addLiquidity</code>).</div>
-                </div>
-            </div>
-
-            <a href="/ballenas" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
-                🐋 Ir al Radar de Ballenas en Vivo
-            </a>
-        </div>
-
-        <!-- GUÍA 3: MAXI PAY & AUTO-DETECCIÓN ON-CHAIN -->
-        <div class="card" style="border-left:5px solid var(--cyan); margin-bottom:30px;">
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:15px;">
-                <div class="step-badge">💳</div>
-                <div>
-                    <h2 style="font-size:22px; font-weight:800; color:var(--text-main);">3. Maxi Pay: Enlaces de Cobro & Auto-Detección en 2 Segundos</h2>
-                    <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Cero comisiones bancarias y cero necesidad de copiar códigos hash.</p>
-                </div>
-            </div>
-
-            <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:15px;">
-                Cómo cobrar a un cliente en 3 pasos sencillos:
-            </p>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:20px;">
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <strong style="color:var(--cyan);">Paso 1 (Tu Enlace):</strong> Entra a <a href="/pay" style="color:var(--cyan); font-weight:bold;">Maxi Pay</a>, pon el monto y presiona <strong>«📲 Compartir por WhatsApp»</strong> para enviarle el link a tu cliente.
-                </div>
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <strong style="color:var(--cyan);">Paso 2 (El Cliente Paga):</strong> Tu cliente abre el link en su celular, escanea el código QR desde Binance, MetaMask o Coinbase y envía los USDC.
-                </div>
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1px solid var(--border);">
-                    <strong style="color:var(--emerald);">Paso 3 (Auto-Detección):</strong> El radar on-chain detecta los fondos en 2 segundos, suena un timbre 🔔 y la pantalla se pone en verde: <strong>«¡Pago Confirmado!»</strong>.
-                </div>
-            </div>
-
-            <a href="/pay" class="btn-primary">
-                💳 Crear un Enlace de Cobro en Maxi Pay
-            </a>
-        </div>
-
-        <!-- GUÍA 4: GIG FINDER & AI PROPOSAL SNIPER -->
-        <div class="card" style="border-left:5px solid var(--emerald); margin-bottom:30px;">
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:15px;">
-                <div class="step-badge" style="background:linear-gradient(135deg, #00df89 0%, #10b981 100%);">💼</div>
-                <div>
-                    <h2 style="font-size:22px; font-weight:800; color:var(--text-main);">4. Gig Finder: Cómo Postularte con IA y Ganar Trabajos de $50 a $650 USD</h2>
-                    <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Ahorra tiempo y gana más contratos postulándote primero.</p>
-                </div>
-            </div>
-
-            <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:15px;">
-                En los bounties de Web3, quien postula primero con una propuesta técnica de calidad tiene más de un 70% de probabilidades de ganar:
-            </p>
-
-            <ul style="color:var(--text-muted); font-size:14px; font-weight:600; line-height:1.8; margin-bottom:20px; padding-left:22px;">
-                <li>Entra a <a href="/trabajos" style="color:var(--emerald); font-weight:bold;">Trabajos & Bounties con IA</a> y elige la oferta que te interese.</li>
-                <li>Presiona el botón <strong>«✨ Postularme con IA (30s)»</strong>.</li>
-                <li>Maxi lee la descripción del bounty y te entrega una propuesta profesional en **Inglés y Español**.</li>
-                <li>Oprime <strong>«📋 Copiar Propuesta»</strong>, abre la convocatoria oficial y pégala para que te adjudiquen el trabajo.</li>
-            </ul>
-
-            <a href="/trabajos" class="btn-primary" style="background:linear-gradient(135deg, #00df89 0%, #10b981 100%);">
-                💼 Ver Trabajos & Probar el Asistente IA
-            </a>
-        </div>
-
-        <!-- GUÍA 5: SMART MONEY SCORE & LOS 4 MOVIMIENTOS -->
-        <div class="card" style="border-left:5px solid var(--amber); margin-bottom:30px;">
-            <div style="display:flex; gap:16px; align-items:center; margin-bottom:15px;">
-                <div class="step-badge" style="background:linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color:#06080e;">🎯</div>
-                <div>
-                    <h2 style="font-size:22px; font-weight:800; color:var(--text-main);">5. Maxi Alpha: Cómo Interpretar el Smart Money Score (0 a 100)</h2>
-                    <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Sigue los pasos del dinero institucional antes de que el mercado se mueva.</p>
-                </div>
-            </div>
-
-            <p style="color:var(--text-muted); font-size:14.5px; line-height:1.6; font-weight:600; margin-bottom:15px;">
-                El Smart Money Score resume en un solo número el sentimiento institucional de las ballenas:
-            </p>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:20px;">
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid #86efac;">
-                    <div style="color:#15803d; font-weight:800; font-size:14px;">🟢 Score > 80 (Acumulación Fuerte)</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600; margin-top:4px;">Las ballenas están comprando agresivamente o inyectando liquidez en DEXs. Señal alcista.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid #7dd3fc;">
-                    <div style="color:#0369a1; font-weight:800; font-size:14px;">🟣 Score 50 - 80 (Hold / Retiro)</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600; margin-top:4px;">Movimientos hacia billeteras frías para conservar fondos a largo plazo.</div>
-                </div>
-
-                <div style="background:var(--bg-card-hover); padding:16px; border-radius:12px; border:1.5px solid #fca5a5;">
-                    <div style="color:#b91c1c; font-weight:800; font-size:14px;">🔴 Score < 40 (Presión Vendedora)</div>
-                    <div style="font-size:12.5px; color:var(--text-muted); font-weight:600; margin-top:4px;">Depósitos masivos hacia Coinbase o Binance para liquidar y tomar ganancias.</div>
-                </div>
-            </div>
-
-            <a href="/ballenas" class="btn-primary" style="background:linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color:#06080e;">
-                🎯 Ver Setups de Trading en Maxi Alpha
-            </a>
-        </div>
-    </div>
-
-    ${getFooter()}
-</body>
-</html>`;
-}
-
 function renderBallenasPage() {
   return `<!DOCTYPE html>
 <html lang="es">
@@ -4627,29 +4419,30 @@ function renderTutorialesPage() {
             gap: 4px;
         }
         .sandbox-box {
-            background: linear-gradient(135deg, rgba(15, 22, 36, 0.95) 0%, rgba(6, 8, 14, 0.98) 100%);
+            background: var(--bg-card);
             border: 2px solid var(--border);
             border-radius: 22px;
             padding: 30px;
             margin-bottom: 45px;
             position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
         }
         .phone-mockup {
             width: 290px;
             height: 480px;
-            background: #090d16;
-            border: 6px solid #1e293b;
+            background: #0f172a;
+            border: 6px solid #334155;
             border-radius: 36px;
             padding: 20px 16px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
             position: relative;
         }
         .phone-screen {
-            background: var(--bg-card);
+            background: #ffffff;
             border-radius: 22px;
             padding: 16px;
             height: 100%;
@@ -4658,7 +4451,8 @@ function renderTutorialesPage() {
             align-items: center;
             justify-content: center;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
+            color: #0f172a;
+            border: 1px solid rgba(0,0,0,0.08);
         }
         .qr-placeholder {
             width: 170px;
@@ -4669,7 +4463,7 @@ function renderTutorialesPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             margin: 12px 0;
         }
         .tut-modal-overlay {
@@ -4755,7 +4549,7 @@ function renderTutorialesPage() {
         }
         .glossary-card {
             background: var(--bg-card);
-            border: 1px solid var(--border);
+            border: 1.5px solid var(--border);
             border-radius: 14px;
             padding: 18px 22px;
             margin-bottom: 12px;
@@ -4764,12 +4558,13 @@ function renderTutorialesPage() {
         }
         .glossary-card:hover {
             border-color: var(--cyan);
+            box-shadow: 0 4px 15px rgba(0,242,254,0.1);
         }
         .glossary-body {
             display: none;
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.08);
+            border-top: 1px solid var(--border);
             color: var(--text-muted);
             font-size: 14px;
             line-height: 1.6;
@@ -4787,7 +4582,7 @@ function renderTutorialesPage() {
                 🚀 MAXI LEARN 2026 • EDUCACIÓN FINANCIERA SIN BARRERAS
             </div>
             <h1 style="font-size:42px; font-weight:900; letter-spacing:-0.03em; margin-bottom:14px; color:var(--text-main); line-height:1.15;">
-                Aprende a Cobrar en Dólares & Multiplicar tus Ganancias
+                Aprende a Cobrar en Dólares &amp; Multiplicar tus Ganancias
             </h1>
             <p style="color:var(--text-muted); font-size:17px; max-width:760px; margin:0 auto 28px; font-weight:500; line-height:1.6;">
                 Guías interactivas de 3 minutos, simuladores de cobro en vivo y quizzes con recompensas diseñados para comerciantes tradicionales, servicios turísticos, freelancers e inversores.
@@ -4795,7 +4590,7 @@ function renderTutorialesPage() {
 
             <!-- OMNIBOX LIVE SEARCH -->
             <div style="max-width:620px; margin:0 auto; position:relative;">
-                <input type="text" id="tutorialSearchInput" onkeyup="filterTutorials()" placeholder="🔍 ¿Qué quieres aprender? (ej: Nequi, QR, Turistas, Ballenas, Comisiones)..." style="width:100%; padding:16px 24px 16px 48px; border-radius:18px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-main); font-size:15px; font-weight:600; outline:none; box-shadow:0 8px 25px rgba(0,0,0,0.25);" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                <input type="text" id="tutorialSearchInput" onkeyup="filterTutorials()" placeholder="🔍 ¿Qué quieres aprender? (ej: Nequi, QR, Turistas, Ballenas, Comisiones)..." style="width:100%; padding:16px 24px 16px 48px; border-radius:18px; background:var(--bg-card); border:2px solid var(--border); color:var(--text-main); font-size:15px; font-weight:600; outline:none; box-shadow:0 8px 25px rgba(0,0,0,0.08);" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
                 <span style="position:absolute; left:18px; top:18px; font-size:18px; color:var(--text-muted);">⚡</span>
             </div>
         </div>
@@ -5071,13 +4866,13 @@ function renderTutorialesPage() {
                         <div style="width:50px; height:4px; background:#334155; border-radius:4px; margin:0 auto 10px;"></div>
                         
                         <div class="phone-screen" id="phoneScreen">
-                            <div style="font-size:11px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em;" id="phoneMerchantTag">
+                            <div style="font-size:12px; font-weight:800; color:#0284c7; text-transform:uppercase; letter-spacing:0.04em;" id="phoneMerchantTag">
                                 Café &amp; Bistro Colonial
                             </div>
-                            <div style="font-size:24px; font-weight:900; color:var(--text-main); margin:4px 0;" id="phoneAmountTag">
+                            <div style="font-size:24px; font-weight:900; color:#0f172a; margin:4px 0;" id="phoneAmountTag">
                                 $25.00 USDC
                             </div>
-                            <div style="font-size:11.5px; color:var(--text-muted); font-weight:600; margin-bottom:8px;" id="phoneConceptTag">
+                            <div style="font-size:12px; color:#64748b; font-weight:600; margin-bottom:8px;" id="phoneConceptTag">
                                 Consumo Almuerzo + Bebida Turista
                             </div>
 
@@ -5110,10 +4905,10 @@ function renderTutorialesPage() {
                                 </svg>
                             </div>
 
-                            <div style="font-size:11px; color:var(--emerald); font-weight:800; display:flex; align-items:center; gap:4px;">
+                            <div style="font-size:11.5px; color:#059669; font-weight:800; display:flex; align-items:center; gap:4px;">
                                 ⚡ Red Base • Comisión: $0.0008 USD
                             </div>
-                            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
+                            <div style="font-size:10.5px; color:#64748b; margin-top:4px; font-weight:600;">
                                 Compatible con Coinbase, MetaMask, Binance
                             </div>
                         </div>
@@ -5391,7 +5186,7 @@ function renderTutorialesPage() {
         // FILTRO DE CATEGORÍAS
         function switchCategory(cat, btn) {
             document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
 
             const cards = document.querySelectorAll('.tut-card');
             cards.forEach(c => {
@@ -5458,7 +5253,7 @@ function renderTutorialesPage() {
             });
 
             quizHtml += '</div>' +
-                '<button class="btn-primary" id="btnSubmitQuiz" onclick="submitLessonQuiz(\'' + tutId + '\')" style="width:100%; justify-content:center; margin-top:14px; padding:12px; font-size:14px;">' +
+                '<button class="btn-primary" id="btnSubmitQuiz" onclick="submitActiveLessonQuiz()" style="width:100%; justify-content:center; margin-top:14px; padding:12px; font-size:14px;">' +
                     '✅ Validar Respuesta &amp; Reclamar Fichas' +
                 '</button>' +
                 '<div id="quizFeedbackMsg" style="margin-top:12px; display:none; padding:12px; border-radius:10px; font-size:13.5px; font-weight:800; text-align:center;"></div>' +
@@ -5501,6 +5296,11 @@ function renderTutorialesPage() {
                     opt.classList.remove('selected');
                 }
             });
+        }
+
+        function submitActiveLessonQuiz() {
+            if (!currentActiveTutorialId) return;
+            submitLessonQuiz(currentActiveTutorialId);
         }
 
         async function submitLessonQuiz(tutId) {
@@ -5605,17 +5405,17 @@ function renderTutorialesPage() {
                 
                 setTimeout(() => {
                     screen.innerHTML = '<div style="font-size:44px; margin-bottom:10px;">✅</div>' +
-                        '<div style="font-size:20px; font-weight:900; color:var(--emerald); margin-bottom:4px;">¡PAGO APROBADO!</div>' +
-                        '<div style="font-size:26px; font-weight:900; color:var(--text-main); margin-bottom:8px;">$' + amount.toFixed(2) + ' USDC</div>' +
-                        '<div style="font-size:12px; color:var(--text-muted); line-height:1.4; margin-bottom:12px;">' +
+                        '<div style="font-size:20px; font-weight:900; color:#059669; margin-bottom:4px;">¡PAGO APROBADO!</div>' +
+                        '<div style="font-size:26px; font-weight:900; color:#0f172a; margin-bottom:8px;">$' + amount.toFixed(2) + ' USDC</div>' +
+                        '<div style="font-size:12px; color:#475569; line-height:1.4; margin-bottom:12px;">' +
                             'Recibido en Base L2 • Irreversible<br>' +
                             'Hash: <code>0x8f2a...c914</code>' +
                         '</div>' +
-                        '<div style="background:rgba(0,223,137,0.15); border:1px solid var(--emerald); border-radius:10px; padding:8px 12px; font-size:11.5px; font-weight:800; color:var(--emerald);">' +
+                        '<div style="background:rgba(0,223,137,0.15); border:1px solid #059669; border-radius:10px; padding:8px 12px; font-size:11.5px; font-weight:800; color:#059669;">' +
                             '✓ Notificación enviada a Telegram' +
                         '</div>';
-                    screen.style.border = '2px solid var(--emerald)';
-                    screen.style.background = 'linear-gradient(135deg, rgba(0,223,137,0.15) 0%, rgba(15,22,36,1) 100%)';
+                    screen.style.border = '2px solid #059669';
+                    screen.style.background = 'linear-gradient(135deg, rgba(0,223,137,0.1) 0%, #ffffff 100%)';
                     status.innerHTML = '🎉 <strong style="color:var(--emerald);">¡PAGO RECIBIDO EXITOSAMENTE!</strong> Tu saldo ha sido acreditado en 1.8 segundos.';
                 }, 1800);
 

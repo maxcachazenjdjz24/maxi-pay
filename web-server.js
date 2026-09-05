@@ -1465,16 +1465,20 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
                         <!-- Onramp Trigger Buttons -->
                         <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('coinbase')" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:#0052FF; color:#fff; box-shadow:0 6px 20px rgba(0,82,255,0.35); cursor:pointer;">
-                                🔵 Pagar $${amount}.00 USD con Coinbase Onramp (Tarjeta / Apple Pay)
+                            <button type="button" id="btnSmartCardSubmit" class="btn-primary" onclick="openLiveOnramp('onramper')" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer;">
+                                ⚡ Pagar $${amount}.00 USD con Tarjeta Internacional (Menor Comisión)
                             </button>
 
-                            <button type="button" onclick="openWompiCheckout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer;">
-                                <span>🇨🇴</span> Pagar con Tarjeta Directa / Nequi (Wompi)
+                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('coinbase')" style="width:100%; justify-content:center; padding:12px; font-size:14px; font-weight:800; border:none; background:#0052FF; color:#fff; box-shadow:0 4px 14px rgba(0,82,255,0.3); cursor:pointer;">
+                                🔵 Pagar con Coinbase Onramp (EE.UU. / Apple Pay)
                             </button>
 
-                            <button type="button" onclick="openLiveOnramp('moonpay')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#7D00FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(125,0,255,0.3);">
-                                <span>🟣</span> Pagar con MoonPay Onramp (Tarjeta / Apple Pay)
+                            <button type="button" onclick="openWompiCheckout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--bg-card); border:1.5px solid var(--emerald); color:var(--emerald); font-weight:800; font-size:14px; border-radius:10px; cursor:pointer;">
+                                <span>🇨🇴</span> Pagar en Pesos con Tarjeta / Nequi (Wompi)
+                            </button>
+
+                            <button type="button" onclick="openLiveOnramp('moonpay')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; background:rgba(125,0,255,0.12); color:#b77bff; border:1px solid rgba(125,0,255,0.3); font-weight:700; font-size:12.5px; border-radius:8px; cursor:pointer;">
+                                <span>🟣</span> Opción Alternativa: MoonPay Onramp
                             </button>
                         </div>
 
@@ -1623,11 +1627,14 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             if (txId) document.getElementById('succTx').innerText = txId;
         }
 
-        async function openLiveOnramp(provider = 'coinbase') {
+        async function openLiveOnramp(provider = 'onramper') {
             const targetWallet = '${wallet}';
             const amountUsd = '${amount}';
 
-            if (provider === 'coinbase') {
+            if (provider === 'onramper') {
+                const onramperUrl = 'https://buy.onramper.com/?defaultCrypto=usdc_base&wallets=USDC_BASE:' + encodeURIComponent(targetWallet) + '&defaultFiat=USD&defaultAmount=' + encodeURIComponent(amountUsd) + '&isAddressEditable=false&onlyCryptos=usdc_base';
+                window.open(onramperUrl, 'onramperModal', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+            } else if (provider === 'coinbase') {
                 const btn = document.getElementById('btnCardSubmit');
                 const origText = btn ? btn.innerHTML : '';
                 if (btn) {
@@ -8354,6 +8361,57 @@ const server = http.createServer(async (req, res) => {
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ valid: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/maxi/payment-advisor') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const country = (payload.country || 'Estados Unidos').trim();
+                const amount = parseFloat(payload.amount) || 20.0;
+                const merchantName = (payload.merchantName || 'Juan David').trim();
+                const wallet = (payload.wallet || MAXI_WALLET).trim();
+
+                // Fee comparisons calculation
+                const achFee = Math.max(0.10, amount * 0.005);
+                const smartCardFee = Math.max(0.40, amount * 0.02);
+                const traditionalOnrampFee = Math.max(4.40, amount * 0.045);
+                const cryptoGasFee = 0.002;
+
+                const userSlug = merchantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                const checkoutLink = `https://maxi-pay.onrender.com/pay/${userSlug}/${amount}?concept=Servicio%20Digital&wallet=${wallet}`;
+
+                let recommendation = '';
+                if (country.toLowerCase().includes('estados unidos') || country.toLowerCase().includes('usa') || country.toLowerCase().includes('eeuu')) {
+                    recommendation = `Para tu cliente en Estados Unidos, la mejor opción es **Transferencia Bancaria Directa (ACH)** o **Tarjeta Débito Internacional (Onramper)**. Tu cliente pagará $${amount.toFixed(2)} USD desde su cuenta bancaria o tarjeta, con una comisión mínima de apenas ~$${achFee.toFixed(2)} USD (~0.5%), y tú recibirás $${(amount - achFee).toFixed(2)} USDC directamente en tu billetera de Base L2.`;
+                } else if (country.toLowerCase().includes('colombia')) {
+                    recommendation = `Para tu cliente en Colombia, la mejor opción es **Tarjeta Directa / Nequi / PSE (Wompi)** o transferencia en pesos. No paga comisión fija en dólares y se liquida en segundos.`;
+                } else {
+                    recommendation = `Para tu cliente en ${country}, la mejor opción es **Tarjeta Débito Internacional (Onramper Multi-Riel)**. El sistema seleccionará automáticamente la procesadora con la tasa más baja para su país y moneda, liquidando en USDC en Base L2.`;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    advisor: {
+                        agent: 'Maxi AI Payment Advisor',
+                        country,
+                        amountUsd: amount,
+                        checkoutLink,
+                        recommendation,
+                        comparisons: [
+                            { rail: 'Transferencia ACH / Cuentas Virtuales (Global66)', feeUsd: achFee.toFixed(2), netUsdc: (amount - achFee).toFixed(2), percentage: '~0.5%', rating: '⭐⭐⭐⭐⭐ Recomendado' },
+                            { rail: 'Tarjeta Internacional Smart (Onramper)', feeUsd: smartCardFee.toFixed(2), netUsdc: (amount - smartCardFee).toFixed(2), percentage: '~2.0%', rating: '⭐⭐⭐⭐ Excelente' },
+                            { rail: 'Cripto QR Directo (Base L2 USDC)', feeUsd: cryptoGasFee.toFixed(3), netUsdc: amount.toFixed(2), percentage: '0.0%', rating: '⭐⭐⭐⭐⭐ Cero Comisiones' },
+                            { rail: 'Pasarela Minorista Aislada (MoonPay)', feeUsd: traditionalOnrampFee.toFixed(2), netUsdc: (amount - traditionalOnrampFee).toFixed(2), percentage: `~${((traditionalOnrampFee/amount)*100).toFixed(1)}%`, rating: '⚠️ Tarifa Fija Alta' }
+                        ]
+                    }
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
     } else {

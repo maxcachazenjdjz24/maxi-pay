@@ -18,6 +18,22 @@
       "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735",
       "sales": [
         {
+          "txHash": "0xd1d441960a275bb8741ae47601c5e81e6b0d3d697fadc99748cc809687791c04",
+          "invoiceId": "CARD-ONRAMP-1788625430172",
+          "orderId": "TEST-PAY-001",
+          "amountUsd": 20,
+          "amountPaid": 20.3,
+          "fee": 0.3,
+          "amountCop": 80000,
+          "concept": "Prueba Real Curso Online",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Juan David Jaramillo Zapata",
+          "from": "Tarjeta •••• 8407",
+          "to": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
+          "date": "2026-09-05T16:23:50.172Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
           "txHash": "0xefea94b611ba6879bf53f79bb3ca6a2ae8231113c72249d39cef81fdb77aa085",
           "invoiceId": "CARD-ONRAMP-1788563018753",
           "orderId": "TEST-ORD-1788563018751",
@@ -115,6 +131,21 @@
       "timestamp": "2026-09-04T23:03:38.753Z",
       "buyerName": "Michael Scott",
       "buyerEmail": "cliente@internacional.com"
+    },
+    "CARD-ONRAMP-1788625430172": {
+      "invoiceId": "CARD-ONRAMP-1788625430172",
+      "orderId": "TEST-PAY-001",
+      "amountUsd": "20.00",
+      "amountPaid": "20.30",
+      "fee": "0.30",
+      "amountCop": 80000,
+      "concept": "Prueba Real Curso Online",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-05T16:23:50.172Z",
+      "buyerName": "Juan David Jaramillo Zapata",
+      "buyerEmail": "jdavidjaramillo@hotmail.com",
+      "txHash": "0xd1d441960a275bb8741ae47601c5e81e6b0d3d697fadc99748cc809687791c04"
     }
   },
   "withdrawals": [

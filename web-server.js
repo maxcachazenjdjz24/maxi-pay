@@ -1366,30 +1366,36 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                                 <span style="font-size:22px;">🇺🇸</span>
                                 <div>
                                     <h3 style="font-size:15.5px; font-weight:800; color:var(--text-main); margin:0;">Pasarela Onramp Internacional</h3>
-                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Débito en USD $\rightarrow$ Depósito en USDC (Base L2)</p>
+                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Débito en USD → Depósito en USDC (Base L2)</p>
                                 </div>
                             </div>
                             <span style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">
-                                Transak Live
+                                Onramp Live
                             </span>
                         </div>
 
                         <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px; font-size:12.5px; line-height:1.6; color:var(--text-muted);">
-                            <div style="color:var(--cyan); font-weight:800; margin-bottom:4px;">🛡️ Proceso de Pago 100% Real:</div>
-                            Al presionar el botón, se abrirá la pasarela oficial certificada de <strong>Transak Onramp</strong>. Ingresas tu tarjeta <strong>Global66 / Visa / Mastercard / Apple Pay</strong>, se debitan los <strong>$${amount}.00 USD</strong> y los fondos se transfieren en <strong>USDC</strong> directamente a la billetera de ${recipientName}:
+                            <div style="color:var(--cyan); font-weight:800; margin-bottom:4px;">🛡️ Proceso de Pago Internacional 100% Real:</div>
+                            Paga con tu tarjeta <strong>Global66 / Visa / Mastercard / Apple Pay</strong> en USD. El procesador liquida los fondos directamente en <strong>USDC nativo (Red Base)</strong> a tu billetera personal:
                             <div style="font-family:monospace; font-size:11.5px; color:var(--text-main); margin-top:6px; word-break:break-all; background:var(--bg-card); padding:6px 10px; border-radius:6px; border:1px solid var(--border);">
                                 ${wallet}
                             </div>
                         </div>
 
-                        <!-- 1-Click Transak Onramp Trigger Button -->
-                        <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('transak')" style="width:100%; justify-content:center; padding:15px; font-size:15.5px; font-weight:800; border:none; box-shadow:0 6px 22px rgba(0,242,254,0.35); cursor:pointer; margin-bottom:12px;">
-                            💳 Pagar $${amount}.00 USD con Tarjeta / Apple Pay (Transak)
-                        </button>
+                        <!-- Onramp Trigger Buttons -->
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('transak')" style="width:100%; justify-content:center; padding:14px; font-size:14.5px; font-weight:800; border:none; box-shadow:0 6px 20px rgba(0,242,254,0.3); cursor:pointer;">
+                                💳 Pagar $${amount}.00 USD con Tarjeta / Apple Pay (Transak)
+                            </button>
 
-                        <button type="button" onclick="openLiveOnramp('coinbase')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#0052FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 4px 14px rgba(0,82,255,0.3);">
-                            <span>🔵</span> Pagar con Coinbase Onramp
-                        </button>
+                            <button type="button" onclick="openLiveOnramp('coinbase')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#0052FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,82,255,0.3);">
+                                <span>🔵</span> Pagar con Coinbase Onramp (USD a USDC)
+                            </button>
+
+                            <button type="button" onclick="openLiveOnramp('ramp')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#1e293b; color:#38bdf8; font-weight:800; font-size:13.5px; border-radius:10px; border:1px solid rgba(56,189,248,0.3); cursor:pointer;">
+                                <span>⚡</span> Pagar con Ramp Network Onramp
+                            </button>
+                        </div>
 
                         <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
                             <div class="radar-pulse"></div>
@@ -1543,8 +1549,11 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             if (provider === 'coinbase') {
                 const cbUrl = 'https://pay.coinbase.com/buy/select-asset?addresses=' + encodeURIComponent(JSON.stringify({ [targetWallet]: ['base'] })) + '&assets=' + encodeURIComponent(JSON.stringify(['USDC'])) + '&presetFiatAmount=' + amountUsd + '&fiatCurrency=USD';
                 window.open(cbUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+            } else if (provider === 'ramp') {
+                const rampUrl = 'https://app.ramp.network/?swapAsset=BASE_USDC&userAddress=' + encodeURIComponent(targetWallet) + '&fiatValue=' + amountUsd + '&fiatCurrency=USD';
+                window.open(rampUrl, 'rampOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             } else {
-                const transakUrl = 'https://global.transak.com/?apiKey=4f7b6070-5e36-4c74-8b6a-939e830e9d6d&cryptoCurrencyCode=USDC&network=base&walletAddress=' + encodeURIComponent(targetWallet) + '&fiatCurrency=USD&fiatAmount=' + encodeURIComponent(amountUsd) + '&defaultPaymentMethod=credit_debit_card&themeColor=00f2fe';
+                const transakUrl = 'https://global.transak.com/?apiKey=4f7b6070-5e36-4c74-8b6a-939e830e9d6d&cryptoCurrencyCode=USDC&network=base&walletAddress=' + encodeURIComponent(targetWallet) + '&fiatCurrency=USD&fiatAmount=' + encodeURIComponent(amountUsd) + '&defaultPaymentMethod=credit_debit_card&themeColor=00f2fe&productsAvailed=BUY';
                 window.open(transakUrl, 'transakOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             }
         }

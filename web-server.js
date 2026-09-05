@@ -57,14 +57,16 @@ async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
   const { importJWK, SignJWT } = require('jose');
   const key = await importJWK(jwk, 'EdDSA');
   const nonce = crypto.randomBytes(16).toString('hex');
+  const now = Math.floor(Date.now() / 1000);
   const jwt = await new SignJWT({
     sub: CDP_KEY_ID,
     iss: 'cdp',
     uris: ['POST api.developer.coinbase.com/onramp/v1/token']
   })
     .setProtectedHeader({ alg: 'EdDSA', kid: CDP_KEY_ID, typ: 'JWT', nonce })
-    .setIssuedAt()
-    .setExpirationTime('2m')
+    .setIssuedAt(now - 10)
+    .setNotBefore(now - 10)
+    .setExpirationTime(now + 120)
     .sign(key);
 
   const body = JSON.stringify({

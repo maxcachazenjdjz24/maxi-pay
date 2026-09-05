@@ -7381,7 +7381,7 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({ credits, user }));
         } else if (pathname === '/health') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'ok', service: 'maxi-suite-portal', wallet: MAXI_WALLET, version: '9.0-clean-navbar' }));
+            res.end(JSON.stringify({ status: 'ok', service: 'maxi-suite-portal', wallet: MAXI_WALLET, version: '9.1-coinbase-onramp' }));
         } else if (pathname === '/api/v1/wompi/signature') {
             const ref = parsedUrl.query.reference || ('REF-' + Date.now());
             const amountInCents = parseInt(parsedUrl.query.amountInCents) || 150000;

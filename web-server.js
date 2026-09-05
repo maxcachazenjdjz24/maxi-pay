@@ -1384,16 +1384,16 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
                         <!-- Onramp Trigger Buttons -->
                         <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
-                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('mercuryo')" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; box-shadow:0 6px 20px rgba(0,242,254,0.3); cursor:pointer;">
-                                💳 Pagar $${amount}.00 USD con Tarjeta / Apple Pay (Mercuryo Live)
-                            </button>
-
-                            <button type="button" onclick="openLiveOnramp('moonpay')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#7D00FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(125,0,255,0.3);">
-                                <span>🟣</span> Pagar con MoonPay Onramp (Tarjeta / Apple Pay)
+                            <button type="button" id="btnCardSubmit" class="btn-primary" onclick="openLiveOnramp('coinbase')" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:#0052FF; color:#fff; box-shadow:0 6px 20px rgba(0,82,255,0.35); cursor:pointer;">
+                                🔵 Pagar $${amount}.00 USD con Coinbase Onramp (Tarjeta / Apple Pay)
                             </button>
 
                             <button type="button" onclick="openWompiCheckout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer;">
                                 <span>🇨🇴</span> Pagar con Tarjeta Directa / Nequi (Wompi)
+                            </button>
+
+                            <button type="button" onclick="openLiveOnramp('moonpay')" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#7D00FF; color:#fff; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(125,0,255,0.3);">
+                                <span>🟣</span> Pagar con MoonPay Onramp (Tarjeta / Apple Pay)
                             </button>
                         </div>
 
@@ -1550,7 +1550,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 const moonpayUrl = 'https://buy.moonpay.com?currencyCode=usdc_base&walletAddress=' + encodeURIComponent(targetWallet) + '&baseCurrencyAmount=' + encodeURIComponent(amountUsd) + '&baseCurrencyCode=usd';
                 window.open(moonpayUrl, 'moonpayOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             } else if (provider === 'coinbase') {
-                const cbUrl = 'https://pay.coinbase.com/buy/select-asset?addresses=' + encodeURIComponent(JSON.stringify({ [targetWallet]: ['base'] })) + '&assets=' + encodeURIComponent(JSON.stringify(['USDC'])) + '&presetFiatAmount=' + amountUsd + '&fiatCurrency=USD';
+                const cbUrl = 'https://pay.coinbase.com/buy/select-asset?appId=61406b79-2d66-4172-97bf-c22d09220527&addresses=' + encodeURIComponent(JSON.stringify({ [targetWallet]: ['base'] })) + '&assets=' + encodeURIComponent(JSON.stringify(['USDC'])) + '&presetFiatAmount=' + amountUsd + '&fiatCurrency=USD';
                 window.open(cbUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             } else {
                 const mercuryoUrl = 'https://exchange.mercuryo.io/?currency=USDC_BASE&fiat_currency=USD&fiat_amount=' + encodeURIComponent(amountUsd) + '&address=' + encodeURIComponent(targetWallet);

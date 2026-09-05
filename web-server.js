@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
@@ -33,6 +34,84 @@ function generateWompiSignature(reference, amountInCents, currency = 'COP') {
   const concat = `${reference}${amountInCents}${currency}${WOMPI_INTEGRITY_SECRET}`;
   return crypto.createHash('sha256').update(concat).digest('hex');
 }
+
+// COINBASE DEVELOPER PLATFORM (CDP) ONRAMP INTEGRATION
+const CDP_KEY_ID = process.env.CDP_KEY_ID || '99bc15fe-1f8d-4734-a3c6-d5beb2fb03c2';
+const CDP_KEY_SECRET = process.env.CDP_KEY_SECRET || 'j7KiKeJlcz1VaKURGAO+S6Hp+kYjYVH2iO8B1B5sv8laH+f2TH1kGKbialj9shvygcKbTmROTHKAJPNoK6UdBg==';
+
+async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
+  const rawSecret = Buffer.from(CDP_KEY_SECRET, 'base64');
+  const seed = rawSecret.subarray(0, 32);
+  const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
+  const privKey = crypto.createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' });
+  const pubKey = crypto.createPublicKey(privKey);
+  const pubKeyJwk = pubKey.export({ format: 'jwk' });
+
+  const jwk = {
+    kty: 'OKP',
+    crv: 'Ed25519',
+    d: seed.toString('base64url'),
+    x: pubKeyJwk.x
+  };
+
+  const { importJWK, SignJWT } = require('jose');
+  const key = await importJWK(jwk, 'EdDSA');
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const jwt = await new SignJWT({
+    sub: CDP_KEY_ID,
+    iss: 'cdp',
+    uris: ['POST api.developer.coinbase.com/onramp/v1/token']
+  })
+    .setProtectedHeader({ alg: 'EdDSA', kid: CDP_KEY_ID, typ: 'JWT', nonce })
+    .setIssuedAt()
+    .setExpirationTime('2m')
+    .sign(key);
+
+  const body = JSON.stringify({
+    destination_wallets: [
+      {
+        address: targetWallet,
+        blockchains: ['base'],
+        assets: ['USDC']
+      }
+    ]
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'api.developer.coinbase.com',
+      path: '/onramp/v1/token',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + jwt,
+        'Content-Length': Buffer.byteLength(body)
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', d => data += d);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.token) {
+            resolve({
+              token: parsed.token,
+              onrampUrl: `https://pay.coinbase.com/?sessionToken=${parsed.token}`
+            });
+          } else {
+            reject(new Error(data));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 
 // TELEGRAM ALERT NOTIFICATIONS INTEGRATION
 const TELEGRAM_BOT_TOKEN = '8006933644:AAHF-kBCjrSIL5hOh5TksCvL6Cq7gGnOvcg';
@@ -1542,16 +1621,36 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             if (txId) document.getElementById('succTx').innerText = txId;
         }
 
-        function openLiveOnramp(provider = 'mercuryo') {
+        async function openLiveOnramp(provider = 'coinbase') {
             const targetWallet = '${wallet}';
             const amountUsd = '${amount}';
 
-            if (provider === 'moonpay') {
+            if (provider === 'coinbase') {
+                const btn = document.getElementById('btnCardSubmit');
+                const origText = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.innerHTML = '⏳ Conectando con Coinbase Onramp seguro...';
+                    btn.disabled = true;
+                }
+                try {
+                    const res = await fetch('/api/v1/coinbase/session-token?wallet=' + encodeURIComponent(targetWallet) + '&amount=' + encodeURIComponent(amountUsd));
+                    const data = await res.json();
+                    if (data.success && data.onrampUrl) {
+                        window.open(data.onrampUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
+                    } else {
+                        alert('No se pudo generar la sesión de Coinbase: ' + (data.error || 'Error desconocido'));
+                    }
+                } catch (e) {
+                    alert('Error de conexión con Coinbase: ' + e.message);
+                } finally {
+                    if (btn) {
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    }
+                }
+            } else if (provider === 'moonpay') {
                 const moonpayUrl = 'https://buy.moonpay.com?currencyCode=usdc_base&walletAddress=' + encodeURIComponent(targetWallet) + '&baseCurrencyAmount=' + encodeURIComponent(amountUsd) + '&baseCurrencyCode=usd';
                 window.open(moonpayUrl, 'moonpayOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
-            } else if (provider === 'coinbase') {
-                const cbUrl = 'https://pay.coinbase.com/buy/select-asset?appId=61406b79-2d66-4172-97bf-c22d09220527&addresses=' + encodeURIComponent(JSON.stringify({ [targetWallet]: ['base'] })) + '&assets=' + encodeURIComponent(JSON.stringify(['USDC'])) + '&presetFiatAmount=' + amountUsd + '&fiatCurrency=USD';
-                window.open(cbUrl, 'coinbaseOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
             } else {
                 const mercuryoUrl = 'https://exchange.mercuryo.io/?currency=USDC_BASE&fiat_currency=USD&fiat_amount=' + encodeURIComponent(amountUsd) + '&address=' + encodeURIComponent(targetWallet);
                 window.open(mercuryoUrl, 'mercuryoOnramp', 'width=480,height=750,location=no,toolbar=no,menubar=no,status=no');
@@ -7290,6 +7389,18 @@ const server = http.createServer(async (req, res) => {
             const signature = generateWompiSignature(ref, amountInCents, currency);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ reference: ref, amountInCents, currency, signature, publicKey: WOMPI_PUBLIC_KEY }));
+        } else if (pathname === '/api/v1/coinbase/session-token') {
+            const targetWallet = (parsedUrl.query.wallet || MAXI_WALLET).trim();
+            const amountUsd = parsedUrl.query.amount || '10';
+            try {
+                const session = await generateCoinbaseOnrampSessionToken(targetWallet, amountUsd);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, sessionToken: session.token, onrampUrl: session.onrampUrl }));
+            } catch (err) {
+                console.error('Error generating Coinbase session token:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
         } else {
             res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end('<h1 style="color:#07090e; text-align:center; margin-top:50px;">404 - Página No Encontrada</h1><p style="text-align:center;"><a href="/">Volver al Inicio</a></p>');

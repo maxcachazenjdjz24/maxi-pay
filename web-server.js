@@ -1642,37 +1642,38 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                             </span>
                         </div>
 
-                        <!-- BANK ACCOUNT DETAILS -->
+                        <!-- REAL CERTIFIED BANK ACCOUNT DETAILS (GLOBAL66 / COMMUNITY FEDERAL SAVINGS BANK) -->
                         <div class="bank-data-row">
                             <div>
                                 <div class="bank-label">Banco Receptor (EE.UU.)</div>
-                                <div class="bank-value">Lead Bank (Partner Institucional Circle)</div>
+                                <div class="bank-value">Community Federal Savings Bank</div>
+                                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">5 Penn Plaza, 14th Floor, New York, NY 10001, US</div>
                             </div>
-                            <button class="copy-btn-sm" onclick="copyText('Lead Bank')">📋 Copiar</button>
+                            <button class="copy-btn-sm" onclick="copyText('Community Federal Savings Bank')">📋 Copiar</button>
                         </div>
 
                         <div class="bank-data-row">
                             <div>
-                                <div class="bank-label">Número de Ruta / Routing (ABA - 9 Dígitos)</div>
-                                <div class="bank-value" style="color:var(--cyan);">101015064</div>
+                                <div class="bank-label">Número de Ruta / ACH Routing (ABA - 9 Dígitos)</div>
+                                <div class="bank-value" style="color:var(--cyan);">026073150</div>
                             </div>
-                            <button class="copy-btn-sm" onclick="copyText('101015064')">📋 Copiar</button>
+                            <button class="copy-btn-sm" onclick="copyText('026073150')">📋 Copiar</button>
                         </div>
 
                         <div class="bank-data-row">
                             <div>
                                 <div class="bank-label">Número de Cuenta (Account Number)</div>
-                                <div class="bank-value" style="color:var(--cyan);">883019284712</div>
+                                <div class="bank-value" style="color:var(--emerald); font-size:16px;">8335968407</div>
                             </div>
-                            <button class="copy-btn-sm" onclick="copyText('883019284712')">📋 Copiar</button>
+                            <button class="copy-btn-sm" onclick="copyText('8335968407')">📋 Copiar</button>
                         </div>
 
                         <div class="bank-data-row">
                             <div>
                                 <div class="bank-label">Titular / Beneficiario</div>
-                                <div class="bank-value">Maxi Pay Global / Juan David Jaramillo</div>
+                                <div class="bank-value">Juan David Jaramillo Zapata</div>
                             </div>
-                            <button class="copy-btn-sm" onclick="copyText('Maxi Pay Global')">📋 Copiar</button>
+                            <button class="copy-btn-sm" onclick="copyText('Juan David Jaramillo Zapata')">📋 Copiar</button>
                         </div>
 
                         <div class="bank-data-row">
@@ -1681,6 +1682,14 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                                 <div class="bank-value">Checking (Cuenta Corriente)</div>
                             </div>
                             <button class="copy-btn-sm" onclick="copyText('Checking')">📋 Copiar</button>
+                        </div>
+
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Código SWIFT / BIC (Internacional)</div>
+                                <div class="bank-value" style="color:var(--cyan);">CMFGUS33</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('CMFGUS33')">📋 Copiar</button>
                         </div>
 
                         <!-- OBLIGATORY UNIQUE MEMO REFERENCE (HIGHLY HIGHLIGHTED IN AMBER NEON) -->

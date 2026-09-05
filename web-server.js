@@ -1443,9 +1443,13 @@ function getGlobalStyles() {
   `;
 }
 
-// 2. DUAL CHECKOUT: REAL CARD-TO-USDC ONRAMP (TRANSAK / COINBASE) + WEB3 CRIPTO (BASE L2)
+// 2. MULTI-RAIL CHECKOUT 2.0: ACH DIRECT (US BANK) + BASE L2 NATIVE USDC (QR/WEB3) + INTERNATIONAL CARD & APPLE PAY
 function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'Maxi Pay') {
+  const numAmount = parseFloat(amount) || 20.00;
+  const cardFeeAmount = parseFloat((numAmount / (1 - 0.015) - numAmount).toFixed(2));
+  const cardTotalToPay = parseFloat((numAmount + cardFeeAmount).toFixed(2));
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=ethereum:' + wallet + '@8453?value=0';
+  const referenceCode = 'REF-' + orderId;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -1478,33 +1482,120 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
         }
         .pay-tab {
             flex: 1;
-            padding: 12px 8px;
+            padding: 12px 6px;
             text-align: center;
             font-weight: 800;
-            font-size: 13.5px;
+            font-size: 13px;
             cursor: pointer;
             border-radius: 12px;
-            transition: all 0.2s;
-            border: 1px solid transparent;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1.5px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .pay-tab.active {
-            background: var(--cyan);
-            color: #06080e;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            background: linear-gradient(135deg, rgba(0,242,254,0.2) 0%, rgba(0,223,137,0.15) 100%);
+            color: var(--cyan);
+            border-color: var(--cyan);
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.25);
         }
         .pay-tab.inactive {
             background: var(--bg-card-hover);
             color: var(--text-muted);
             border-color: var(--border);
         }
+        .pay-tab.inactive:hover {
+            border-color: var(--cyan);
+            color: var(--text-main);
+        }
+        .bank-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+        .bank-data-row:hover {
+            border-color: var(--cyan);
+        }
+        .bank-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .bank-value {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+        .copy-btn-sm {
+            background: rgba(0,242,254,0.12);
+            border: 1px solid rgba(0,242,254,0.3);
+            color: var(--cyan);
+            font-weight: 800;
+            font-size: 11px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .copy-btn-sm:hover {
+            background: var(--cyan);
+            color: #06080e;
+        }
+        .memo-alert-card {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(0, 242, 254, 0.08) 100%);
+            border: 2px solid #F59E0B;
+            border-radius: 14px;
+            padding: 16px;
+            margin: 14px 0;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+            text-align: center;
+        }
+        #checkoutToast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0f172a;
+            color: #00df89;
+            border: 1.5px solid #00df89;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 13.5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 999999;
+            display: none;
+            animation: fadeInToast 0.3s ease;
+        }
+        @keyframes fadeInToast {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
     <script type="text/javascript" src="https://checkout.wompi.co/widget.js"></script>
 </head>
 <body>
+    <div id="checkoutToast"></div>
+
     <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
-        <div class="card" style="width:100%; max-width:540px; text-align:center; padding:32px; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.15);">
+        <div class="card" style="width:100%; max-width:560px; text-align:center; padding:28px 24px; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.15);">
             
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+            <!-- HEADER -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; color:var(--text-main);">
                     <div style="width:28px; height:28px; background:rgba(0,242,254,0.12); border-radius:8px; display:flex; align-items:center; justify-content:center;">${ICONS.logo}</div>
                     <span>Maxi Pay Pro Checkout</span>
@@ -1512,34 +1603,159 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Orden: <strong>${orderId}</strong></div>
             </div>
 
+            <!-- MAIN ACTIVE PAYMENT FLOW -->
             <div id="paymentPendingSection">
                 <div style="font-size:14px; font-weight:800; color:var(--cyan); margin-bottom:4px;">Concepto: ${concept}</div>
                 <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px; font-weight:600;">Destinatario: ${recipientName}</div>
 
-                <div style="font-size:36px; font-weight:800; color:var(--emerald); margin-bottom:16px; letter-spacing:-0.03em;">
-                    $${parseFloat(amount).toFixed(2)} <span style="font-size:16px; color:var(--text-muted);">USD (~$${(parseFloat(amount) * 4000).toLocaleString('es-CO')} COP)</span>
+                <div style="font-size:36px; font-weight:900; color:var(--emerald); margin-bottom:16px; letter-spacing:-0.03em;">
+                    $${numAmount.toFixed(2)} <span style="font-size:16px; color:var(--text-muted); font-weight:600;">USD (~$${(numAmount * 4000).toLocaleString('es-CO')} COP)</span>
                 </div>
 
-                <!-- PAYMENT METHOD TABS -->
-                <div style="display:flex; gap:8px; margin-bottom:18px;">
-                    <div id="tabCard" class="pay-tab active" onclick="switchPayTab('card')">
-                        💳 Tarjeta Débito / Crédito
+                <!-- 3-RAIL SELECTOR TABS -->
+                <div style="display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;">
+                    <div id="tabAch" class="pay-tab active" onclick="switchPayTab('ach')">
+                        <span>🇺🇸</span> Transferencia ACH (0%)
                     </div>
                     <div id="tabCrypto" class="pay-tab inactive" onclick="switchPayTab('crypto')">
-                        🪙 Cripto / QR (Base L2)
+                        <span>🪙</span> Dólares QR Base
+                    </div>
+                    <div id="tabCard" class="pay-tab inactive" onclick="switchPayTab('card')">
+                        <span>💳</span> Tarjeta / Apple Pay
                     </div>
                 </div>
 
-                <!-- METHOD 1: NATIVE EMBEDDED CARD CHECKOUT (0% MERCHANT FEE, 100% USDC ON BASE L2) -->
-                <div id="cardPaySection" style="text-align:left;">
+                <!-- RIEL 1: TRANSFERENCIA BANCARIA ACH EN EE.UU. (0% COMISIÓN) -->
+                <div id="achPaySection" style="text-align:left;">
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:18px; margin-bottom:14px;">
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:22px;">🏛️</span>
+                                <div>
+                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Transferencia Bancaria Directa en EE.UU.</h3>
+                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Chase • BoA • Wells Fargo • Wise • Mercury • FedACH</p>
+                                </div>
+                            </div>
+                            <span style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">
+                                0% Comisión de Recepción
+                            </span>
+                        </div>
+
+                        <!-- BANK ACCOUNT DETAILS -->
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Banco Receptor (EE.UU.)</div>
+                                <div class="bank-value">Lead Bank (Partner Institucional Circle)</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('Lead Bank')">📋 Copiar</button>
+                        </div>
+
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Número de Ruta / Routing (ABA - 9 Dígitos)</div>
+                                <div class="bank-value" style="color:var(--cyan);">101015064</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('101015064')">📋 Copiar</button>
+                        </div>
+
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Número de Cuenta (Account Number)</div>
+                                <div class="bank-value" style="color:var(--cyan);">883019284712</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('883019284712')">📋 Copiar</button>
+                        </div>
+
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Titular / Beneficiario</div>
+                                <div class="bank-value">Maxi Pay Global / Juan David Jaramillo</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('Maxi Pay Global')">📋 Copiar</button>
+                        </div>
+
+                        <div class="bank-data-row">
+                            <div>
+                                <div class="bank-label">Tipo de Cuenta</div>
+                                <div class="bank-value">Checking (Cuenta Corriente)</div>
+                            </div>
+                            <button class="copy-btn-sm" onclick="copyText('Checking')">📋 Copiar</button>
+                        </div>
+
+                        <!-- OBLIGATORY UNIQUE MEMO REFERENCE (HIGHLY HIGHLIGHTED IN AMBER NEON) -->
+                        <div class="memo-alert-card">
+                            <div style="font-size:11.5px; font-weight:900; color:#F59E0B; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+                                ⚠️ OBLIGATORIO: INCLUYE ESTE MEMO / REFERENCIA EN TU BANCO
+                            </div>
+                            <div style="font-family:monospace; font-size:22px; font-weight:900; color:var(--cyan); letter-spacing:1.5px; margin:6px 0;" id="achReferenceDisplay">
+                                ${referenceCode}
+                            </div>
+                            <button onclick="copyText('${referenceCode}')" style="background:#F59E0B; color:#06080e; border:none; font-weight:800; font-size:12px; padding:6px 14px; border-radius:8px; cursor:pointer; margin-bottom:8px;">
+                                📋 Copiar Referencia Obligatoria
+                            </button>
+                            <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+                                Pega este código en el campo <strong>"Memo"</strong>, <strong>"Descripción"</strong> o <strong>"Referencia"</strong> de tu app bancaria para que los fondos se concilien y liquiden en USDC de forma automática.
+                            </div>
+                        </div>
+
+                        <!-- SENDER CONFIRMATION FORM -->
+                        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;">
+                            <div style="font-size:12.5px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
+                                📝 Notificar Envío de Transferencia (Opcional):
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <input type="text" id="achSenderName" placeholder="Tu Nombre o Banco" style="padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; color:var(--text-main); font-size:13px; outline:none;">
+                                <input type="email" id="achSenderEmail" placeholder="Tu Correo (para Recibo)" style="padding:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; color:var(--text-main); font-size:13px; outline:none;">
+                            </div>
+                            <button id="btnNotifyAch" onclick="submitAchNotification()" class="btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; border:none; cursor:pointer;">
+                                ✅ Ya Envié los $${numAmount.toFixed(2)} USD vía ACH
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- RIEL 2: DÓLARES DIGITALES QR (BASE L2 USDC) -->
+                <div id="cryptoPaySection" style="display:none; text-align:left;">
+                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px; text-align:center;">
+                        
+                        <div style="background:white; padding:14px; border-radius:16px; display:inline-block; margin-bottom:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+                            <img src="${qrUrl}" alt="QR de Pago" style="width:190px; height:190px; display:block;">
+                        </div>
+
+                        <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px; font-weight:700;">
+                            Escanea con Coinbase Wallet, MetaMask, Phantom, Trust o Binance (Red Base):
+                        </div>
+
+                        <div style="font-family:monospace; font-size:12px; color:var(--cyan); background:var(--input-bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); word-break:break-all; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="overflow:hidden; text-overflow:ellipsis;">${wallet}</span>
+                            <button onclick="copyText('${wallet}')" style="background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); font-weight:bold; border-radius:6px; padding:4px 8px; cursor:pointer; margin-left:8px; font-size:11.5px;">Copiar</button>
+                        </div>
+
+                        <!-- Web3 1-Click Pay Button -->
+                        <button type="button" id="btnWeb3Pay" onclick="payWithWeb3Wallet()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:linear-gradient(135deg, #a855f7 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; margin-bottom:12px; box-shadow:0 4px 15px rgba(168,85,247,0.3);">
+                            <span>🦊</span> Pagar $${numAmount.toFixed(2)} USDC con Web3 Wallet (MetaMask / Coinbase)
+                        </button>
+
+                        <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <div class="radar-pulse"></div>
+                            <div style="font-size:12px; font-weight:800; color:var(--emerald);">
+                                Monitoreando red Base L2 en vivo... (Auto-detección activa)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIEL 3: TARJETA DÉBITO/CRÉDITO INTERNACIONAL & APPLE PAY -->
+                <div id="cardPaySection" style="display:none; text-align:left;">
                     <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px;">
                         
-                        <!-- Header badge -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="font-size:22px;">💳</span>
                                 <div>
-                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Pago Seguro con Tarjeta Internacional</h3>
+                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Pago con Tarjeta Débito / Crédito</h3>
                                     <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Global66 • Mastercard • Visa • Apple Pay</p>
                                 </div>
                             </div>
@@ -1548,7 +1764,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                             </span>
                         </div>
 
-                        <!-- Embedded Native Card Form -->
+                        <!-- Embedded Card Form -->
                         <form id="nativeCardForm" onsubmit="submitNativeCardPay(event)" style="display:flex; flex-direction:column; gap:12px;">
                             <div>
                                 <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Nombre del Titular</label>
@@ -1586,30 +1802,30 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                             <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; line-height:1.7;">
                                 <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
                                     <span>Subtotal Producto / Servicio:</span>
-                                    <span style="font-weight:700; color:var(--text-main);">$${parseFloat(amount).toFixed(2)} USD</span>
+                                    <span style="font-weight:700; color:var(--text-main);">$${numAmount.toFixed(2)} USD</span>
                                 </div>
                                 <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
                                     <span>Tarifa Procesamiento Tarjeta (1.5%):</span>
-                                    <span style="font-weight:700; color:var(--cyan);">+$${(parseFloat(amount) * 0.015).toFixed(2)} USD</span>
+                                    <span style="font-weight:700; color:var(--cyan);">+$${cardFeeAmount.toFixed(2)} USD</span>
                                 </div>
                                 <div style="display:flex; justify-content:space-between; color:var(--text-muted); font-size:11.5px;">
                                     <span>Liquidación al Comerciante (Red Base L2):</span>
-                                    <span style="font-weight:700; color:var(--emerald);">$${parseFloat(amount).toFixed(2)} USDC (100% Neto)</span>
+                                    <span style="font-weight:700; color:var(--emerald);">$${numAmount.toFixed(2)} USDC (100% Neto)</span>
                                 </div>
                                 <div style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
                                     <span style="font-weight:800; color:var(--text-main); font-size:14px;">Total a Pagar con Tarjeta:</span>
-                                    <span style="font-size:18px; font-weight:800; color:var(--emerald);">$${(parseFloat(amount) * 1.015).toFixed(2)} USD</span>
+                                    <span style="font-size:18px; font-weight:900; color:var(--emerald);">$${cardTotalToPay.toFixed(2)} USD</span>
                                 </div>
                             </div>
 
                             <!-- Submit Button -->
                             <button type="submit" id="btnNativeCardPay" class="btn-primary" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer; border-radius:12px; margin-top:4px;">
-                                🔒 Pagar $${(parseFloat(amount) * 1.015).toFixed(2)} USD con Tarjeta
+                                🔒 Pagar $${cardTotalToPay.toFixed(2)} USD con Tarjeta
                             </button>
 
                             <!-- 1-Click Apple Pay / Google Pay option -->
                             <button type="button" onclick="payWithApplePay()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; background:#000; color:#fff; font-weight:800; font-size:13.5px; border-radius:10px; border:1px solid #333; cursor:pointer;">
-                                <span> Pay / G Pay</span> Pagar $${(parseFloat(amount) * 1.015).toFixed(2)} USD en 1 Clic
+                                <span> Pay / G Pay</span> Pagar $${cardTotalToPay.toFixed(2)} USD en 1 Clic
                             </button>
                         </form>
 
@@ -1639,37 +1855,6 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     </div>
                 </div>
 
-                <!-- METHOD 2: CRYPTO QR SCAN & WEB3 1-CLICK -->
-                <div id="cryptoPaySection" style="display:none; text-align:left;">
-                    <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px; text-align:center;">
-                        
-                        <div style="background:white; padding:14px; border-radius:16px; display:inline-block; margin-bottom:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-                            <img src="${qrUrl}" alt="QR de Pago" style="width:190px; height:190px; display:block;">
-                        </div>
-
-                        <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px; font-weight:700;">
-                            Escanea con Binance, Coinbase, MetaMask o TrustWallet (Red Base):
-                        </div>
-
-                        <div style="font-family:monospace; font-size:12px; color:var(--cyan); background:var(--input-bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); word-break:break-all; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="overflow:hidden; text-overflow:ellipsis;">${wallet}</span>
-                            <button onclick="navigator.clipboard.writeText('${wallet}'); showToastCopy();" style="background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); font-weight:bold; border-radius:6px; padding:4px 8px; cursor:pointer; margin-left:8px; font-size:11.5px;">Copiar</button>
-                        </div>
-
-                        <!-- Web3 1-Click Pay Button -->
-                        <button type="button" id="btnWeb3Pay" onclick="payWithWeb3Wallet()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:linear-gradient(135deg, #a855f7 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border-radius:10px; border:none; cursor:pointer; margin-bottom:12px; box-shadow:0 4px 15px rgba(168,85,247,0.3);">
-                            <span>🦊</span> Pagar $${parseFloat(amount).toFixed(2)} USDC con Web3 Wallet (MetaMask / Coinbase)
-                        </button>
-
-                        <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <div class="radar-pulse"></div>
-                            <div style="font-size:12px; font-weight:800; color:var(--emerald);">
-                                Monitoreando red Base L2 en vivo... (Auto-detección activa)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <!-- SUCCESS CONFIRMATION SECTION -->
@@ -1684,17 +1869,17 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:18px; border-radius:14px; text-align:left; font-size:13px; line-height:1.8; margin-bottom:20px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                         <span><strong>Total Pagado por el Cliente:</strong></span>
-                        <span id="succAmount" style="color:var(--emerald); font-weight:800;">$${(parseFloat(amount) * 1.015).toFixed(2)} USD</span>
+                        <span id="succAmount" style="color:var(--emerald); font-weight:800;">$${numAmount.toFixed(2)} USD</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                         <span><strong>Liquidación Neta al Comercio:</strong></span>
-                        <span id="succNetUsdc" style="color:var(--cyan); font-weight:800;">$${parseFloat(amount).toFixed(2)} USDC (100% Neto)</span>
+                        <span id="succNetUsdc" style="color:var(--cyan); font-weight:800;">$${numAmount.toFixed(2)} USDC (100% Neto)</span>
                     </div>
-                    <strong>Método:</strong> <span id="succMethod">💳 Tarjeta Débito / Crédito Internacional</span><br>
+                    <strong>Método:</strong> <span id="succMethod">🏛️ Transferencia Bancaria ACH (EE.UU.)</span><br>
                     <strong>ID de Comprobante / Tx:</strong> <span id="succTx" style="word-break:break-all; font-family:monospace; font-weight:bold; color:var(--cyan);">${orderId}</span><br>
                     <strong>Destinatario:</strong> <span style="color:var(--text-main); font-weight:700;">${recipientName} (${wallet.slice(0,8)}...${wallet.slice(-6)})</span><br>
                     <strong>Red de Liquidación:</strong> <span style="color:var(--emerald); font-weight:700;">Base L2 Blockchain (100% On-Chain)</span><br>
-                    <strong>Ahorro en Comisiones vs Bancos:</strong> <strong style="color:var(--emerald);">~$${(parseFloat(amount) * 0.12).toFixed(2)} USD (0% retenciones bancarias)</strong>
+                    <strong>Ahorro en Comisiones vs Bancos:</strong> <strong style="color:var(--emerald);">~$${(numAmount * 0.12).toFixed(2)} USD (0% retenciones bancarias)</strong>
                 </div>
 
                 <div style="display:flex; gap:10px;">
@@ -1715,26 +1900,46 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
         let isConfirmed = false;
 
         function switchPayTab(tab) {
-            const tabCard = document.getElementById('tabCard');
+            const tabAch = document.getElementById('tabAch');
             const tabCrypto = document.getElementById('tabCrypto');
-            const cardSection = document.getElementById('cardPaySection');
+            const tabCard = document.getElementById('tabCard');
+            const achSection = document.getElementById('achPaySection');
             const cryptoSection = document.getElementById('cryptoPaySection');
+            const cardSection = document.getElementById('cardPaySection');
 
-            if (tab === 'card') {
-                tabCard.className = 'pay-tab active';
-                tabCrypto.className = 'pay-tab inactive';
-                cardSection.style.display = 'block';
-                cryptoSection.style.display = 'none';
-            } else {
-                tabCard.className = 'pay-tab inactive';
+            tabAch.className = 'pay-tab inactive';
+            tabCrypto.className = 'pay-tab inactive';
+            tabCard.className = 'pay-tab inactive';
+            achSection.style.display = 'none';
+            cryptoSection.style.display = 'none';
+            cardSection.style.display = 'none';
+
+            if (tab === 'ach') {
+                tabAch.className = 'pay-tab active';
+                achSection.style.display = 'block';
+            } else if (tab === 'crypto') {
                 tabCrypto.className = 'pay-tab active';
-                cardSection.style.display = 'none';
                 cryptoSection.style.display = 'block';
+            } else if (tab === 'card') {
+                tabCard.className = 'pay-tab active';
+                cardSection.style.display = 'block';
             }
         }
 
-        function showToastCopy() {
-            alert('¡Dirección copiada al portapapeles!');
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('¡Copiado al portapapeles: ' + text + '!');
+            }).catch(() => {
+                showToast('¡Copiado!');
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('checkoutToast');
+            if (!toast) return;
+            toast.innerText = '📋 ' + msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2800);
         }
 
         function playSuccessChime() {
@@ -1815,8 +2020,48 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     document.getElementById('succTx').innerText = txId;
                 }
             }
-            if (paidAmount) document.getElementById('succAmount').innerText = '$' + paidAmount + ' USD';
+            if (paidAmount) document.getElementById('succAmount').innerText = '$' + parseFloat(paidAmount).toFixed(2) + ' USD';
             if (netAmount) document.getElementById('succNetUsdc').innerText = '$' + parseFloat(netAmount).toFixed(2) + ' USDC (100% Neto)';
+        }
+
+        async function submitAchNotification() {
+            const btn = document.getElementById('btnNotifyAch');
+            const origText = btn.innerHTML;
+            const senderName = (document.getElementById('achSenderName').value || '').trim() || 'Cliente en EE.UU.';
+            const senderEmail = (document.getElementById('achSenderEmail').value || '').trim() || 'cliente@eeuu.com';
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Registrando notificación ACH...';
+
+            try {
+                const res = await fetch('/api/v1/checkout/ach-notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: '${orderId}',
+                        amount: '${numAmount}',
+                        concept: '${concept}',
+                        targetWallet: '${wallet}',
+                        recipientName: '${recipientName}',
+                        senderName: senderName,
+                        senderEmail: senderEmail,
+                        reference: '${referenceCode}'
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showSuccess('🏛️ Transferencia Bancaria ACH en EE.UU. (Registrada)', '${referenceCode}', '${numAmount}', '${numAmount}');
+                } else {
+                    alert('Error al notificar: ' + (data.error || 'Inténtalo de nuevo.'));
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error al conectar con el servidor: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
         }
 
         function handleCardNumberInput(el) {
@@ -1871,7 +2116,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             try {
                 const payload = {
                     orderId: '${orderId}',
-                    amount: '${amount}',
+                    amount: '${numAmount}',
                     concept: '${concept}',
                     targetWallet: '${wallet}',
                     recipientName: '${recipientName}',
@@ -1913,7 +2158,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
             try {
                 const payload = {
                     orderId: '${orderId}',
-                    amount: '${amount}',
+                    amount: '${numAmount}',
                     concept: '${concept}',
                     targetWallet: '${wallet}',
                     recipientName: '${recipientName}',
@@ -7683,6 +7928,102 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end('<h1 style="color:#07090e; text-align:center; margin-top:50px;">404 - Página No Encontrada</h1><p style="text-align:center;"><a href="/">Volver al Inicio</a></p>');
         }
+    } else if (req.method === 'POST' && pathname === '/api/v1/checkout/ach-notify') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                console.log('🏛️ [ACH TRANSFER NOTIFICATION RECEIVED]:', JSON.stringify(payload));
+
+                const orderId = payload.orderId || ('PAY-' + Math.floor(100000 + Math.random() * 900000));
+                const amountUsd = parseFloat(payload.amount) || 20.00;
+                const amountCop = Math.round(amountUsd * 4000);
+                const concept = payload.concept || 'Servicio Digital / Curso Online';
+                const targetWallet = (payload.targetWallet || MAXI_WALLET).trim().toLowerCase();
+                const recipientName = payload.recipientName || 'Juan David Jaramillo Zapata';
+                const senderName = payload.senderName || 'Cliente en EE.UU.';
+                const senderEmail = payload.senderEmail || 'cliente@eeuu.com';
+                const reference = payload.reference || ('REF-' + orderId);
+
+                const invoiceId = 'ACH-NOTIFY-' + Date.now();
+
+                // Find merchant in usersDb
+                let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
+                    (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
+                ) || 'jdavidjaramillo@hotmail.com';
+
+                const merchant = usersDb.users[merchantEmail];
+                if (merchant) {
+                    if (!merchant.sales) merchant.sales = [];
+                    merchant.sales.unshift({
+                        invoiceId,
+                        orderId,
+                        amountUsd,
+                        amountCop,
+                        concept,
+                        paymentMethod: 'Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)',
+                        senderName,
+                        senderEmail,
+                        from: senderName + ' (' + senderEmail + ')',
+                        to: targetWallet,
+                        date: new Date().toISOString(),
+                        status: 'PENDIENTE_CONCILIACION_ACH',
+                        reference
+                    });
+                }
+
+                // Register Invoice
+                if (!usersDb.invoices) usersDb.invoices = {};
+                usersDb.invoices[invoiceId] = {
+                    invoiceId,
+                    orderId,
+                    amountUsd: amountUsd.toFixed(2),
+                    amountCop,
+                    concept,
+                    method: 'Transferencia Bancaria ACH (EE.UU.)',
+                    status: 'Pendiente Conciliación ACH',
+                    timestamp: new Date().toISOString(),
+                    buyerName: senderName,
+                    buyerEmail: senderEmail,
+                    reference,
+                    targetWallet
+                };
+
+                saveUsersDb();
+                console.log(`✅ [ACH NOTIFICATION REGISTERED]: $${amountUsd} USD by ${senderName} (${senderEmail}) -> Ref: ${reference}`);
+
+                // Rich Telegram Push Alert to Juan David
+                const savedFees = (amountUsd * 0.12).toFixed(2);
+                sendTelegramAlert(
+                    `🏛️ *¡NOTIFICACIÓN DE TRANSFERENCIA ACH EN EE.UU.!* 🇺🇸💵\n\n` +
+                    `👤 *Comercio / Receptor:* ${merchant ? merchant.name : recipientName} (${merchantEmail})\n` +
+                    `💰 *Monto Notificado:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `🏷️ *Concepto:* ${concept}\n` +
+                    `🆔 *Referencia / Memo:* \`${reference}\`\n` +
+                    `👤 *Pagador:* ${senderName} (${senderEmail})\n` +
+                    `🏛️ *Canal:* Transferencia ACH Bancaria EE.UU. (0% Costo de Recepción)\n` +
+                    `📥 *Billetera Destino:* \`${targetWallet}\`\n` +
+                    `💰 *Ahorro en Comisiones:* ~$${savedFees} USD (0% retenciones bancarias)\n\n` +
+                    `⏳ _El sistema registrará la conciliación para acreditar los fondos en Base L2._`
+                );
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    invoiceId,
+                    orderId,
+                    reference,
+                    amountUsd: amountUsd.toFixed(2),
+                    message: 'Transferencia ACH notificada con éxito. En proceso de conciliación bancaria.'
+                }));
+            } catch (err) {
+                console.error('Error procesando notificación ACH:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
     } else if (req.method === 'POST' && (pathname === '/api/v1/checkout/native-card-pay' || pathname === '/api/v1/checkout/card-onramp-pay' || pathname === '/api/v1/checkout/card-pay')) {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -7693,7 +8034,7 @@ const server = http.createServer(async (req, res) => {
 
                 const orderId = payload.orderId || ('PAY-' + Math.floor(100000 + Math.random() * 900000));
                 const netUsdc = parseFloat(payload.amount) || 20.00;
-                const feeAmount = parseFloat((netUsdc * 0.015).toFixed(2));
+                const feeAmount = parseFloat((netUsdc / (1 - 0.015) - netUsdc).toFixed(2));
                 const amountPaid = parseFloat((netUsdc + feeAmount).toFixed(2));
                 const amountCop = Math.round(netUsdc * 4000);
                 const concept = payload.concept || 'Servicio Digital / Curso Online';

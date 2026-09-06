@@ -675,6 +675,126 @@ function getFooter() {
             <div style="color:var(--cyan); font-weight:800;">🔒 100% On-Chain Math Certainty</div>
         </div>
     </footer>
+
+    <!-- 🤖 FLOATING MAXI AI ADVISOR WIDGET -->
+    <div id="maxiFloatingContainer" style="position:fixed; bottom:24px; right:24px; z-index:99999; font-family:'Plus Jakarta Sans',sans-serif;">
+        <!-- TRIGGER BUTTON -->
+        <button id="maxiAiToggleBtn" onclick="toggleMaxiAiChat()" style="display:flex; align-items:center; gap:10px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:800; font-size:14px; border:none; padding:12px 22px; border-radius:50px; cursor:pointer; box-shadow:0 8px 30px rgba(0,242,254,0.45); transition:all 0.3s cubic-bezier(0.16,1,0.3,1);">
+            <span style="font-size:20px;">🤖</span>
+            <span>Asesor Maxi IA</span>
+            <span style="width:8px; height:8px; border-radius:50%; background:#06080e; display:inline-block;"></span>
+        </button>
+
+        <!-- CHAT MODAL WINDOW -->
+        <div id="modalMaxiAdvisorChat" style="display:none; position:fixed; bottom:85px; right:24px; width:400px; max-width:calc(100vw - 32px); height:600px; max-height:calc(100vh - 110px); background:#0c101c; border:1px solid rgba(0,242,254,0.3); border-radius:24px; box-shadow:0 25px 70px rgba(0,0,0,0.85); flex-direction:column; overflow:hidden; z-index:100000; backdrop-filter:blur(20px);">
+            <!-- HEADER -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:rgba(18,24,38,0.95); border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); display:flex; align-items:center; justify-content:center; font-size:22px; color:#06080e; box-shadow:0 4px 15px rgba(0,242,254,0.3);">🤖</div>
+                    <div>
+                        <div style="font-size:15px; font-weight:800; color:#ffffff;">Maxi IA • Asesor Global</div>
+                        <div style="font-size:11.5px; color:#00df89; font-weight:600; display:flex; align-items:center; gap:5px;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#00df89; display:inline-block;"></span>
+                            En línea 24/7 • Cobros &amp; Retiros
+                        </div>
+                    </div>
+                </div>
+                <button onclick="toggleMaxiAiChat()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:8px;">✕</button>
+            </div>
+
+            <!-- MESSAGES CONTAINER -->
+            <div id="maxiAiMessagesBox" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
+                <!-- WELCOME MESSAGE -->
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <div style="width:30px; height:30px; border-radius:8px; background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">🤖</div>
+                    <div style="background:#151b2e; border:1px solid rgba(255,255,255,0.08); padding:14px; border-radius:4px 16px 16px 16px; color:#e2e8f0; font-size:13.5px; line-height:1.5; max-width:88%;">
+                        ¡Hola! 👋 Soy <strong>Maxi IA</strong>, tu asesor financiero y de cobros en Maxi Suite.<br><br>
+                        ¿En qué te puedo asesorar hoy? Elige una opción rápida o escribe tu consulta:
+                    </div>
+                </div>
+
+                <!-- QUICK PROMPT CHIPS -->
+                <div style="display:flex; flex-direction:column; gap:8px; margin-left:40px;">
+                    <button class="maxi-chip" onclick="askMaxiPreset('¿Cómo cobrarle a un cliente en Estados Unidos con 0% comisión?')">🇺🇸 ¿Cómo cobrar en EE.UU.? (ACH 0%)</button>
+                    <button class="maxi-chip" onclick="askMaxiPreset('¿Cómo cobrarle a un cliente en Europa con SEPA e IBAN?')">🇪🇺 ¿Cómo cobrar en Europa? (SEPA 0%)</button>
+                    <button class="maxi-chip" onclick="askMaxiPreset('¿Cómo pasar mis dólares a Bancolombia o Nequi con Wenia?')">🇨🇴 ¿Cómo pasar dólares a Nequi / Bancolombia?</button>
+                    <button class="maxi-chip" onclick="askMaxiPreset('Quiero generar mi enlace de cobro personalizado')">🔗 Generar Enlace de Cobro (/pay)</button>
+                    <button class="maxi-chip" onclick="askMaxiPreset('¿Cómo ganar dinero en Gig Finder con IA?')">💼 Ganar dinero en Gig Finder</button>
+                </div>
+            </div>
+
+            <!-- INPUT BAR -->
+            <div style="padding:12px 16px; background:#121826; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:8px; align-items:center;">
+                <input type="text" id="maxiAiInput" placeholder="Escribe tu pregunta o país del cliente..." style="flex:1; background:#080b12; border:1px solid rgba(255,255,255,0.12); color:#ffffff; padding:11px 14px; border-radius:12px; font-size:13.5px; outline:none; font-family:'Plus Jakarta Sans',sans-serif;" onkeydown="if(event.key==='Enter') sendMaxiAiMessage()">
+                <button onclick="sendMaxiAiMessage()" style="background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; border:none; width:40px; height:40px; border-radius:12px; font-weight:900; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">➔</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMaxiAiChat() {
+            const modal = document.getElementById('modalMaxiAdvisorChat');
+            if (modal.style.display === 'none' || !modal.style.display) {
+                modal.style.display = 'flex';
+                document.getElementById('maxiAiInput').focus();
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+
+        function askMaxiPreset(text) {
+            document.getElementById('maxiAiInput').value = text;
+            sendMaxiAiMessage();
+        }
+
+        async function sendMaxiAiMessage() {
+            const input = document.getElementById('maxiAiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const box = document.getElementById('maxiAiMessagesBox');
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.style.cssText = 'display:flex; justify-content:flex-end;';
+            userMsg.innerHTML = '<div style=\"background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; padding:12px 16px; border-radius:16px 16px 4px 16px; font-weight:700; font-size:13.5px; max-width:85%;\">' + text.replace(/</g, '&lt;') + '</div>';
+            box.appendChild(userMsg);
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            // Add loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.id = 'maxiLoadingMsg';
+            loadingMsg.style.cssText = 'display:flex; gap:10px; align-items:flex-start;';
+            loadingMsg.innerHTML = '<div style=\"width:30px; height:30px; border-radius:8px; background:rgba(0,242,254,0.15); display:flex; align-items:center; justify-content:center; font-size:16px;\">🤖</div><div style=\"background:#151b2e; padding:12px 16px; border-radius:4px 16px 16px 16px; color:#94a3b8; font-size:13px;\">Maxi IA está analizando la mejor opción...</div>';
+            box.appendChild(loadingMsg);
+            box.scrollTop = box.scrollHeight;
+
+            try {
+                const res = await fetch('/api/maxi/chat-advisor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                const loadEl = document.getElementById('maxiLoadingMsg');
+                if (loadEl) loadEl.remove();
+
+                const aiMsg = document.createElement('div');
+                aiMsg.style.cssText = 'display:flex; gap:10px; align-items:flex-start;';
+                aiMsg.innerHTML = '<div style=\"width:30px; height:30px; border-radius:8px; background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;\">🤖</div>' +
+                                  '<div style=\"background:#151b2e; border:1px solid rgba(255,255,255,0.08); padding:14px; border-radius:4px 16px 16px 16px; color:#e2e8f0; font-size:13.5px; line-height:1.55; max-width:88%;\">' + (data.replyHtml || data.reply || 'Estoy listo para ayudarte con tus cobros y retiros.') + '</div>';
+                box.appendChild(aiMsg);
+                box.scrollTop = box.scrollHeight;
+            } catch (err) {
+                const loadEl = document.getElementById('maxiLoadingMsg');
+                if (loadEl) loadEl.remove();
+                const errMsg = document.createElement('div');
+                errMsg.innerHTML = '<div style=\"color:#f43f5e; font-size:13px; margin-left:40px;\">Error al conectar con Maxi IA. Por favor intenta de nuevo.</div>';
+                box.appendChild(errMsg);
+            }
+        }
+    </script>
   `;
 }
 
@@ -1197,12 +1317,33 @@ function getGlobalStyles() {
             animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes modalFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* MAXI AI FLOATING WIDGET STYLES */
+        .maxi-chip {
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            color: #38bdf8;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
-        @keyframes modalPop {
-            0% { transform: scale(0.92); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+        .maxi-chip:hover {
+            background: rgba(0, 242, 254, 0.18);
+            border-color: #00f2fe;
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+        #maxiAiToggleBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 242, 254, 0.6);
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
         }
     </style>
 
@@ -9145,6 +9286,67 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
+    } else if (req.method === 'POST' && pathname === '/api/maxi/chat-advisor') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const msg = (payload.message || '').trim().toLowerCase();
+
+                let replyHtml = '';
+
+                if (msg.includes('estados unidos') || msg.includes('eeuu') || msg.includes('usa') || msg.includes('ach')) {
+                    replyHtml = `🇺🇸 <strong>Cobros en Estados Unidos (0% Comisión Bancaria):</strong><br><br>` +
+                        `• <strong>Método Recomendado:</strong> Transferencia Bancaria ACH Doméstica.<br>` +
+                        `• <strong>Datos para tu cliente:</strong> Banco <em>Community Federal Savings Bank</em>, Routing <code>026073150</code>, Cuenta <code>8335968407</code> y la Referencia única del cobro.<br>` +
+                        `• <strong>Beneficio:</strong> A tu cliente le cuesta $0.00 USD transferir y tú recibes <strong>100% neto en USDC</strong> en Base L2.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🔗 Generar Enlace de Cobro ACH →</a>`;
+                } else if (msg.includes('europa') || msg.includes('sepa') || msg.includes('iban') || msg.includes('euro') || msg.includes('españa')) {
+                    replyHtml = `🇪🇺 <strong>Cobros en Europa (Zona Euro / SEPA):</strong><br><br>` +
+                        `• <strong>Método Recomendado:</strong> Transferencia SEPA Directa.<br>` +
+                        `• <strong>Beneficio:</strong> Tu cliente en Europa transfiere en Euros (€ EUR) desde su banco (Santander, BBVA, N26, Revolut) con <strong>0 € de comisión</strong> a tu IBAN Europeo.<br>` +
+                        `• <strong>Liquidación:</strong> Se convierte internamente y recibes USDC en Base L2 en tu billetera.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🔗 Crear Cobro Internacional →</a>`;
+                } else if (msg.includes('nequi') || msg.includes('bancolombia') || msg.includes('wenia') || msg.includes('pesos') || msg.includes('colombia')) {
+                    replyHtml = `🇨🇴 <strong>Retirar Dólares a Bancolombia y Nequi con Wenia Oficial:</strong><br><br>` +
+                        `1. <strong>Wenia (Grupo Bancolombia):</strong> Abre tu Cuenta Global Wenia desde la App Bancolombia o Nequi.<br>` +
+                        `2. <strong>Paridad 1:1:</strong> Envía tus USDC desde Maxi Pay sin comisión de entrada.<br>` +
+                        `3. <strong>Venta Inmediata:</strong> Vende a pesos y el dinero entra en segundos a tu cuenta o gasta con tu <strong>Wenia Card</strong> sin cuota de manejo.<br><br>` +
+                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🎓 Ver Guía Wenia Paso a Paso →</a>`;
+                } else if (msg.includes('enlace') || msg.includes('link') || msg.includes('cobrar') || msg.includes('factura')) {
+                    replyHtml = `🔗 <strong>Generador de Enlaces de Cobro (/pay):</strong><br><br>` +
+                        `Puedes generar tu link personalizado en 5 segundos con el formato:<br>` +
+                        `<code>https://maxi-pay.onrender.com/pay/[tu-nombre]/[monto]</code><br><br>` +
+                        `Tus clientes podrán elegir entre <strong>ACH EE.UU., SEPA Europa, QR Cripto o Tarjeta con Apple Pay</strong>.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">⚡ Ir al Generador de Links →</a>`;
+                } else if (msg.includes('trabajo') || msg.includes('gig') || msg.includes('empleo') || msg.includes('bounty')) {
+                    replyHtml = `💼 <strong>Ganar Dinero en Gig Finder con IA:</strong><br><br>` +
+                        `• Encuentra cientos de ofertas remotas y convocatorias en dólares de $50 a $650 USD.<br>` +
+                        `• Usa el botón <strong>✨ Sniper con IA</strong> para redactar propuestas técnicas ganadoras en 30 segundos.<br><br>` +
+                        `<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🚀 Explorar Trabajos Disponibles →</a>`;
+                } else if (msg.includes('ballena') || msg.includes('smart money') || msg.includes('señal') || msg.includes('trading')) {
+                    replyHtml = `🐋 <strong>Radar de Ballenas & Señales Cuantitativas:</strong><br><br>` +
+                        `• Monitorea los movimientos de billeteras de alto patrimonio en Base L2, Cripto, Oro (XAU) y S&P 500.<br>` +
+                        `• Un <strong>Smart Money Score > 80</strong> indica acumulación masiva de capital.<br><br>` +
+                        `<a href="/ballenas" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">📊 Abrir Radar de Ballenas →</a>`;
+                } else {
+                    replyHtml = `🤖 <strong>Asesoría Maxi IA:</strong><br><br>` +
+                        `En Maxi Suite estamos listos para ayudarte a <strong>cuidar tu dinero y optimizar tus finanzas</strong>:<br><br>` +
+                        `• <strong>Cobros Internacionales:</strong> ACH EE.UU., SEPA Europa, QR Base L2 y Tarjeta.<br>` +
+                        `• <strong>Retiros Seguros:</strong> Wenia (Bancolombia/Nequi), Coinbase ACH, Bitso y P2P.<br>` +
+                        `• <strong>Oportunidades:</strong> Trabajos remotos en dólares y Radar de Ballenas.<br><br>` +
+                        `¿Deseas generar un enlace de cobro o aprender a retirar a tu banco?`;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, replyHtml }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');

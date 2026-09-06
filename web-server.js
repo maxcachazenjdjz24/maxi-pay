@@ -21,6 +21,21 @@ function parseCookies(req) {
   return list;
 }
 
+// PASSWORD HASHING UTILITY (PBKDF2 SHA512)
+function hashPassword(password, salt = null) {
+  if (!salt) {
+    salt = crypto.randomBytes(16).toString('hex');
+  }
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return { hash, salt };
+}
+
+function verifyPassword(password, storedHash, storedSalt) {
+  if (!storedHash || !storedSalt) return false;
+  const { hash } = hashPassword(password, storedSalt);
+  return hash === storedHash;
+}
+
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const MAXI_WALLET = '0xc94927fF92091A738406329E130E930E3bA788D6'.toLowerCase();
 const BASE_USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'.toLowerCase();
@@ -2582,7 +2597,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <div style="text-align:center; margin-bottom:20px;">
                         <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
                         <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
-                            Regístrate con tu <strong>Nombre</strong>, <strong>Correo</strong> y <strong>Celular</strong> para recibir <span style="color:var(--emerald); font-weight:800;">+5 Fichas Gratis de Bienvenida</span>.
+                            Regístrate para recibir <span style="color:var(--emerald); font-weight:800;">+5 Fichas Gratis de Bienvenida</span>.
                         </p>
                     </div>
 
@@ -2596,6 +2611,18 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
                     <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Contraseña:</label>
+                    <div style="position:relative; margin-bottom:12px;">
+                        <input type="password" id="regPassword" class="input-box" placeholder="Mínimo 6 caracteres" style="padding-right:40px;">
+                        <span onclick="togglePasswordVisibility('regPassword')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                    </div>
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Confirmar Contraseña:</label>
+                    <div style="position:relative; margin-bottom:12px;">
+                        <input type="password" id="regConfirmPassword" class="input-box" placeholder="Repite tu contraseña" style="padding-right:40px;">
+                        <span onclick="togglePasswordVisibility('regConfirmPassword')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                    </div>
 
                     <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer; font-size:15px; font-weight:800; padding:14px;">
                         🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
@@ -2611,27 +2638,26 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <div style="text-align:center; margin-bottom:20px;">
                         <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión (Sign In)</h2>
                         <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
-                            Accede a tu panel, tus fichas de crédito y tu billetera personal.
+                            Ingresa tu correo y contraseña para acceder a tu panel y billetera.
                         </p>
                     </div>
 
                     <div id="loginError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
 
-                    <!-- 1-CLICK FOUNDER LOGIN BUTTON -->
-                    <button class="btn-primary" onclick="quickLoginPrompt('jdavidjaramillo@hotmail.com')" style="width:100%; justify-content:center; padding:14px; font-weight:800; font-size:15px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 8px 25px rgba(0,223,137,0.35); cursor:pointer;">
-                        ⚡ Iniciar Sesión como Juan David (1 Clic)
-                    </button>
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
+                    <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com">
 
-                    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
-                        <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-muted);">O escribe tu correo registrado:</label>
-                        <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
-
-                        <button class="btn-outline" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:8px; padding:10px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
-                            🔑 Entrar con este Correo
-                        </button>
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; margin-top:12px; color:var(--text-main);">Contraseña:</label>
+                    <div style="position:relative; margin-bottom:12px;">
+                        <input type="password" id="loginPasswordInput" class="input-box" placeholder="Ingresa tu contraseña" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
+                        <span onclick="togglePasswordVisibility('loginPasswordInput')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
                     </div>
 
-                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
+                    <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:14px; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
+                        🔑 Iniciar Sesión
+                    </button>
+
+                    <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
                         ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Crear Cuenta Gratis (+5 Fichas)</a>
                     </div>
                 </div>
@@ -3115,15 +3141,43 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            }
+        }
+
         async function submitRegister() {
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
             const errBox = document.getElementById('regError');
+            if (errBox) errBox.style.display = 'none';
 
-            if (!name || !email || !phone) {
-                errBox.style.display = 'block';
-                errBox.innerText = 'Por favor completa tu Nombre, Correo Electrónico y Celular.';
+            if (!name || !email || !phone || !password) {
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Por favor completa todos los campos: Nombre, Correo, Celular y Contraseña.';
+                }
+                return;
+            }
+
+            if (password.length < 6) {
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'La contraseña debe tener al menos 6 caracteres.';
+                }
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Las contraseñas no coinciden. Por favor verifícalas.';
+                }
                 return;
             }
 
@@ -3131,7 +3185,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone })
+                    body: JSON.stringify({ name, email, phone, password })
                 });
                 const data = await res.json();
                 if (data.success && data.token) {
@@ -3141,24 +3195,29 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     showToast('🎉 ¡Cuenta creada con éxito! Bienvenido a Maxi Suite.');
                     showProfile(data.user, data.invoices || []);
                 } else {
-                    errBox.style.display = 'block';
-                    errBox.innerText = data.error || 'Error al registrar.';
+                    if (errBox) {
+                        errBox.style.display = 'block';
+                        errBox.innerText = data.error || 'Error al registrar.';
+                    }
                 }
             } catch (err) {
-                errBox.style.display = 'block';
-                errBox.innerText = 'Error de conexión: ' + err.message;
+                if (errBox) {
+                    errBox.style.display = 'block';
+                    errBox.innerText = 'Error de conexión: ' + err.message;
+                }
             }
         }
 
         async function submitLoginFromInput() {
             const email = document.getElementById('loginEmailInput').value.trim();
+            const password = document.getElementById('loginPasswordInput').value;
             const errBox = document.getElementById('loginError');
             if (errBox) errBox.style.display = 'none';
 
-            if (!email) {
+            if (!email || !password) {
                 if (errBox) {
                     errBox.style.display = 'block';
-                    errBox.innerText = 'Por favor ingresa tu correo electrónico registrado.';
+                    errBox.innerText = 'Por favor ingresa tu correo electrónico y tu contraseña.';
                 }
                 return;
             }
@@ -3167,7 +3226,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
                 if (data.success && data.token) {
@@ -3179,9 +3238,9 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 } else {
                     if (errBox) {
                         errBox.style.display = 'block';
-                        errBox.innerText = data.error || 'No se encontró una cuenta con ese correo.';
+                        errBox.innerText = data.error || 'Correo o contraseña incorrectos.';
                     } else {
-                        showToast(data.error || 'No se encontró una cuenta con ese correo.', 'error');
+                        showToast(data.error || 'Correo o contraseña incorrectos.', 'error');
                     }
                 }
             } catch (e) {
@@ -3191,35 +3250,6 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 } else {
                     showToast('Error al conectar: ' + e.message, 'error');
                 }
-            }
-        }
-
-        async function quickLoginPrompt(email = 'jdavidjaramillo@hotmail.com') {
-            const tabLog = document.getElementById('tabBtnLogin');
-            if (tabLog) tabLog.innerText = '⏳ Entrando...';
-
-            try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
-                });
-                const data = await res.json();
-                if (data.success && data.token) {
-                    localStorage.setItem('maxi_user_token', data.token);
-                    document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
-                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
-                    showToast('⚡ ¡Bienvenido de nuevo, ' + (data.user.name.split(' ')[0]) + '!');
-                    showProfile(data.user, data.invoices || []);
-                } else {
-                    showToast(data.error || 'Error al iniciar sesión', 'error');
-                    switchAuthTab('login');
-                }
-            } catch (e) {
-                showToast('Error de conexión', 'error');
-                switchAuthTab('login');
-            } finally {
-                if (tabLog) tabLog.innerText = '🔑 Iniciar Sesión';
             }
         }
 
@@ -8841,33 +8871,41 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                const { name, email, phone, wallet } = payload;
+                const { name, email, phone, password, wallet } = payload;
                 if (!name || !email || !phone) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: 'Nombre, Correo y Celular son requeridos.' }));
+                    return;
+                }
+                if (!password || password.length < 6) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'La contraseña debe tener al menos 6 caracteres.' }));
                     return;
                 }
 
                 const cleanEmail = email.trim().toLowerCase();
                 let user = usersDb.users[cleanEmail];
 
-                if (!user) {
-                    user = {
-                        id: 'usr_' + Date.now(),
-                        name: name.trim(),
-                        email: cleanEmail,
-                        phone: phone.trim(),
-                        wallet: wallet ? wallet.trim() : null,
-                        credits: 5,
-                        plan: 'Gratuito',
-                        createdAt: new Date().toISOString()
-                    };
-                    usersDb.users[cleanEmail] = user;
-                } else {
-                    user.name = name.trim();
-                    user.phone = phone.trim();
-                    if (wallet) user.wallet = wallet.trim();
+                if (user) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Ya existe una cuenta registrada con este correo electrónico. Por favor inicia sesión.' }));
+                    return;
                 }
+
+                const { hash, salt } = hashPassword(password);
+                user = {
+                    id: 'usr_' + Date.now(),
+                    name: name.trim(),
+                    email: cleanEmail,
+                    phone: phone.trim(),
+                    wallet: wallet ? wallet.trim() : null,
+                    passwordHash: hash,
+                    passwordSalt: salt,
+                    credits: 5,
+                    plan: 'Gratuito',
+                    createdAt: new Date().toISOString()
+                };
+                usersDb.users[cleanEmail] = user;
 
                 const token = crypto.randomBytes(24).toString('hex');
                 usersDb.sessions[token] = cleanEmail;
@@ -8896,9 +8934,9 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, {
             'Content-Type': 'application/json',
             'Set-Cookie': [
-                'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
-                'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
-                'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+                'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax',
+                'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax',
+                'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax'
             ]
         });
         res.end(JSON.stringify({ success: true }));
@@ -8915,6 +8953,22 @@ const server = http.createServer(async (req, res) => {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: 'No existe una cuenta registrada con este correo electrónico.' }));
                     return;
+                }
+
+                const password = payload.password;
+                if (!password) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Por favor ingresa tu contraseña.' }));
+                    return;
+                }
+
+                if (user.passwordHash && user.passwordSalt) {
+                    const isValid = verifyPassword(password, user.passwordHash, user.passwordSalt);
+                    if (!isValid) {
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, error: 'Contraseña incorrecta. Por favor verifica e inténtalo nuevamente.' }));
+                        return;
+                    }
                 }
 
                 const token = crypto.randomBytes(24).toString('hex');

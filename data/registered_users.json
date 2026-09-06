@@ -6,6 +6,8 @@
       "email": "jdavidjaramillo@hotmail.com",
       "phone": "+573147546359",
       "wallet": "0x355BAB72e5d6f5FF5ab46116C5beC522047f2004",
+      "passwordHash": "134415ca1b36e1dab38e7bd5625aa105929669d081cb4e91d09fbf24826bb1dc927226e6b039068a7783be790ef014d91449b346c5aedb1f9ca081384bf2a7a0",
+      "passwordSalt": "76ebbfd82ab72c8acea9615bcab8239d",
       "credits": 55,
       "plan": "Maxi Pay Pro",
       "createdAt": "2026-09-04T14:37:02.594Z",
@@ -129,7 +131,10 @@
   },
   "sessions": {
     "f5d35c4e0d672ad7e1d27b25d6cdc8c424c694465a92fac1": "jdavidjaramillo@hotmail.com",
-    "1d5293dd1d5fb2cac10bcd66ca80cf1eb1211d6ce51e6109": "jdavidjaramillo@hotmail.com"
+    "1d5293dd1d5fb2cac10bcd66ca80cf1eb1211d6ce51e6109": "jdavidjaramillo@hotmail.com",
+    "cedb47b4c79a9251c7f374a8f306f430f6a55af700105888": "jdavidjaramillo@hotmail.com",
+    "c5960fb7d4989f0108133ddab216d9db79ee975103a054af": "testuser_1788710210794@example.com",
+    "f2904277f02b0a484a7112e373ec96308a189cc9863cc0c7": "testuser_1788710210794@example.com"
   },
   "adminSessions": {},
   "invoices": {

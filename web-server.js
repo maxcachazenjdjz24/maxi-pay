@@ -7963,6 +7963,7 @@ function renderDemoStoreHtml() {
 
 // ALIBABA CLOUD MODELSTUDIO (QWEN) INFERENCE CLIENT & KNOWLEDGE BASE
 const MODELSTUDIO_API_KEY = process.env.MODELSTUDIO_API_KEY || 'sk-ws-H.DMPIYMM.RzFX.MEUCIDpyi1Wg4_IGknOtU0kzAhnJKBa7Y_RngdKMmBG8z3DBAiEAr2t7d1TVi8k32uluqJQx_g1xDexiG8iHVyuO4pN4vlA';
+const qwenHttpsAgent = new https.Agent({ keepAlive: true, maxSockets: 10, timeout: 30000 });
 
 const MAXI_SUITE_SYSTEM_PROMPT = `Eres Maxi, el Director Operativo, Asesor Financiero y Estratega de Negocios de Maxi Suite (https://maxi-pay.onrender.com).
 
@@ -8046,7 +8047,7 @@ async function callMaxiQwenAdvisor(userMessage) {
         { role: 'user', content: userMessage }
       ],
       temperature: 0.6,
-      max_tokens: 750
+      max_tokens: 450
     });
 
     const result = await new Promise((resolve, reject) => {
@@ -8054,12 +8055,13 @@ async function callMaxiQwenAdvisor(userMessage) {
         hostname: 'dashscope-intl.aliyuncs.com',
         path: '/compatible-mode/v1/chat/completions',
         method: 'POST',
+        agent: qwenHttpsAgent,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${MODELSTUDIO_API_KEY}`,
           'Content-Length': Buffer.byteLength(payload)
         },
-        timeout: 12000
+        timeout: 20000
       }, (res) => {
         let data = '';
         res.on('data', d => data += d);

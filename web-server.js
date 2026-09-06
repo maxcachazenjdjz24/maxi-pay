@@ -227,6 +227,7 @@ async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
 const TELEGRAM_BOT_TOKEN = '8006933644:AAHF-kBCjrSIL5hOh5TksCvL6Cq7gGnOvcg';
 const TELEGRAM_ADMIN_CHAT_ID = '7959552395';
 
+// Admin Alert Dispatcher
 async function sendTelegramAlert(text) {
   try {
     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -240,9 +241,303 @@ async function sendTelegramAlert(text) {
       })
     });
   } catch (e) {
-    console.error('Error sending Telegram alert:', e.message);
+    console.error('Error sending Admin Telegram alert:', e.message);
   }
 }
+
+// User 1-on-1 Private Telegram Notification Dispatcher
+async function sendUserTelegramNotification(userEmail, text) {
+  try {
+    if (!userEmail) return;
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const user = usersDb.users[cleanEmail];
+    if (!user || !user.telegramChatId) return;
+
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user.telegramChatId,
+        text,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+      })
+    });
+    console.log(`📲 [USER TELEGRAM NOTIFIED]: ${cleanEmail} -> ChatID: ${user.telegramChatId}`);
+  } catch (e) {
+    console.error(`Error sending user Telegram notification to ${userEmail}:`, e.message);
+  }
+}
+
+// TRANSACTIONAL RECEIPT EMAIL ENGINE (RESEND API INTEGRATION)
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
+async function sendTransactionalReceiptEmail({
+  to,
+  buyerName,
+  merchantName,
+  concept,
+  amountUsd,
+  amountCop,
+  method,
+  reference,
+  txHash,
+  isSubscription
+}) {
+  try {
+    if (!to || typeof to !== 'string' || !to.includes('@')) {
+      return { success: false, error: 'Email inválido' };
+    }
+    const cleanTo = to.trim().toLowerCase();
+    const formattedUsd = amountUsd ? ('$' + Number(amountUsd).toFixed(2) + ' USD') : '';
+    const formattedCop = amountCop ? ('$' + Number(amountCop).toLocaleString('es-CO') + ' COP') : '';
+    const displayAmount = formattedUsd && formattedCop ? `${formattedUsd} (~${formattedCop})` : (formattedUsd || formattedCop);
+    const dateStr = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+    const receiptId = 'REC-' + Math.floor(100000 + Math.random() * 900000);
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comprobante de Pago • Maxi Pay</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #06080e; color: #f8fafc; margin: 0; padding: 20px; }
+    .container { max-width: 560px; margin: 0 auto; background: #0c1017; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .header { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 30px 24px; text-align: center; border-bottom: 2px solid #00df89; }
+    .logo { font-size: 26px; font-weight: 900; color: #f8fafc; letter-spacing: -0.5px; }
+    .logo span { color: #00df89; }
+    .badge { display: inline-block; background: rgba(0, 223, 137, 0.15); color: #00df89; border: 1px solid #00df89; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-top: 10px; }
+    .content { padding: 28px 24px; }
+    .amount-box { background: rgba(0, 223, 137, 0.08); border: 1.5px solid #00df89; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0; }
+    .amount-title { font-size: 12px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .amount-val { font-size: 30px; font-weight: 900; color: #00df89; margin: 6px 0; }
+    .table-details { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13.5px; }
+    .table-details td { padding: 10px 0; border-bottom: 1px solid #1e293b; }
+    .table-details td.label { color: #94a3b8; font-weight: 600; width: 40%; }
+    .table-details td.value { color: #f8fafc; font-weight: 700; text-align: right; }
+    .footer { padding: 20px 24px; background: #07090e; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
+    .button { display: inline-block; background: linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color: #06080e; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 800; font-size: 14px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">MAXI<span>PAY</span></div>
+      <div class="badge">✓ Pago Confirmado 100%</div>
+      <h2 style="margin: 12px 0 0 0; font-size: 20px; font-weight: 800; color: #fff;">Comprobante Digital de Transacción</h2>
+    </div>
+    <div class="content">
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.5; margin-top: 0;">
+        Hola <strong>${buyerName || 'Cliente'}</strong>, tu pago ha sido procesado y liquidado con éxito a través de la infraestructura institucional de <strong>Maxi Pay</strong>.
+      </p>
+
+      <div class="amount-box">
+        <div class="amount-title">Total Pagado</div>
+        <div class="amount-val">${displayAmount}</div>
+        <div style="font-size: 12px; color: #00f2fe; font-weight: 700;">Sin comisiones ocultas • Liquidación Instantánea</div>
+      </div>
+
+      <table class="table-details">
+        <tr>
+          <td class="label">N° de Recibo:</td>
+          <td class="value" style="font-family: monospace; color: #00f2fe;">${receiptId}</td>
+        </tr>
+        <tr>
+          <td class="label">Concepto:</td>
+          <td class="value">${concept || 'Servicio Digital'}</td>
+        </tr>
+        <tr>
+          <td class="label">Comercio / Beneficiario:</td>
+          <td class="value">${merchantName || 'Maxi Pay Comercio'}</td>
+        </tr>
+        <tr>
+          <td class="label">Método de Pago:</td>
+          <td class="value">${method || 'Transferencia Digital'}</td>
+        </tr>
+        <tr>
+          <td class="label">Referencia:</td>
+          <td class="value" style="font-family: monospace;">${reference || 'N/A'}</td>
+        </tr>
+        ${txHash ? `<tr>
+          <td class="label">Hash On-Chain:</td>
+          <td class="value" style="font-family: monospace; font-size: 11px;">${txHash.slice(0, 10)}...${txHash.slice(-8)}</td>
+        </tr>` : ''}
+        <tr>
+          <td class="label">Fecha y Hora:</td>
+          <td class="value">${dateStr}</td>
+        </tr>
+        <tr>
+          <td class="label">Estado:</td>
+          <td class="value" style="color: #00df89;">✓ Liquidado Exitosamente</td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; margin-top: 25px;">
+        <a href="https://maxi-pay.onrender.com/cuenta" class="button" target="_blank">Acceder a Mi Cuenta Maxi Suite</a>
+      </div>
+    </div>
+    <div class="footer">
+      Este es un comprobante electrónico oficial generado por Maxi Suite.<br>
+      © ${new Date().getFullYear()} Maxi Suite • Tecnología de Liquidación Digital sin Intermediarios.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    if (RESEND_API_KEY) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'Maxi Pay <onboarding@resend.dev>',
+          to: [cleanTo],
+          subject: `🧾 Comprobante de Pago Maxi Pay - ${concept || reference || receiptId}`,
+          html: htmlContent
+        })
+      });
+      const data = await res.json();
+      console.log(`✉️ [RESEND EMAIL DISPATCHED] To: ${cleanTo}, Resend ID:`, data?.id || data);
+      return { success: true, emailId: data?.id };
+    } else {
+      console.log(`✉️ [RESEND SIMULATION (NO API KEY)] To: ${cleanTo}, Concept: ${concept}, Amount: ${displayAmount}`);
+      return { success: true, simulated: true };
+    }
+  } catch (err) {
+    console.error('Error sending transactional receipt email:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// TELEGRAM UPDATES POLLER (HANDLES /start link_TOKEN FOR AUTOMATIC USER LINKING)
+let lastTelegramUpdateId = 0;
+let isPollingTelegram = false;
+
+async function pollTelegramUpdates() {
+  if (isPollingTelegram) return;
+  isPollingTelegram = true;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=${lastTelegramUpdateId + 1}&limit=30&timeout=2`);
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.result)) {
+      for (const update of data.result) {
+        if (update.update_id >= lastTelegramUpdateId) {
+          lastTelegramUpdateId = update.update_id;
+        }
+        const msg = update.message;
+        if (!msg || !msg.text) continue;
+
+        const chatId = String(msg.chat.id);
+        const text = msg.text.trim();
+        const username = msg.from.username ? ('@' + msg.from.username) : (msg.from.first_name || 'Usuario');
+
+        if (text.startsWith('/start')) {
+          const parts = text.split(/\s+/);
+          const token = parts[1] ? parts[1].trim() : '';
+
+          if (token && usersDb.telegramTokens && usersDb.telegramTokens[token]) {
+            const userEmail = usersDb.telegramTokens[token];
+            const user = usersDb.users[userEmail];
+            if (user) {
+              user.telegramChatId = chatId;
+              user.telegramUsername = username;
+              delete usersDb.telegramTokens[token];
+              saveUsersDb();
+
+              const welcomeMsg = `🎉 *¡CUENTA VINCULADA CON ÉXITO A MAXI SUITE!* 🚀\n\n` +
+                `Hola *${user.name || 'Usuario'}*, tu cuenta (\`${user.email}\`) ha quedado vinculada exitosamente con este chat privado de Telegram.\n\n` +
+                `🔔 *Alertas privadas activadas:*\n` +
+                `• 💵 Pagos de clientes en EE.UU. (Transferencias ACH).\n` +
+                `• 💳 Cobros internacionales con tarjeta.\n` +
+                `• 🪙 Depósitos y acreditaciones de USDC en Base L2.\n` +
+                `• 📲 Notificaciones de retiros a Nequi / Bancolombia.\n` +
+                `• 👑 Activación de membresías y recargas de fichas.\n\n` +
+                `🔒 _Tus alertas son 100% privadas y seguras. Nadie más tiene acceso a este canal._`;
+
+              await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: welcomeMsg,
+                  parse_mode: 'Markdown',
+                  disable_web_page_preview: true
+                })
+              });
+              console.log(`📲 [TELEGRAM LINK SUCCESS]: ${userEmail} linked with chat ID ${chatId} (${username})`);
+            } else {
+              await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: `⚠️ *Enlace Expirado:* No se encontró la cuenta asociada al token. Por favor genera un nuevo enlace desde https://maxi-pay.onrender.com/cuenta.`,
+                  parse_mode: 'Markdown'
+                })
+              });
+            }
+          } else if (token) {
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text: `⚠️ *Token no válido o ya utilizado.*\nIngresa a https://maxi-pay.onrender.com/cuenta y haz clic en *'Vincular mi Telegram'* para generar un enlace nuevo.`,
+                parse_mode: 'Markdown'
+              })
+            });
+          } else {
+            // General /start without token
+            if (chatId === TELEGRAM_ADMIN_CHAT_ID) {
+              await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: `👑 *¡Hola Administrador Juan David!* Maxi Bot está activo y monitoreando el ecosistema Maxi Suite en tiempo real 🚀`,
+                  parse_mode: 'Markdown'
+                })
+              });
+            } else {
+              const linkedUser = Object.values(usersDb.users || {}).find(u => String(u.telegramChatId) === chatId);
+              if (linkedUser) {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    text: `👋 *¡Hola ${linkedUser.name}!* Tu cuenta (\`${linkedUser.email}\`) ya está vinculada y lista para recibir tus alertas privadas de pago ⚡`,
+                    parse_mode: 'Markdown'
+                  })
+                });
+              } else {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    text: `🤖 *¡Hola! Soy Maxi Bot, tu asistente oficial de Maxi Suite.*\n\nPara recibir alertas instantáneas y privadas cada vez que tus clientes te paguen, vincula tu cuenta desde tu panel:\n🔗 https://maxi-pay.onrender.com/cuenta`,
+                    parse_mode: 'Markdown'
+                  })
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    // Suppress network poll errors
+  } finally {
+    isPollingTelegram = false;
+  }
+}
+
+// Start Telegram updates poller every 3.5 seconds
+setInterval(pollTelegramUpdates, 3500);
 
 // TREASURY HEALTH SENTINEL (BASE L2 ETH GAS & USDC LIQUIDITY MONITOR)
 let lastTreasuryAlertTimestamp = 0;
@@ -351,6 +646,7 @@ function loadUsersDb() {
     if (!usersDb.adminSessions) usersDb.adminSessions = {};
     if (!usersDb.invoices) usersDb.invoices = {};
     if (!usersDb.withdrawals) usersDb.withdrawals = [];
+    if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
   } catch (e) {
     console.error('Error loading users db:', e.message);
   }
@@ -2646,6 +2942,9 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
   const userSlug = encodeURIComponent((userName || 'usuario').toLowerCase().replace(/\s+/g, '-'));
   const userCustomPayLink = hasCustomWallet ? `https://maxi-pay.onrender.com/pay/${userSlug}/10?concept=Curso%20Online&wallet=${encodeURIComponent(walletAddress)}` : '';
 
+  const telegramLinked = !!user?.telegramChatId;
+  const telegramUser = user?.telegramUsername || (user?.telegramChatId ? ('ID ' + user.telegramChatId) : '');
+
   // Pre-render Invoices Table
   let invoicesTableHtml = '';
   if (invoices && invoices.length > 0) {
@@ -2858,6 +3157,73 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <div style="background:var(--bg-card); padding:12px; border-radius:10px; border:1px solid var(--border); font-size:13px; font-weight:700;">⚡ 0% Comisiones en Enlaces de Pago</div>
                     <div style="background:var(--bg-card); padding:12px; border-radius:10px; border:1px solid var(--border); font-size:13px; font-weight:700;">✨ Asistente IA Sniper Ilimitado</div>
                     <div style="background:var(--bg-card); padding:12px; border-radius:10px; border:1px solid var(--border); font-size:13px; font-weight:700;">🐋 Señales de Ballenas Prioritarias</div>
+                </div>
+            </div>
+
+            <!-- TELEGRAM PRIVATE ALERTS INTEGRATION CARD -->
+            <div class="card" style="border: 1.5px solid ${telegramLinked ? 'var(--emerald)' : 'var(--cyan)'}; background: linear-gradient(180deg, ${telegramLinked ? 'rgba(0,223,137,0.06)' : 'rgba(0,242,254,0.06)'} 0%, var(--bg-card) 100%); margin-top:20px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:44px; height:44px; border-radius:12px; background:#229ED9; display:flex; align-items:center; justify-content:center; font-size:24px; color:white; box-shadow:0 6px 18px rgba(34,158,217,0.35);">
+                            ✈️
+                        </div>
+                        <div>
+                            <h3 style="font-size:20px; font-weight:900; color:var(--text-main); margin:0;">
+                                Alertas Privadas en Telegram
+                            </h3>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin:2px 0 0 0;">
+                                Recibe avisos 1-a-1 instantáneos cada vez que te paguen por ACH, Tarjeta o USDC.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="telegramStatusBadge">
+                        ${telegramLinked ? `
+                        <span style="background:var(--calc-saved-bg); color:var(--emerald); border:1px solid var(--emerald); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px;">
+                            <span style="width:8px; height:8px; background:var(--emerald); border-radius:50%; display:inline-block;"></span>
+                            Conectado: ${telegramUser}
+                        </span>
+                        ` : `
+                        <span style="background:rgba(0,242,254,0.12); color:var(--cyan); border:1px solid var(--cyan); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800;">
+                            ⚪ No vinculado
+                        </span>
+                        `}
+                    </div>
+                </div>
+
+                <div id="telegramUnlinkedView" style="${telegramLinked ? 'display:none;' : 'display:block;'} background:var(--input-bg); padding:16px 18px; border-radius:12px; border:1px solid var(--border);">
+                    <p style="color:var(--text-main); font-size:13.5px; line-height:1.5; margin:0 0 14px 0; font-weight:600;">
+                        Conecta tu cuenta con <strong style="color:var(--cyan);">@Maxi_pay_official_bot</strong> para que Maxi te avise al instante en tu Telegram personal cuando un cliente complete una transferencia o cuando recibas dólares digitales. Tus datos y alertas son estrictamente privados.
+                    </p>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <button id="btnLinkTelegram" onclick="linkTelegramBot()" class="btn-primary" style="padding:12px 22px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #229ED9 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(34,158,217,0.3); cursor:pointer;">
+                            📲 Vincular mi Telegram con Maxi Bot
+                        </button>
+                        <span id="telegramLinkSpinner" style="display:none; font-size:13px; color:var(--cyan); font-weight:700;">
+                            ⏳ Abriendo bot y esperando confirmación...
+                        </span>
+                    </div>
+                </div>
+
+                <div id="telegramLinkedView" style="${telegramLinked ? 'display:block;' : 'display:none;'} background:var(--input-bg); padding:16px 18px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <div style="color:var(--emerald); font-weight:800; font-size:13.5px; margin-bottom:4px;">
+                                ✓ Notificaciones privadas activas y sincronizadas
+                            </div>
+                            <div style="color:var(--text-muted); font-size:12.5px;">
+                                Canal seguro: <strong style="color:var(--text-main);" id="telegramUsernameDisplay">${telegramUser}</strong>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button onclick="testTelegramAlert()" class="btn-outline" style="padding:8px 16px; font-size:12.5px; font-weight:800; border-color:var(--cyan); color:var(--cyan); cursor:pointer;">
+                                🧪 Probar Alerta
+                            </button>
+                            <button onclick="unlinkTelegramBot()" class="btn-outline" style="padding:8px 14px; font-size:12.5px; font-weight:700; border-color:var(--rose); color:var(--rose); cursor:pointer;">
+                                ❌ Desvincular
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -3611,6 +3977,139 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
+        // TELEGRAM CLIENT LINKING & ALERT TEST HANDLERS
+        let telegramPollTimer = null;
+
+        async function linkTelegramBot() {
+            const btn = document.getElementById('btnLinkTelegram');
+            const spinner = document.getElementById('telegramLinkSpinner');
+            if (btn) btn.disabled = true;
+            if (spinner) spinner.style.display = 'inline-block';
+
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/telegram-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.linkUrl) {
+                    window.open(data.linkUrl, '_blank');
+                    showToast('📲 Abriendo Telegram... Presiona "Iniciar" en el bot para vincular.', 'info');
+                    
+                    // Poll for link confirmation
+                    if (telegramPollTimer) clearInterval(telegramPollTimer);
+                    let attempts = 0;
+                    telegramPollTimer = setInterval(async () => {
+                        attempts++;
+                        if (attempts > 30) {
+                            clearInterval(telegramPollTimer);
+                            if (spinner) spinner.style.display = 'none';
+                            if (btn) btn.disabled = false;
+                            return;
+                        }
+                        const authRes = await fetch('/api/auth/me', {
+                            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                        });
+                        const authData = await authRes.json();
+                        if (authData.authenticated && authData.user?.telegramChatId) {
+                            clearInterval(telegramPollTimer);
+                            if (spinner) spinner.style.display = 'none';
+                            if (btn) btn.disabled = false;
+                            if (currentUserState) {
+                                currentUserState.telegramChatId = authData.user.telegramChatId;
+                                currentUserState.telegramUsername = authData.user.telegramUsername;
+                            }
+                            updateTelegramUI(true, authData.user.telegramUsername || authData.user.telegramChatId);
+                            showToast('🎉 ¡Telegram vinculado con éxito! Recibirás tus alertas aquí.');
+                        }
+                    }, 2500);
+                } else {
+                    showToast(data.error || 'Error al generar enlace de Telegram.', 'error');
+                    if (spinner) spinner.style.display = 'none';
+                    if (btn) btn.disabled = false;
+                }
+            } catch (err) {
+                showToast('Error de conexión: ' + err.message, 'error');
+                if (spinner) spinner.style.display = 'none';
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function unlinkTelegramBot() {
+            if (!confirm('¿Estás seguro de que deseas desvincular tu cuenta de Telegram? Dejarás de recibir alertas privadas de tus pagos.')) return;
+
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/telegram-unlink', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (currentUserState) {
+                        currentUserState.telegramChatId = null;
+                        currentUserState.telegramUsername = null;
+                    }
+                    updateTelegramUI(false);
+                    showToast('Telegram desvinculado correctamente.', 'info');
+                } else {
+                    showToast(data.error || 'Error al desvincular.', 'error');
+                }
+            } catch (e) {
+                showToast('Error de conexión: ' + e.message, 'error');
+            }
+        }
+
+        async function testTelegramAlert() {
+            try {
+                const token = localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/telegram-test-alert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('📲 ¡Mensaje de prueba enviado a tu Telegram! Revisa tu app.');
+                } else {
+                    showToast(data.error || 'Error al enviar alerta.', 'error');
+                }
+            } catch (e) {
+                showToast('Error de conexión: ' + e.message, 'error');
+            }
+        }
+
+        function updateTelegramUI(isLinked, username = '') {
+            const unlinkedView = document.getElementById('telegramUnlinkedView');
+            const linkedView = document.getElementById('telegramLinkedView');
+            const statusBadge = document.getElementById('telegramStatusBadge');
+            const usernameDisplay = document.getElementById('telegramUsernameDisplay');
+
+            if (isLinked) {
+                if (unlinkedView) unlinkedView.style.display = 'none';
+                if (linkedView) linkedView.style.display = 'block';
+                if (usernameDisplay) usernameDisplay.innerText = username || 'Conectado';
+                if (statusBadge) {
+                    statusBadge.innerHTML = '<span style="background:var(--calc-saved-bg); color:var(--emerald); border:1px solid var(--emerald); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--emerald); border-radius:50%; display:inline-block;"></span> Conectado: ' + (username || 'ID') + '</span>';
+                }
+            } else {
+                if (unlinkedView) unlinkedView.style.display = 'block';
+                if (linkedView) linkedView.style.display = 'none';
+                if (statusBadge) {
+                    statusBadge.innerHTML = '<span style="background:rgba(0,242,254,0.12); color:var(--cyan); border:1px solid var(--cyan); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800;">⚪ No vinculado</span>';
+                }
+            }
+        }
+
         function showProfile(user, invoices = []) {
             if (!user) return;
             currentUserState = user;
@@ -3639,6 +4138,9 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
             const proSec = document.getElementById('proFeaturesSection');
             if (proSec) proSec.style.display = isPro ? 'block' : 'none';
+
+            // Update Telegram state
+            updateTelegramUI(!!user.telegramChatId, user.telegramUsername || (user.telegramChatId ? ('ID ' + user.telegramChatId) : ''));
 
             const noWalletBox = document.getElementById('noWalletSection');
             const activeWalletBox = document.getElementById('activeWalletSection');
@@ -8551,7 +9053,7 @@ const server = http.createServer(async (req, res) => {
                         });
                         saveUsersDb();
 
-                        // Send rich Telegram Alert
+                        // Send rich Telegram Alert to Admin
                         const alertMsg = '🎉 *¡NUEVO PAGO DE CLIENTE RECIBIDO EN MAXI PAY!* 🇺🇸💵\n\n' +
                             '👤 *Comercio / Receptor:* ' + merchant.name + ' (' + merchant.email + ')\n' +
                             '💰 *Monto Recibido:* $' + check.usdcAmount.toFixed(2) + ' USD (~$' + Math.round(check.usdcAmount * 4000).toLocaleString('es-CO') + ' COP)\n' +
@@ -8561,6 +9063,19 @@ const server = http.createServer(async (req, res) => {
                             '📥 *Billetera Destino:* ' + targetWallet + '\n' +
                             '🔗 *Comprobante On-Chain:* https://basescan.org/tx/' + check.txHash;
                         sendTelegramAlert(alertMsg);
+
+                        // Send 1-on-1 Private Telegram Notification to Merchant
+                        sendUserTelegramNotification(
+                            merchantEmail,
+                            `🪙 *¡DÓLARES DIGITALES RECIBIDOS EN BASE L2!* 🚀\n\n` +
+                            `Hola *${merchant.name}*, se ha confirmado un depósito directo en tu billetera digital:\n\n` +
+                            `💰 *Monto Recibido:* *$${check.usdcAmount.toFixed(2)} USDC* (~$${Math.round(check.usdcAmount * 4000).toLocaleString('es-CO')} COP)\n` +
+                            `🏷️ *Concepto:* ${concept}\n` +
+                            `🌐 *Red:* Base L2 Blockchain (100% Confirmado)\n` +
+                            `📤 *Pagador:* \`${check.from}\`\n` +
+                            `🔗 *Comprobante On-Chain:* https://basescan.org/tx/${check.txHash}\n\n` +
+                            `✅ _Fondos disponibles inmediatamente en tu panel para retirar a Nequi._`
+                        );
                     }
                 }
             }
@@ -8679,7 +9194,7 @@ const server = http.createServer(async (req, res) => {
                 saveUsersDb();
                 console.log(`✅ [ACH NOTIFICATION REGISTERED]: $${amountUsd} USD by ${senderName} (${senderEmail}) -> Ref: ${reference}`);
 
-                // Rich Telegram Push Alert to Juan David
+                // Rich Telegram Push Alert to Admin (Juan David)
                 const savedFees = (amountUsd * 0.12).toFixed(2);
                 sendTelegramAlert(
                     `🏛️ *¡NOTIFICACIÓN DE TRANSFERENCIA ACH EN EE.UU.!* 🇺🇸💵\n\n` +
@@ -8693,6 +9208,32 @@ const server = http.createServer(async (req, res) => {
                     `💰 *Ahorro en Comisiones:* ~$${savedFees} USD (0% retenciones bancarias)\n\n` +
                     `⏳ _El sistema registrará la conciliación para acreditar los fondos en Base L2._`
                 );
+
+                // 1-on-1 Private Telegram Notification to Merchant
+                sendUserTelegramNotification(
+                    merchantEmail,
+                    `🏛️ *¡NUEVO PAGO ACH NOTIFICADO!* 🇺🇸💵\n\n` +
+                    `Hola *${merchant ? merchant.name : recipientName}*, un cliente en EE.UU. ha notificado una transferencia bancaria a tu favor:\n\n` +
+                    `💰 *Monto Notificado:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `🏷️ *Concepto:* ${concept}\n` +
+                    `🆔 *Referencia:* \`${reference}\`\n` +
+                    `👤 *Cliente:* ${senderName} (${senderEmail})\n` +
+                    `🏛️ *Método:* Transferencia ACH Bancaria EE.UU.\n` +
+                    `⏳ *Estado:* En proceso de conciliación bancaria para acreditar fondos en tu billetera.\n\n` +
+                    `🚀 _Maxi Pay protege tu negocio con 0% comisiones abusivas._`
+                );
+
+                // Send Transactional Email Receipt to Buyer
+                sendTransactionalReceiptEmail({
+                    to: senderEmail,
+                    buyerName: senderName,
+                    merchantName: merchant ? merchant.name : recipientName,
+                    concept,
+                    amountUsd: amountUsd.toFixed(2),
+                    amountCop,
+                    method: 'Transferencia Bancaria ACH en EE.UU.',
+                    reference
+                });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -8781,7 +9322,7 @@ const server = http.createServer(async (req, res) => {
                 saveUsersDb();
                 console.log(`✅ [NATIVE CARD APPROVED]: $${amountPaid} USD charged -> $${netUsdc} USDC settled to ${targetWallet} (${recipientName})`);
 
-                // Rich Telegram Push Notification
+                // Rich Telegram Push Notification to Admin (Juan David)
                 const savedFees = (netUsdc * 0.12).toFixed(2);
                 const last4 = payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242';
                 sendTelegramAlert(
@@ -8797,6 +9338,32 @@ const server = http.createServer(async (req, res) => {
                     `💰 *Comisiones Bancarias Ahorradas:* ~$${savedFees} USD (0% retenciones bancarias)\n\n` +
                     `✅ _Los dólares digitales (USDC) ya se encuentran acreditados en tu billetera._`
                 );
+
+                // 1-on-1 Private Telegram Notification to Merchant
+                sendUserTelegramNotification(
+                    merchantEmail,
+                    `🎉 *¡PAGO CON TARJETA RECIBIDO Y LIQUIDADO!* 💳💵\n\n` +
+                    `Hola *${merchant ? merchant.name : recipientName}*, has recibido un pago internacional acreditado al instante:\n\n` +
+                    `💰 *Monto Neto Recibido:* *$${netUsdc.toFixed(2)} USDC* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `💳 *Método:* ${isApplePay ? ' Apple Pay / Google Pay' : `💳 Tarjeta Débito/Crédito (•••• ${last4})`}\n` +
+                    `🏷️ *Concepto:* ${concept}\n` +
+                    `⛓️ *Red:* Base L2 Blockchain (100% USDC en tu billetera)\n` +
+                    `🧾 *ID Transacción:* \`${txHash}\`\n\n` +
+                    `✅ _El dinero ya está disponible en tu Billetera Digital para retirar a Nequi o Bancolombia._`
+                );
+
+                // Send Transactional Email Receipt to Buyer
+                sendTransactionalReceiptEmail({
+                    to: payload.buyerEmail || 'cliente@internacional.com',
+                    buyerName: cardHolder,
+                    merchantName: merchant ? merchant.name : recipientName,
+                    concept,
+                    amountUsd: netUsdc,
+                    amountCop,
+                    method: isApplePay ? 'Apple Pay / Google Pay' : `Tarjeta Internacional (•••• ${last4})`,
+                    reference: orderId,
+                    txHash
+                });
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -8900,6 +9467,136 @@ const server = http.createServer(async (req, res) => {
             }
         });
         return;
+    } else if (req.method === 'POST' && pathname === '/api/user/telegram-link-token') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else {
+                    const cookies = parseCookies(req);
+                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
+                        email = usersDb.sessions[cookies.maxi_user_token];
+                    }
+                }
+
+                if (!email || !usersDb.users[email]) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Debes iniciar sesión para vincular tu Telegram.' }));
+                    return;
+                }
+
+                const linkToken = 'link_' + crypto.randomBytes(8).toString('hex');
+                if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
+                usersDb.telegramTokens[linkToken] = email;
+                saveUsersDb();
+
+                const linkUrl = `https://t.me/Maxi_pay_official_bot?start=${linkToken}`;
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    token: linkToken,
+                    botUsername: 'Maxi_pay_official_bot',
+                    linkUrl
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    } else if (req.method === 'POST' && pathname === '/api/user/telegram-unlink') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else {
+                    const cookies = parseCookies(req);
+                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
+                        email = usersDb.sessions[cookies.maxi_user_token];
+                    }
+                }
+
+                if (!email || !usersDb.users[email]) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
+                    return;
+                }
+
+                const user = usersDb.users[email];
+                user.telegramChatId = null;
+                user.telegramUsername = null;
+                saveUsersDb();
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Cuenta de Telegram desvinculada exitosamente.'
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    } else if (req.method === 'POST' && pathname === '/api/user/telegram-test-alert') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else {
+                    const cookies = parseCookies(req);
+                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
+                        email = usersDb.sessions[cookies.maxi_user_token];
+                    }
+                }
+
+                if (!email || !usersDb.users[email]) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
+                    return;
+                }
+
+                const user = usersDb.users[email];
+                if (!user.telegramChatId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Aún no has vinculado tu Telegram.' }));
+                    return;
+                }
+
+                await sendUserTelegramNotification(
+                    email,
+                    `🧪 *¡PRUEBA DE ALERTA EXITOSA EN MAXI SUITE!* 🚀\n\n` +
+                    `Hola *${user.name}*, tu canal privado de notificaciones está 100% operativo.\n\n` +
+                    `✅ *Billetera vinculada:* \`${user.wallet || 'No asignada aún'}\`\n` +
+                    `👑 *Plan:* *${user.plan || 'Gratuito'}*\n` +
+                    `⏱️ *Hora:* ${new Date().toLocaleString('es-CO')}\n\n` +
+                    `Cada vez que recibas un pago por ACH, Tarjeta o USDC, te notificaremos aquí de inmediato.`
+                );
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Alerta de prueba enviada a tu Telegram.'
+                }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
     } else if (req.method === 'POST' && pathname === '/api/user/withdraw-to-nequi') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -8954,15 +9651,27 @@ const server = http.createServer(async (req, res) => {
                 usersDb.withdrawals.unshift(withdrawal);
                 saveUsersDb();
 
-                // Send Telegram Notification
-                const wAlertMsg = '📲 *¡SOLICITUD DE RETIRO DE SALDO RECIBIDA EN MAXI PAY!*\\n\\n' +
-                    '👤 *Usuario:* ' + user.name + ' (' + user.email + ')\\n' +
-                    '💵 *Monto Retirado:* $' + amountUsd.toFixed(2) + ' USD (~$' + amountCop.toLocaleString('es-CO') + ' COP)\\n' +
-                    '🏦 *Destino:* Nequi / Bancolombia a la Mano\\n' +
-                    '📱 *Número de Celular:* ' + phone + '\\n' +
-                    '⏱️ *Fecha:* ' + new Date().toLocaleString('es-CO') + '\\n' +
-                    '🌐 *Estado:* Liquidación y transferencia en proceso.';
+                // Send Telegram Notification to Admin (Juan David)
+                const wAlertMsg = `📲 *¡SOLICITUD DE RETIRO DE SALDO RECIBIDA EN MAXI PAY!* 🇨🇴\n\n` +
+                    `👤 *Usuario:* ${user.name} (${user.email})\n` +
+                    `💵 *Monto Retirado:* $${amountUsd.toFixed(2)} USD (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `🏦 *Destino:* Nequi / Bancolombia a la Mano\n` +
+                    `📱 *Número de Celular:* \`${phone}\`\n` +
+                    `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
+                    `🌐 *Estado:* Liquidación y transferencia en proceso.`;
                 sendTelegramAlert(wAlertMsg);
+
+                // Send 1-on-1 Private Telegram Notification to User
+                sendUserTelegramNotification(
+                    user.email,
+                    `📲 *¡SOLICITUD DE RETIRO A NEQUI EN PROCESO!* 🇨🇴\n\n` +
+                    `Hola *${user.name}*, hemos recibido tu solicitud de retiro:\n\n` +
+                    `💵 *Monto a Liquidar:* $${amountUsd.toFixed(2)} USD (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `🏦 *Destino:* Nequi / Bancolombia (\`${phone}\`)\n` +
+                    `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
+                    `🌐 *Estado:* En proceso de transferencia.\n\n` +
+                    `Te avisaremos tan pronto el saldo esté disponible en tu app de Nequi.`
+                );
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -9059,7 +9768,7 @@ const server = http.createServer(async (req, res) => {
                     saveUsersDb();
                     console.log(`✅ [WOMPI PAYMENT APPROVED]: $${amountCop} COP de ${customerEmail} -> Plan: ${targetPlan}`);
 
-                    // TELEGRAM PUSH NOTIFICATION
+                    // TELEGRAM PUSH NOTIFICATION TO ADMIN (JUAN DAVID)
                     sendTelegramAlert(
                         `🔔 *¡NUEVO PAGO RECIBIDO EN MAXI PAY!* 🇨🇴\n\n` +
                         `💰 *Monto:* $${Number(amountCop).toLocaleString()} COP (~$${(amountCop / 4000).toFixed(2)} USD)\n` +
@@ -9070,6 +9779,32 @@ const server = http.createServer(async (req, res) => {
                         `👑 *Plan Activado:* *${targetPlan}* (+${addCredits} Fichas)\n\n` +
                         `✅ _El saldo ha sido liquidado en tu Wompi Cuenta y los accesos del usuario están activos._`
                     );
+
+                    // 1-ON-1 PRIVATE TELEGRAM NOTIFICATION TO SUBSCRIBER
+                    if (customerEmail) {
+                        sendUserTelegramNotification(
+                            customerEmail,
+                            `👑 *¡MEMBRESÍA ACTIVADA EN MAXI SUITE!* 🇨🇴✨\n\n` +
+                            `Hola *${user?.name || 'Cliente'}*, tu pago por Wompi ha sido aprobado exitosamente:\n\n` +
+                            `💎 *Plan Activado:* *${targetPlan}*\n` +
+                            `🪙 *Fichas de Crédito:* +${addCredits} Fichas de Bienvenida\n` +
+                            `💰 *Monto Pagado:* $${Number(amountCop).toLocaleString('es-CO')} COP\n` +
+                            `🧾 *Comprobante Wompi:* \`${txId}\`\n\n` +
+                            `🚀 _Ya puedes acceder a tu panel y disfrutar de todas las herramientas exclusivas de tu membresía._`
+                        );
+
+                        // Send Transactional Email Receipt to Subscriber
+                        sendTransactionalReceiptEmail({
+                            to: customerEmail,
+                            buyerName: user?.name || 'Cliente Wompi',
+                            merchantName: 'Maxi Suite Oficial',
+                            concept: 'Suscripción ' + targetPlan,
+                            amountCop,
+                            method: 'Wompi ' + paymentMethod,
+                            reference: ref,
+                            isSubscription: true
+                        });
+                    }
                 }
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

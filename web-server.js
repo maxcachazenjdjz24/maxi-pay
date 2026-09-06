@@ -6902,6 +6902,48 @@ function renderTutorialesPage() {
                 </div>
             </div>
 
+            <!-- GUÍA 3B: WENIA BANCOLOMBIA OFICIAL -->
+            <div class="tut-card" data-category="comercios seguridad" data-tags="wenia bancolombia nequi retiro oficial grupo cibest usdw copw 1:1">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Oficial Bancolombia • 3 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        🏦 Retiros Oficiales a Bancolombia y Nequi con Wenia
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Aprende a pasar tus USDC a tu cuenta de ahorros Bancolombia o Nequi con respaldo bancario oficial, 0% comisiones de depósito y paridad 1:1.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_wenia_bancolombia')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
+            <!-- GUÍA 3C: RETIROS GLOBALES (EE.UU., EUROPA, LATAM) -->
+            <div class="tut-card" data-category="comercios internacional" data-tags="internacional retiro eeuu coinbase ach europa sepa mexico bitso spei chile peru">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="badge-level badge-beginner">Global • 4 min</span>
+                        <span class="badge-reward">🎁 +3 Fichas</span>
+                    </div>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main); margin-bottom:8px; line-height:1.3;">
+                        🌎 Retiros a Bancos de EE.UU., Europa y Latinoamérica (0% Fee)
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:13.5px; line-height:1.5; margin-bottom:18px;">
+                        Cómo transferir tus USDC a bancos locales en EE.UU. (Coinbase ACH), Europa (SEPA), México (Bitso SPEI), Chile y Perú con comisiones mínimas.
+                    </p>
+                </div>
+                <div>
+                    <button class="btn-primary" onclick="openTutorialModal('tut_retiros_globales')" style="width:100%; justify-content:center; font-size:13.5px; padding:10px 16px;">
+                        📖 Abrir Guía &amp; Ganar Fichas →
+                    </button>
+                </div>
+            </div>
+
             <!-- GUÍA 4: FREELANCERS ENLACES -->
             <div class="tut-card" data-category="freelancers" data-tags="freelance link pago enlace whatsapp clientes internacional remoto">
                 <div>
@@ -7274,6 +7316,48 @@ function renderTutorialesPage() {
                         { text: 'Sí, fluctúa todos los días según la bolsa.', correct: false },
                         { text: 'No. 1 USDC siempre equivale exactamente a $1 USD con paridad 1:1 respaldada.', correct: true },
                         { text: 'Solo vale los fines de semana.', correct: false }
+                    ]
+                }
+            },
+            'tut_wenia_bancolombia': {
+                id: 'tut_wenia_bancolombia',
+                category: 'Comercios & Seguridad',
+                badge: 'Oficial Bancolombia • 3 min',
+                reward: 3,
+                title: '🏦 Retiros Oficiales a Bancolombia y Nequi con Wenia',
+                summary: 'El puente regulado de Grupo Bancolombia para convertir tus USDC a pesos con paridad 1:1.',
+                steps: [
+                    { num: 1, title: 'Abre tu Cuenta Global Wenia', text: 'Descarga Wenia o activa tu Cuenta Global directamente desde la App Mi Bancolombia o Nequi en 1 minuto.' },
+                    { num: 2, title: 'Envía tus USDC desde Maxi Pay', text: 'Deposita tus USDC desde tu billetera Base. Wenia los acredita 1:1 en USDW sin comisiones de entrada.' },
+                    { num: 3, title: 'Vende a Pesos o Gasta con Wenia Card', text: 'Pasa los pesos a tu cuenta de ahorros Bancolombia o Nequi al instante, o gasta con tu Wenia Card (Mastercard sin cuota de manejo).' }
+                ],
+                quiz: {
+                    question: '¿Qué empresa respalda la plataforma Wenia en Colombia?',
+                    options: [
+                        { text: 'Grupo Bancolombia (Grupo Cibest) con integración oficial a cuentas de ahorros y Nequi.', correct: true },
+                        { text: 'Una entidad sin registro en ninguna parte.', correct: false },
+                        { text: 'Un banco de Japón exclusivamente.', correct: false }
+                    ]
+                }
+            },
+            'tut_retiros_globales': {
+                id: 'tut_retiros_globales',
+                category: 'Comercios & Internacional',
+                badge: 'Global • 4 min',
+                reward: 3,
+                title: '🌎 Retiros a Bancos de EE.UU., Europa y Latinoamérica (0% Fee)',
+                summary: 'Las mejores rutas bancarias por país para transferir tus USDC a tu banco local sin intermediarios costosos.',
+                steps: [
+                    { num: 1, title: 'En EE.UU. (Coinbase / Circle)', text: 'Deposita tus USDC por Base en Coinbase y transfiere a tu cuenta bancaria (Chase, BofA, Wells Fargo) vía ACH con $0.00 de comisión (Gratis).' },
+                    { num: 2, title: 'En Europa (Revolut / Kraken / SEPA)', text: 'Transfiere a tu cuenta con IBAN Europeo y retira en Euros (€ EUR) vía transferencia SEPA Instantánea sin comisiones abusivas.' },
+                    { num: 3, title: 'En México y Latam (Bitso SPEI / Buda / Global66)', text: 'En México retira por SPEI en segundos con Bitso. En Chile y Perú usa Buda.com o Global66 para transferir a tu banco local.' }
+                ],
+                quiz: {
+                    question: '¿Cuánto cobra Coinbase en EE.UU. por retirar USDC a una cuenta bancaria vía ACH?',
+                    options: [
+                        { text: '$0.00 USD (Totalmente Gratis con paridad 1:1 en dólares).', correct: true },
+                        { text: '$50 dólares fijos por transferencia.', correct: false },
+                        { text: '15% del monto total.', correct: false }
                     ]
                 }
             },
@@ -9015,28 +9099,44 @@ const server = http.createServer(async (req, res) => {
                 const checkoutLink = `https://maxi-pay.onrender.com/pay/${userSlug}/${amount}?concept=Servicio%20Digital&wallet=${wallet}`;
 
                 let recommendation = '';
-                if (country.toLowerCase().includes('estados unidos') || country.toLowerCase().includes('usa') || country.toLowerCase().includes('eeuu')) {
-                    recommendation = `Para tu cliente en Estados Unidos, la mejor opción es **Transferencia Bancaria Directa (ACH)** o **Tarjeta Débito Internacional (Onramper)**. Tu cliente pagará $${amount.toFixed(2)} USD desde su cuenta bancaria o tarjeta, con una comisión mínima de apenas ~$${achFee.toFixed(2)} USD (~0.5%), y tú recibirás $${(amount - achFee).toFixed(2)} USDC directamente en tu billetera de Base L2.`;
-                } else if (country.toLowerCase().includes('colombia')) {
-                    recommendation = `Para tu cliente en Colombia, la mejor opción es **Tarjeta Directa / Nequi / PSE (Wompi)** o transferencia en pesos. No paga comisión fija en dólares y se liquida en segundos.`;
+                let withdrawalAdvice = '';
+                const cLower = country.toLowerCase();
+
+                if (cLower.includes('estados unidos') || cLower.includes('usa') || cLower.includes('eeuu') || cLower.includes('us')) {
+                    recommendation = `Para tu cliente en Estados Unidos, la mejor opción es **Transferencia Bancaria Directa (ACH 0%)** o **Tarjeta / Apple Pay**. Tu cliente transfiere desde Chase, Bank of America o Wells Fargo con 0% comisión bancaria y tú recibes $${(amount - achFee).toFixed(2)} USDC netos en Base L2.`;
+                    withdrawalAdvice = `Para retirar en EE.UU., puedes conectar tu billetera a **Coinbase** y transferir a tu cuenta bancaria vía ACH con **$0.00 de comisión (Gratis)** y paridad 1:1.`;
+                } else if (cLower.includes('colombia')) {
+                    recommendation = `Para tu cliente en Colombia, la mejor opción es **Nequi / Bancolombia / PSE (Wompi)** o Dólares Digitales QR. Tu cliente paga en pesos colombianos ($${(amount * 4000).toLocaleString('es-CO')} COP) sin comisiones internacionales.`;
+                    withdrawalAdvice = `Para pasar tus dólares a pesos en Colombia, la vía oficial y más segura es **Wenia (Grupo Bancolombia)** con paridad 1:1 y retiro inmediato a Bancolombia/Nequi, o vía mercado P2P a la TRM plena.`;
+                } else if (cLower.includes('españa') || cLower.includes('europa') || cLower.includes('euro') || cLower.includes('alemania') || cLower.includes('francia') || cLower.includes('italia')) {
+                    recommendation = `Para tu cliente en Europa (${country}), la mejor opción es **Transferencia Bancaria SEPA (IBAN Europeo 0%)** o **Tarjeta Internacional 3DS**. El cliente transfiere en Euros sin comisiones de giro internacional y tú recibes USDC en Base L2.`;
+                    withdrawalAdvice = `Para retirar en Europa, transfiere tus USDC a **Revolut o Kraken** y retira en Euros a cualquier cuenta bancaria SEPA de la Unión Europea con 0€ de comisión.`;
+                } else if (cLower.includes('mexico') || cLower.includes('méxico')) {
+                    recommendation = `Para tu cliente en México, la mejor opción es **Transferencia SPEI** o **Tarjeta Débito/Crédito**. Paga en pesos mexicanos con liquidación instantánea en USDC.`;
+                    withdrawalAdvice = `Para retirar en México, envía tus USDC a **Bitso** y retira por **SPEI** en segundos a cualquier banco mexicano (BBVA, Santander, Banorte, Nu).`;
+                } else if (cLower.includes('chile') || cLower.includes('peru') || cLower.includes('perú') || cLower.includes('argentina') || cLower.includes('brasil')) {
+                    recommendation = `Para tu cliente en ${country}, la mejor opción es **Transferencia Bancaria Local (Global66 / Banco Local)** o **Tarjeta Internacional**.`;
+                    withdrawalAdvice = `Para retirar en ${country}, puedes usar **Buda.com, Global66 o Mercado Pago/PIX** para liquidar en tu moneda local sin comisiones SWIFT.`;
                 } else {
-                    recommendation = `Para tu cliente en ${country}, la mejor opción es **Tarjeta Débito Internacional (Onramper Multi-Riel)**. El sistema seleccionará automáticamente la procesadora con la tasa más baja para su país y moneda, liquidando en USDC en Base L2.`;
+                    recommendation = `Para tu cliente en ${country}, la mejor opción es **Tarjeta Débito Internacional Smart (Onramper Multi-Riel)** o **Dólares QR Base L2 (USDC)**.`;
+                    withdrawalAdvice = `Puedes mover tus USDC con total soberanía hacia cualquier exchange o billetera del mundo con apenas $0.002 de gas en Base L2.`;
                 }
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
                     advisor: {
-                        agent: 'Maxi AI Payment Advisor',
+                        agent: 'Maxi AI Payment Advisor (Capacitación Global v9.5)',
                         country,
                         amountUsd: amount,
                         checkoutLink,
                         recommendation,
+                        withdrawalAdvice,
                         comparisons: [
-                            { rail: 'Transferencia ACH / Cuentas Virtuales (Global66)', feeUsd: achFee.toFixed(2), netUsdc: (amount - achFee).toFixed(2), percentage: '~0.5%', rating: '⭐⭐⭐⭐⭐ Recomendado' },
-                            { rail: 'Tarjeta Internacional Smart (Onramper)', feeUsd: smartCardFee.toFixed(2), netUsdc: (amount - smartCardFee).toFixed(2), percentage: '~2.0%', rating: '⭐⭐⭐⭐ Excelente' },
+                            { rail: 'Transferencia ACH / SEPA / Cuentas Virtuales (Global66)', feeUsd: achFee.toFixed(2), netUsdc: (amount - achFee).toFixed(2), percentage: '~0.5%', rating: '⭐⭐⭐⭐⭐ Recomendado 0% Bancario' },
+                            { rail: 'Tarjeta Internacional Smart (Apple Pay / Visa / MC)', feeUsd: smartCardFee.toFixed(2), netUsdc: (amount - smartCardFee).toFixed(2), percentage: '~2.0%', rating: '⭐⭐⭐⭐ Inmediato & Seguro' },
                             { rail: 'Cripto QR Directo (Base L2 USDC)', feeUsd: cryptoGasFee.toFixed(3), netUsdc: amount.toFixed(2), percentage: '0.0%', rating: '⭐⭐⭐⭐⭐ Cero Comisiones' },
-                            { rail: 'Pasarela Minorista Aislada (MoonPay)', feeUsd: traditionalOnrampFee.toFixed(2), netUsdc: (amount - traditionalOnrampFee).toFixed(2), percentage: `~${((traditionalOnrampFee/amount)*100).toFixed(1)}%`, rating: '⚠️ Tarifa Fija Alta' }
+                            { rail: 'Giro SWIFT Bancario Tradicional', feeUsd: (35.00).toFixed(2), netUsdc: Math.max(0, amount - 35).toFixed(2), percentage: `~${((35/amount)*100).toFixed(1)}%`, rating: '❌ Extremadamente Caro' }
                         ]
                     }
                 }));

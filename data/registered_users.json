@@ -45,8 +45,10 @@
           "from": "John Smith (Chase Bank) (john.smith@gmail.com)",
           "to": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
           "date": "2026-09-05T23:19:20.568Z",
-          "status": "PENDIENTE_CONCILIACION_ACH",
-          "reference": "REF-PAY-TEST-999"
+          "status": "CONFIRMADO_LIQUIDADO_USDC",
+          "reference": "REF-PAY-TEST-999",
+          "txHash": "0xdab347c8eebda14616c188fc58ecfa97cb4732568af504515f7675bd567ae3f1",
+          "settledAt": "2026-09-06T02:51:50.788Z"
         },
         {
           "txHash": "0xcb6f3fc61189336ee77884c0458c6d4d333602b71bced0ac244fa82c9bd417af",
@@ -216,12 +218,13 @@
       "amountCop": 80000,
       "concept": "Asesoria Global Maxi",
       "method": "Transferencia Bancaria ACH (EE.UU.)",
-      "status": "Pendiente Conciliación ACH",
+      "status": "Aprobado 100% (Liquidado en USDC)",
       "timestamp": "2026-09-05T23:19:20.568Z",
       "buyerName": "John Smith (Chase Bank)",
       "buyerEmail": "john.smith@gmail.com",
       "reference": "REF-PAY-TEST-999",
-      "targetWallet": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004"
+      "targetWallet": "0x355bab72e5d6f5ff5ab46116c5bec522047f2004",
+      "txHash": "0xdab347c8eebda14616c188fc58ecfa97cb4732568af504515f7675bd567ae3f1"
     },
     "CARD-ONRAMP-1788650364671": {
       "invoiceId": "CARD-ONRAMP-1788650364671",

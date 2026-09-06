@@ -338,16 +338,12 @@ const processedPayments = new Set();
 function getClientCredits(req) {
   const cookies = parseCookies(req);
   const token = cookies.maxi_user_session || cookies.maxi_user_token || req.headers['authorization']?.replace('Bearer ', '').trim();
-  if (token && usersDb.sessions[token]) {
+  if (token && usersDb.sessions && usersDb.sessions[token]) {
     const email = usersDb.sessions[token];
-    const user = usersDb.users[email];
+    const user = usersDb.users ? usersDb.users[email] : null;
     if (user) {
       return { ip: email, credits: user.credits, user };
     }
-  }
-  if (cookies.maxi_user_email && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
-    const user = usersDb.users[cookies.maxi_user_email.toLowerCase()];
-    return { ip: user.email, credits: user.credits, user };
   }
 
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'guest_user';
@@ -843,9 +839,13 @@ function getFooter() {
             box.scrollTop = box.scrollHeight;
 
             try {
+                const token = localStorage.getItem('maxi_user_token');
+                const reqHeaders = { 'Content-Type': 'application/json' };
+                if (token) reqHeaders['Authorization'] = 'Bearer ' + token;
+
                 const res = await fetch('/api/maxi/chat-advisor', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: reqHeaders,
                     body: JSON.stringify({ message: text })
                 });
                 const data = await res.json();
@@ -8131,18 +8131,17 @@ function checkFreeRateLimit(ip) {
 
 function verifyUserSubscription(req) {
   const cookies = parseCookies(req);
-  const token = cookies.maxi_user_session || cookies.maxi_user_token || (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '').trim() : null);
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null) ||
+                cookies.maxi_user_session || 
+                cookies.maxi_user_token;
 
-  let user = null;
-  let email = null;
-
-  if (token && usersDb.sessions && usersDb.sessions[token]) {
-    email = usersDb.sessions[token].toLowerCase();
-    user = usersDb.users ? usersDb.users[email] : null;
-  } else if (cookies.maxi_user_email && usersDb.users && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
-    email = cookies.maxi_user_email.toLowerCase();
-    user = usersDb.users[email] || null;
+  if (!token || !usersDb.sessions || !usersDb.sessions[token]) {
+    return { isPro: false, tier: 'guest', user: null, planName: 'Gratuito' };
   }
+
+  const email = usersDb.sessions[token].toLowerCase();
+  const user = usersDb.users ? usersDb.users[email] : null;
 
   if (!user) {
     return { isPro: false, tier: 'guest', user: null, planName: 'Gratuito' };

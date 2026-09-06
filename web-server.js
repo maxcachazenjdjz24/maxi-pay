@@ -610,8 +610,12 @@ function getHeader(activePage = 'home') {
                     <span id="langFlag" style="font-weight:800; font-size:11.5px;">ES</span>
                 </button>
 
-                <a href="/cuenta" class="btn-account" id="accountNavBtn">
-                    ${ICONS.user} <span id="accountNavText">Crear Cuenta</span>
+                <a href="/cuenta?tab=login" class="btn-outline" style="padding:7px 13px; font-size:12.5px; border-radius:10px; font-weight:800; border-color:rgba(0,242,254,0.35); color:var(--text-main); text-decoration:none;" title="Iniciar Sesión en tu Cuenta">
+                    🔑 Iniciar Sesión
+                </a>
+
+                <a href="/cuenta?tab=register" class="btn-primary" style="padding:7px 14px; font-size:12.5px; border-radius:10px; font-weight:800; text-decoration:none;" id="accountNavBtn" title="Crear Cuenta y Recibir 5 Fichas Gratis">
+                    👤 Crear Cuenta
                 </a>
 
                 <a href="/admin" class="icon-btn" title="Panel Privado de Administrador (Juan David)" style="border-color:rgba(0,242,254,0.4); color:var(--cyan);">
@@ -2458,18 +2462,18 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 }
 
 // 3. PAGE: CUENTA (SERVER-SIDE RENDERED WITH AUTH COOKIE SUPPORT & ZERO-POPUPS MODALS)
-function renderCuentaPage(user = null, invoices = []) {
+function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
   const isUserAuthenticated = !!user;
-  const userName = user?.name || 'Juan David Jaramillo Zapata';
-  const userEmail = user?.email || 'jdavidjaramillo@hotmail.com';
-  const userPhone = user?.phone || '+57 314 754 6359';
-  const userCredits = user?.credits !== undefined ? user.credits : 55;
+  const userName = user?.name || '';
+  const userEmail = user?.email || '';
+  const userPhone = user?.phone || '';
+  const userCredits = user?.credits !== undefined ? user.credits : 0;
   const isPro = user?.plan && user?.plan !== 'Gratuito';
   const planTag = isPro ? ('👑 ' + user.plan) : 'Plan Gratuito';
   
   const hasCustomWallet = !!user?.wallet && user.wallet.trim().toLowerCase() !== MAXI_WALLET.toLowerCase();
   const walletAddress = hasCustomWallet ? user.wallet : '';
-  const userSlug = encodeURIComponent(userName.toLowerCase().replace(/\s+/g, '-'));
+  const userSlug = encodeURIComponent((userName || 'usuario').toLowerCase().replace(/\s+/g, '-'));
   const userCustomPayLink = hasCustomWallet ? `https://maxi-pay.onrender.com/pay/${userSlug}/10?concept=Curso%20Online&wallet=${encodeURIComponent(walletAddress)}` : '';
 
   // Pre-render Invoices Table
@@ -2565,18 +2569,47 @@ function renderCuentaPage(user = null, invoices = []) {
         <div id="authForms" style="${isUserAuthenticated ? 'display:none;' : 'display:block;'} max-width:520px; margin:0 auto;">
             <div class="card" style="box-shadow:0 15px 45px rgba(0, 242, 254, 0.1);">
                 <div style="display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; gap:8px;">
-                    <button id="tabBtnLogin" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); cursor:pointer;">
-                        🔑 Iniciar Sesión
+                    <button id="tabBtnRegister" onclick="switchAuthTab('register')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid ${initialTab === 'register' ? 'var(--cyan)' : 'transparent'}; color:${initialTab === 'register' ? 'var(--cyan)' : 'var(--text-muted)'}; cursor:pointer;">
+                        👤 Crear Cuenta (+5 Fichas)
                     </button>
-                    <button id="tabBtnRegister" onclick="switchAuthTab('register')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); cursor:pointer;">
-                        👤 Crear Cuenta
+                    <button id="tabBtnLogin" onclick="switchAuthTab('login')" style="flex:1; padding:12px; font-weight:800; font-size:14px; background:none; border:none; border-bottom:2px solid ${initialTab === 'login' ? 'var(--cyan)' : 'transparent'}; color:${initialTab === 'login' ? 'var(--cyan)' : 'var(--text-muted)'}; cursor:pointer;">
+                        🔑 Iniciar Sesión (Sign In)
                     </button>
                 </div>
 
-                <!-- LOGIN FORM (DEFAULT) -->
-                <div id="formLoginSection">
+                <!-- REGISTER FORM -->
+                <div id="formRegisterSection" style="${initialTab === 'register' ? 'display:block;' : 'display:none;'}">
                     <div style="text-align:center; margin-bottom:20px;">
-                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión en tu Cuenta</h2>
+                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                            Regístrate con tu <strong>Nombre</strong>, <strong>Correo</strong> y <strong>Celular</strong> para recibir <span style="color:var(--emerald); font-weight:800;">+5 Fichas Gratis de Bienvenida</span>.
+                        </p>
+                    </div>
+
+                    <div id="regError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Nombre Completo:</label>
+                    <input type="text" id="regName" class="input-box" placeholder="Ej: Juan David Jaramillo">
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
+                    <input type="email" id="regEmail" class="input-box" placeholder="ejemplo@correo.com">
+
+                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
+                    <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
+
+                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer; font-size:15px; font-weight:800; padding:14px;">
+                        🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
+                    </button>
+
+                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
+                        ¿Ya tienes cuenta registrada? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--emerald); font-weight:800; text-decoration:underline;">Iniciar Sesión (Sign In)</a>
+                    </div>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <div id="formLoginSection" style="${initialTab === 'login' ? 'display:block;' : 'display:none;'}">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Iniciar Sesión (Sign In)</h2>
                         <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
                             Accede a tu panel, tus fichas de crédito y tu billetera personal.
                         </p>
@@ -2599,36 +2632,7 @@ function renderCuentaPage(user = null, invoices = []) {
                     </div>
 
                     <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                        ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Crear Cuenta Gratis</a>
-                    </div>
-                </div>
-
-                <!-- REGISTER FORM -->
-                <div id="formRegisterSection" style="display:none;">
-                    <div style="text-align:center; margin-bottom:20px;">
-                        <h2 style="font-size:24px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Crear Cuenta en Maxi Suite</h2>
-                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
-                            Regístrate con tu <strong>Correo</strong> y <strong>Celular</strong> para recibir <strong>+5 Fichas Gratis de Bienvenida</strong>.
-                        </p>
-                    </div>
-
-                    <div id="regError" style="display:none; padding:12px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:15px;"></div>
-
-                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Nombre Completo:</label>
-                    <input type="text" id="regName" class="input-box" placeholder="Ej: Juan David Jaramillo">
-
-                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
-                    <input type="email" id="regEmail" class="input-box" placeholder="ejemplo@correo.com">
-
-                    <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Celular (WhatsApp):</label>
-                    <input type="tel" id="regPhone" class="input-box" placeholder="+57 300 123 4567">
-
-                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer;">
-                        🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
-                    </button>
-
-                    <div style="text-align:center; margin-top:18px; font-size:13.5px; color:var(--text-muted); font-weight:600;">
-                        ¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--emerald); font-weight:800; text-decoration:underline;">Iniciar Sesión</a>
+                        ¿No tienes cuenta aún? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--cyan); font-weight:800; text-decoration:underline;">Crear Cuenta Gratis (+5 Fichas)</a>
                     </div>
                 </div>
             </div>
@@ -3436,10 +3440,10 @@ function renderCuentaPage(user = null, invoices = []) {
             const profCredits = document.getElementById('profCredits');
             const profPlanTag = document.getElementById('profPlanTag');
 
-            if (profName) profName.innerText = user.name || 'Juan David';
-            if (profEmail) profEmail.innerText = user.email || 'jdavidjaramillo@hotmail.com';
-            if (profPhone) profPhone.innerText = user.phone || '+57 314 754 6359';
-            if (profCredits) profCredits.innerText = (user.credits !== undefined ? user.credits : 55) + ' Fichas';
+            if (profName) profName.innerText = user.name || 'Usuario Maxi';
+            if (profEmail) profEmail.innerText = user.email || '';
+            if (profPhone) profPhone.innerText = user.phone || '';
+            if (profCredits) profCredits.innerText = (user.credits !== undefined ? user.credits : 5) + ' Fichas';
 
             const isPro = user.plan && user.plan !== 'Gratuito';
             if (profPlanTag) {
@@ -3464,7 +3468,7 @@ function renderCuentaPage(user = null, invoices = []) {
                 if (noWalletBox) noWalletBox.style.display = 'none';
                 if (activeWalletBox) activeWalletBox.style.display = 'block';
                 
-                const userSlug = encodeURIComponent((user.name || 'Juan David').toLowerCase().replace(/\s+/g, '-'));
+                const userSlug = encodeURIComponent((user.name || 'usuario').toLowerCase().replace(/\s+/g, '-'));
                 const customLink = window.location.origin + '/pay/' + userSlug + '/10?concept=Curso%20Online&wallet=' + encodeURIComponent(user.wallet);
                 if (customLinkDiv) customLinkDiv.innerText = customLink;
 
@@ -3480,7 +3484,7 @@ function renderCuentaPage(user = null, invoices = []) {
             // Update Navbar if present
             const navText = document.getElementById('accountNavText');
             if (navText) {
-                navText.innerText = (user.name.split(' ')[0]) + ' 👑 PRO (' + (user.credits || 55) + ' Fichas)';
+                navText.innerText = (user.name.split(' ')[0]) + (isPro ? ' 👑 PRO' : '') + ' (' + (user.credits !== undefined ? user.credits : 5) + ' Fichas)';
             }
 
             refreshUserWalletData();
@@ -3622,20 +3626,25 @@ function renderCuentaPage(user = null, invoices = []) {
         }
 
         async function logout() {
-            document.cookie = 'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
-            document.cookie = 'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
-            document.cookie = 'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+            document.cookie = 'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax';
+            document.cookie = 'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax';
+            document.cookie = 'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax';
             localStorage.removeItem('maxi_user_token');
             try {
                 await fetch('/api/auth/logout', { method: 'POST' });
             } catch(e) {}
             showToast('🔒 Sesión cerrada correctamente', 'info');
             setTimeout(() => {
-                window.location.href = '/cuenta';
-            }, 600);
+                window.location.href = '/cuenta?tab=login&logout=true';
+            }, 400);
         }
 
         async function initAccountPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam === 'register' || tabParam === 'login') {
+                switchAuthTab(tabParam);
+            }
             if (currentUserState) {
                 refreshUserWalletData();
             }
@@ -4948,7 +4957,7 @@ function renderHomePage() {
             </p>
             
             <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
-                <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:15px 32px; font-size:16px; font-weight:800; border-radius:14px; box-shadow:0 8px 25px rgba(0,242,254,0.3);">
+                <a href="/cuenta?tab=register" class="btn-primary" style="text-decoration:none; padding:15px 32px; font-size:16px; font-weight:800; border-radius:14px; box-shadow:0 8px 25px rgba(0,242,254,0.3);">
                     🎁 Crear Cuenta Gratis & Recibir 5 Fichas
                 </a>
                 <a href="/pay" class="btn-outline" style="text-decoration:none; padding:15px 28px; font-size:16px; font-weight:800; border-radius:14px;">
@@ -5628,7 +5637,7 @@ function renderHomePage() {
                 Únete a los comerciantes, prestadores de turismo, freelancers y traders que ya cobran sin comisiones intermedias y reciben sus pagos al instante.
             </p>
             <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
-                <a href="/cuenta" class="btn-primary" style="text-decoration:none; padding:15px 36px; font-size:16px; font-weight:800; border-radius:14px;">
+                <a href="/cuenta?tab=register" class="btn-primary" style="text-decoration:none; padding:15px 36px; font-size:16px; font-weight:800; border-radius:14px;">
                     🚀 Activar Maxi Pro por $9.99 USD (+100 Fichas)
                 </a>
                 <a href="/pay" class="btn-outline" style="text-decoration:none; padding:15px 28px; font-size:16px; font-weight:800; border-radius:14px;">
@@ -7960,19 +7969,42 @@ const server = http.createServer(async (req, res) => {
             res.end(renderAdminPage());
         } else if (pathname === '/cuenta') {
             loadUsersDb();
+            const query = parsedUrl.query || {};
             const cookies = parseCookies(req);
+
+            // 1. Explicit Logout
+            if (query.logout === 'true') {
+                res.writeHead(200, {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Set-Cookie': [
+                        'maxi_user_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax',
+                        'maxi_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax',
+                        'maxi_user_email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax'
+                    ]
+                });
+                res.end(renderCuentaPage(null, [], query.tab || 'login'));
+                return;
+            }
+
             const token = cookies.maxi_user_session || cookies.maxi_user_token || req.headers['authorization']?.replace('Bearer ', '').trim();
             let email = null;
-            if (token && usersDb.sessions[token]) {
+            if (token && usersDb.sessions && usersDb.sessions[token]) {
                 email = usersDb.sessions[token];
-            } else if (cookies.maxi_user_email && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
+            } else if (cookies.maxi_user_email && usersDb.users && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
                 email = cookies.maxi_user_email.toLowerCase();
             }
 
-            const authenticatedUser = email ? usersDb.users[email] : null;
+            let authenticatedUser = email ? usersDb.users[email] : null;
+
+            // If user explicitly requested Crear Cuenta (?tab=register) or Iniciar Sesión (?tab=login)
+            const initialTab = query.tab === 'login' ? 'login' : 'register';
+            if (query.tab === 'register' || query.tab === 'login') {
+                authenticatedUser = null;
+            }
+
             const userInvoices = authenticatedUser ? Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === authenticatedUser.email.toLowerCase()) : [];
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderCuentaPage(authenticatedUser, userInvoices));
+            res.end(renderCuentaPage(authenticatedUser, userInvoices, initialTab));
         } else if (pathname === '/trabajos' || pathname === '/gigs') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderTrabajosPage());
@@ -8841,8 +8873,15 @@ const server = http.createServer(async (req, res) => {
                 usersDb.sessions[token] = cleanEmail;
                 saveUsersDb();
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, token, user }));
+                res.writeHead(200, { 
+                    'Content-Type': 'application/json',
+                    'Set-Cookie': [
+                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                        `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
+                    ]
+                });
+                res.end(JSON.stringify({ success: true, token, user, invoices: [] }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));

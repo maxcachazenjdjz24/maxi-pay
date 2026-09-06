@@ -718,7 +718,10 @@ function getFooter() {
                         </div>
                     </div>
                 </div>
-                <button onclick="toggleMaxiAiChat()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:8px;">✕</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button onclick="clearMaxiAiChat()" title="Iniciar nueva conversación" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:11.5px; cursor:pointer; padding:5px 9px; border-radius:8px; display:flex; align-items:center; gap:4px; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif;">🔄 Limpiar</button>
+                    <button onclick="toggleMaxiAiChat()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:8px;">✕</button>
+                </div>
             </div>
 
             <!-- MESSAGES CONTAINER -->
@@ -751,13 +754,62 @@ function getFooter() {
     </div>
 
     <script>
+        function getWelcomeChatHtml() {
+            return '<div style=\"display:flex; gap:10px; align-items:flex-start;\">' +
+                   '<div style=\"width:30px; height:30px; border-radius:8px; background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;\">🤖</div>' +
+                   '<div style=\"background:#151b2e; border:1px solid rgba(255,255,255,0.08); padding:14px; border-radius:4px 16px 16px 16px; color:#e2e8f0; font-size:13.5px; line-height:1.5; max-width:88%;\">¡Hola! 👋 Soy <strong>Maxi IA</strong>, tu asesor financiero y de cobros en Maxi Suite.<br><br>¿En qué te puedo asesorar hoy? Elige una opción rápida o escribe tu consulta:</div></div>' +
+                   '<div style=\"display:flex; flex-direction:column; gap:8px; margin-left:40px;\">' +
+                   '<button class=\"maxi-chip\" onclick=\"askMaxiPreset(\\'¿Cómo cobrarle a un cliente en Estados Unidos con 0% comisión?\\')\">🇺🇸 ¿Cómo cobrar en EE.UU.? (ACH 0%)</button>' +
+                   '<button class=\"maxi-chip\" onclick=\"askMaxiPreset(\\'¿Cómo cobrarle a un cliente en Europa con SEPA e IBAN?\\')\">🇪🇺 ¿Cómo cobrar en Europa? (SEPA 0%)</button>' +
+                   '<button class=\"maxi-chip\" onclick=\"askMaxiPreset(\\'¿Cómo pasar mis dólares a Bancolombia o Nequi con Wenia?\\')\">🇨🇴 ¿Cómo pasar dólares a Nequi / Bancolombia?</button>' +
+                   '<button class=\"maxi-chip\" onclick=\"askMaxiPreset(\\'Quiero generar mi enlace de cobro personalizado\\')\">🔗 Generar Enlace de Cobro (/pay)</button>' +
+                   '<button class=\"maxi-chip\" onclick=\"askMaxiPreset(\\'¿Cómo ganar dinero en Gig Finder con IA?\\')\">💼 Ganar dinero en Gig Finder</button></div>';
+        }
+
+        function saveChatToSession() {
+            try {
+                const box = document.getElementById('maxiAiMessagesBox');
+                if (box) {
+                    sessionStorage.setItem('maxi_chat_history', box.innerHTML);
+                }
+            } catch (e) {}
+        }
+
+        function restoreChatFromSession() {
+            try {
+                const saved = sessionStorage.getItem('maxi_chat_history');
+                const box = document.getElementById('maxiAiMessagesBox');
+                if (saved && box && saved.trim().length > 10) {
+                    box.innerHTML = saved;
+                    box.scrollTop = box.scrollHeight;
+                }
+                const isOpen = sessionStorage.getItem('maxi_chat_open');
+                if (isOpen === 'true') {
+                    const modal = document.getElementById('modalMaxiAdvisorChat');
+                    if (modal) modal.style.display = 'flex';
+                }
+            } catch (e) {}
+        }
+
+        function clearMaxiAiChat() {
+            try {
+                sessionStorage.removeItem('maxi_chat_history');
+                const box = document.getElementById('maxiAiMessagesBox');
+                if (box) {
+                    box.innerHTML = getWelcomeChatHtml();
+                }
+            } catch (e) {}
+        }
+
         function toggleMaxiAiChat() {
             const modal = document.getElementById('modalMaxiAdvisorChat');
             if (modal.style.display === 'none' || !modal.style.display) {
                 modal.style.display = 'flex';
+                try { sessionStorage.setItem('maxi_chat_open', 'true'); } catch (e) {}
                 document.getElementById('maxiAiInput').focus();
             } else {
                 modal.style.display = 'none';
+                try { sessionStorage.setItem('maxi_chat_open', 'false'); } catch (e) {}
             }
         }
 
@@ -780,6 +832,7 @@ function getFooter() {
             box.appendChild(userMsg);
             input.value = '';
             box.scrollTop = box.scrollHeight;
+            saveChatToSession();
 
             // Add loading indicator
             const loadingMsg = document.createElement('div');
@@ -805,13 +858,22 @@ function getFooter() {
                                   '<div style=\"background:#151b2e; border:1px solid rgba(255,255,255,0.08); padding:14px; border-radius:4px 16px 16px 16px; color:#e2e8f0; font-size:13.5px; line-height:1.55; max-width:88%;\">' + (data.replyHtml || data.reply || 'Estoy listo para ayudarte con tus cobros y retiros.') + '</div>';
                 box.appendChild(aiMsg);
                 box.scrollTop = box.scrollHeight;
+                saveChatToSession();
             } catch (err) {
                 const loadEl = document.getElementById('maxiLoadingMsg');
                 if (loadEl) loadEl.remove();
                 const errMsg = document.createElement('div');
                 errMsg.innerHTML = '<div style=\"color:#f43f5e; font-size:13px; margin-left:40px;\">Error al conectar con Maxi IA. Por favor intenta de nuevo.</div>';
                 box.appendChild(errMsg);
+                saveChatToSession();
             }
+        }
+
+        // Restore conversation on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', restoreChatFromSession);
+        } else {
+            restoreChatFromSession();
         }
     </script>
   `;

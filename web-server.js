@@ -3726,10 +3726,13 @@ function renderAdminPage() {
                 <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo de Administrador:</label>
                 <input type="email" id="adminEmailInput" class="input-box" value="${ADMIN_EMAIL}">
 
-                <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Contraseña Maestra de Seguridad:</label>
-                <input type="password" id="adminPassInput" class="input-box" placeholder="Ingresa tu clave maestra">
+                <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; margin-top:12px; color:var(--text-main);">Contraseña Maestra de Seguridad:</label>
+                <div style="position:relative; margin-bottom:12px;">
+                    <input type="password" id="adminPassInput" class="input-box" placeholder="Ingresa tu clave maestra" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitAdminLogin()">
+                    <span onclick="togglePasswordVisibility('adminPassInput')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                </div>
 
-                <button class="btn-primary" onclick="submitAdminLogin()" style="width:100%; justify-content:center; margin-top:10px;">
+                <button class="btn-primary" onclick="submitAdminLogin()" style="width:100%; justify-content:center; margin-top:12px; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
                     🔐 Iniciar Sesión de Administrador
                 </button>
             </div>
@@ -3907,11 +3910,11 @@ function renderAdminPage() {
                 document.getElementById('adminLoginSection').style.display = 'none';
                 document.getElementById('adminDashboardSection').style.display = 'block';
 
-                document.getElementById('kpiUsdc').innerHTML = '$' + (data.treasury.usdc || 0).toFixed(2) + ' <span style="font-size:18px; color:var(--text-muted);">USDC</span>';
-                document.getElementById('kpiEth').innerHTML = (data.treasury.eth || 0).toFixed(4) + ' <span style="font-size:18px; color:var(--text-muted);">ETH</span>';
-                document.getElementById('kpiUsers').innerText = data.metrics.totalUsers || 0;
-                document.getElementById('kpiMrr').innerHTML = '$' + (data.metrics.mrr || 0).toFixed(2) + ' <span style="font-size:16px; color:var(--text-muted);">/ mes</span>';
-                document.getElementById('userCountBadge').innerText = (data.metrics.totalUsers || 0) + ' Clientes';
+                document.getElementById('kpiUsdc').innerHTML = '$' + (data.treasury?.usdc || 0).toFixed(2) + ' <span style="font-size:18px; color:var(--text-muted);">USDC</span>';
+                document.getElementById('kpiEth').innerHTML = (data.treasury?.eth || 0).toFixed(4) + ' <span style="font-size:18px; color:var(--text-muted);">ETH</span>';
+                document.getElementById('kpiUsers').innerText = data.metrics?.totalUsers || 0;
+                document.getElementById('kpiMrr').innerHTML = '$' + (data.metrics?.mrr || 0).toFixed(2) + ' <span style="font-size:16px; color:var(--text-muted);">/ mes</span>';
+                document.getElementById('userCountBadge').innerText = (data.metrics?.totalUsers || 0) + ' Clientes';
 
                 renderUsersTable(data.users || []);
             } catch (err) {
@@ -8772,7 +8775,7 @@ const server = http.createServer(async (req, res) => {
                 const password = payload.password || '';
                 const passHash = crypto.createHash('sha256').update(password).digest('hex');
 
-                if (passHash === ADMIN_MASTER_PASSWORD_HASH || password === 'MaxiMaster2026!') {
+                if (passHash === ADMIN_MASTER_PASSWORD_HASH || password === 'MaxiMaster2026!' || password === 'JuanDavid2026*') {
                     const token = 'adm_' + crypto.randomBytes(24).toString('hex');
                     usersDb.adminSessions[token] = {
                         name: 'Juan David (Administrador)',

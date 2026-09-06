@@ -136,7 +136,18 @@
     "c5960fb7d4989f0108133ddab216d9db79ee975103a054af": "testuser_1788710210794@example.com",
     "f2904277f02b0a484a7112e373ec96308a189cc9863cc0c7": "testuser_1788710210794@example.com"
   },
-  "adminSessions": {},
+  "adminSessions": {
+    "adm_e985b7ba016e9281220224a97ba0c543d65de0f7bdc2efe5": {
+      "name": "Juan David (Administrador)",
+      "email": "admin@maxi.suite",
+      "loginAt": "2026-09-06T16:04:41.508Z"
+    },
+    "adm_d468358e8540c2539d5c9d061203d6dacd03157be4a6f267": {
+      "name": "Juan David (Administrador)",
+      "email": "admin@maxi.suite",
+      "loginAt": "2026-09-06T16:04:48.142Z"
+    }
+  },
   "invoices": {
     "WOMPI-1526018-1788534094-90406": {
       "invoiceId": "WOMPI-1526018-1788534094-90406",

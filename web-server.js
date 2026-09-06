@@ -492,12 +492,17 @@ async function pollTelegramUpdates() {
           } else {
             // General /start without token
             if (chatId === TELEGRAM_ADMIN_CHAT_ID) {
+              if (usersDb.users && usersDb.users['jdavidjaramillo@hotmail.com']) {
+                usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId = chatId;
+                usersDb.users['jdavidjaramillo@hotmail.com'].telegramUsername = username;
+                saveUsersDb();
+              }
               await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
-                  text: `👑 *¡Hola Administrador Juan David!* Maxi Bot está activo y monitoreando el ecosistema Maxi Suite en tiempo real 🚀`,
+                  text: `👑 *¡Hola Juan David!* Tu cuenta de Administrador y Usuario (\`jdavidjaramillo@hotmail.com\`) está 100% vinculada y activa.\n\nRecibirás aquí todas las alertas del sistema y los avisos privados de tus cobros y ventas en tiempo real 🚀`,
                   parse_mode: 'Markdown'
                 })
               });
@@ -519,11 +524,33 @@ async function pollTelegramUpdates() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     chat_id: chatId,
-                    text: `🤖 *¡Hola! Soy Maxi Bot, tu asistente oficial de Maxi Suite.*\n\nPara recibir alertas instantáneas y privadas cada vez que tus clientes te paguen, vincula tu cuenta desde tu panel:\n🔗 https://maxi-pay.onrender.com/cuenta`,
+                    text: `🤖 *¡Hola! Soy Maxi Bot, tu asistente oficial de Maxi Suite.*\n\nPara recibir alertas instantáneas y privadas cada vez que tus clientes te paguen, vincula tu cuenta desde tu panel:\n🔗 https://maxi-pay.onrender.com/cuenta\n\n_O responde a este mensaje escribiendo el correo de tu cuenta de Maxi Suite para vincularla al instante._`,
                     parse_mode: 'Markdown'
                   })
                 });
               }
+            }
+          }
+        } else {
+          // Check if message is an email address to link directly
+          const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+          if (emailMatch) {
+            const emailInput = emailMatch[0].toLowerCase();
+            if (usersDb.users && usersDb.users[emailInput]) {
+              const matchedUser = usersDb.users[emailInput];
+              matchedUser.telegramChatId = chatId;
+              matchedUser.telegramUsername = username;
+              saveUsersDb();
+
+              await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  text: `🎉 *¡CUENTA VINCULADA CON ÉXITO!* 🚀\n\nHola *${matchedUser.name}*, tu cuenta (\`${matchedUser.email}\`) ha quedado vinculada con este chat de Telegram.\n\nRecibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`,
+                  parse_mode: 'Markdown'
+                })
+              });
             }
           }
         }
@@ -647,6 +674,14 @@ function loadUsersDb() {
     if (!usersDb.invoices) usersDb.invoices = {};
     if (!usersDb.withdrawals) usersDb.withdrawals = [];
     if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
+
+    // Auto-link Master Account (Juan David) with Admin Telegram
+    if (usersDb.users && usersDb.users['jdavidjaramillo@hotmail.com']) {
+      if (!usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId) {
+        usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId = TELEGRAM_ADMIN_CHAT_ID;
+        usersDb.users['jdavidjaramillo@hotmail.com'].telegramUsername = '@jdavidjaramillo';
+      }
+    }
   } catch (e) {
     console.error('Error loading users db:', e.message);
   }

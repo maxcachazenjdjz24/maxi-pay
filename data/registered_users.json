@@ -18,7 +18,40 @@
         "txId": "1526018-1788534094-90406"
       },
       "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735",
+      "telegramChatId": "7959552395",
+      "telegramUsername": "@jdavidjaramillo",
       "sales": [
+        {
+          "txHash": "0xbdf26387cb6b9e43dcc4f04b5c6bdd2695cff761fed02b7b43238568fd86de14",
+          "invoiceId": "CARD-ONRAMP-1788736000138",
+          "orderId": "PAY-364758",
+          "amountUsd": 20,
+          "amountPaid": 20.3,
+          "fee": 0.3,
+          "amountCop": 80000,
+          "concept": "Curso Intensivo de Trading",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 1234",
+          "to": "0xc94927ff92091a738406329e130e930e3ba788d6",
+          "date": "2026-09-06T23:06:40.138Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788736000123",
+          "orderId": "PAY-745484",
+          "amountUsd": 35,
+          "amountCop": 140000,
+          "concept": "Servicio de Consultoría Financiera",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Michael Scott",
+          "senderEmail": "michael@dundermifflin.com",
+          "from": "Michael Scott (michael@dundermifflin.com)",
+          "to": "0xc94927ff92091a738406329e130e930e3ba788d6",
+          "date": "2026-09-06T23:06:40.123Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-TEST-ACH-999"
+        },
         {
           "txHash": "0x28fc494b1a29fb5c715f0e0dfe9f799528db8c40bab3a9a24a22857a0ef1c29f",
           "invoiceId": "CARD-ONRAMP-1788650364671",
@@ -127,6 +160,26 @@
           "status": "CONFIRMADO_ONRAMP_USDC"
         }
       ]
+    },
+    "testuser_1788735999999@example.com": {
+      "id": "usr_1788736000064",
+      "name": "Carlos Mendoza",
+      "email": "testuser_1788735999999@example.com",
+      "phone": "+57 310 987 6543",
+      "wallet": null,
+      "passwordHash": "8635fc3e9be2706b88b1a8d05dd75f26e06533b6c7fedb4e4da36c5e48d4434461daac3a69cfbb12cc9ac49036c4e920a0b13cf1f4fc7c555c6a1563acc64894",
+      "passwordSalt": "9881df28d2e10f2ac4630e34f5614751",
+      "credits": 505,
+      "plan": "Maxi Suite All-Access",
+      "createdAt": "2026-09-06T23:06:40.064Z",
+      "lastPayment": {
+        "method": "Wompi BANCOLOMBIA_TRANSFER",
+        "amountCop": 80000,
+        "date": "2026-09-06T23:06:40.147Z",
+        "txId": "WOMPI-TEST-1788736000143"
+      },
+      "telegramChatId": null,
+      "telegramUsername": null
     }
   },
   "sessions": {
@@ -135,7 +188,8 @@
     "cedb47b4c79a9251c7f374a8f306f430f6a55af700105888": "jdavidjaramillo@hotmail.com",
     "c5960fb7d4989f0108133ddab216d9db79ee975103a054af": "testuser_1788710210794@example.com",
     "f2904277f02b0a484a7112e373ec96308a189cc9863cc0c7": "testuser_1788710210794@example.com",
-    "0a22d2cae886ea46ba4bd2212e8f3c22f9ce8c19bf680207": "jdavidjaramillo@hotmail.com"
+    "0a22d2cae886ea46ba4bd2212e8f3c22f9ce8c19bf680207": "jdavidjaramillo@hotmail.com",
+    "99ab0637fa9882049f7777fbffdf98c4c442ff7dd5881112": "testuser_1788735999999@example.com"
   },
   "adminSessions": {
     "adm_e985b7ba016e9281220224a97ba0c543d65de0f7bdc2efe5": {
@@ -257,6 +311,47 @@
       "buyerName": "Alice Johnson",
       "buyerEmail": "alice@gmail.com",
       "txHash": "0x28fc494b1a29fb5c715f0e0dfe9f799528db8c40bab3a9a24a22857a0ef1c29f"
+    },
+    "ACH-NOTIFY-1788736000123": {
+      "invoiceId": "ACH-NOTIFY-1788736000123",
+      "orderId": "PAY-745484",
+      "amountUsd": "35.00",
+      "amountCop": 140000,
+      "concept": "Servicio de Consultoría Financiera",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-06T23:06:40.123Z",
+      "buyerName": "Michael Scott",
+      "buyerEmail": "michael@dundermifflin.com",
+      "reference": "REF-TEST-ACH-999",
+      "targetWallet": "0xc94927ff92091a738406329e130e930e3ba788d6"
+    },
+    "CARD-ONRAMP-1788736000138": {
+      "invoiceId": "CARD-ONRAMP-1788736000138",
+      "orderId": "PAY-364758",
+      "amountUsd": "20.00",
+      "amountPaid": "20.30",
+      "fee": "0.30",
+      "amountCop": 80000,
+      "concept": "Curso Intensivo de Trading",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-06T23:06:40.138Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah@skynet.com",
+      "txHash": "0xbdf26387cb6b9e43dcc4f04b5c6bdd2695cff761fed02b7b43238568fd86de14"
+    },
+    "WOMPI-WOMPI-TEST-1788736000143": {
+      "invoiceId": "WOMPI-WOMPI-TEST-1788736000143",
+      "orderId": "REF-WOMPI-ALLACCESS-1788736000143",
+      "wompiTxId": "WOMPI-TEST-1788736000143",
+      "amountCop": 80000,
+      "amountUsd": "20.00",
+      "concept": "Suscripción Maxi Suite All-Access",
+      "method": "Wompi BANCOLOMBIA_TRANSFER",
+      "status": "Aprobado 100% (Producción)",
+      "timestamp": "2026-09-06T23:06:40.147Z",
+      "buyerEmail": "testuser_1788735999999@example.com"
     }
   },
   "withdrawals": [
@@ -271,5 +366,8 @@
       "status": "PROCESANDO_INMEDIATO",
       "timestamp": "2026-09-04T19:56:32.166Z"
     }
-  ]
+  ],
+  "telegramTokens": {
+    "link_9a4b7d6d7e42d549": "testuser_1788735999999@example.com"
+  }
 }

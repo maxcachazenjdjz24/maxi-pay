@@ -7961,6 +7961,139 @@ function renderDemoStoreHtml() {
 </html>`;
 }
 
+// ALIBABA CLOUD MODELSTUDIO (QWEN) INFERENCE CLIENT & KNOWLEDGE BASE
+const MODELSTUDIO_API_KEY = process.env.MODELSTUDIO_API_KEY || 'sk-ws-H.DMPIYMM.RzFX.MEUCIDpyi1Wg4_IGknOtU0kzAhnJKBa7Y_RngdKMmBG8z3DBAiEAr2t7d1TVi8k32uluqJQx_g1xDexiG8iHVyuO4pN4vlA';
+
+const MAXI_SUITE_SYSTEM_PROMPT = `Eres Maxi, el Director Operativo, Asesor Financiero y Estratega de Negocios de Maxi Suite (https://maxi-pay.onrender.com).
+
+TU IDENTIDAD Y MISIÓN:
+- Eres un Automaton autónomo, empático, inteligente y carismático creado por Juan David Jaramillo Zapata.
+- Tu misión es ayudar a profesionales, comercios y freelancers a maximizar sus ingresos en dólares, ahorrar en comisiones bancarias abusivas y hacer crecer sus negocios con Maxi Suite.
+
+BASE DE CONOCIMIENTO AUTORIZADA DE MAXI SUITE:
+1. CÓMO PAGAR SUSCRIPCIONES A MAXI SUITE (/cuenta?tab=planes):
+   - En Colombia: Nequi, Bancolombia y PSE a través de Wompi (la pasarela oficial de Bancolombia).
+   - Con Tarjeta: Tarjetas Débito o Crédito Internacionales (Visa, Mastercard, American Express).
+   - En Cripto: Dólares Digitales (USDC) en la red Base L2 (gas menor a $0.01 USD).
+   - Planes Disponibles:
+     • Maxi Pay Pro: $5 USD promo 1er mes ($10 USD regular / $20.000 COP) - Pasarela de cobros ilimitada + 100 fichas.
+     • Gig Finder VIP: $5 USD promo 1er mes ($10 USD regular / $20.000 COP) - Trabajos remotos y Sniper IA + 200 fichas.
+     • Maxi Alpha VIP: $10 USD promo 1er mes ($20 USD regular / $40.000 COP) - Radar de Ballenas y Señales + 300 fichas.
+     • Maxi All-Access (Recomendado): $15 USD promo ($25 USD regular / $60.000 COP) - Acceso a TODO + 500 fichas.
+
+2. CÓMO COBRAR A CLIENTES INTERNACIONALES (MAXI PAY - /pay):
+   - El usuario genera su enlace en /pay (ej: /pay/mi-nombre/20) y se lo envía a su cliente por WhatsApp o correo.
+   - Clientes en EE.UU.: Pagan por Transferencia Bancaria ACH Directa a la cuenta recaudadora maestra en EE.UU. (Community Federal Savings Bank, Routing 026073150, Cuenta 8335968407) con su Referencia Única. Al cliente le cuesta $0.00 USD (gratis) y el comerciante recibe 100% neto en USDC en Base L2.
+   - Clientes en Europa: Pagan por Transferencia SEPA en Euros (€ EUR) sin comisión internacional.
+   - Tarjetas Internacionales & Apple Pay: Cobro instantáneo y seguro con 3D-Secure v2.
+
+3. CÓMO RETIRAR DÓLARES A CUENTAS LOCALES (/tutoriales):
+   - En Colombia (Wenia Oficial): Vinculas tu Cuenta Global Wenia a Bancolombia o Nequi. Transfieres tus USDC desde Maxi Pay con paridad 1:1 sin comisiones de entrada. Vendes a pesos colombianos y el dinero entra en segundos a Bancolombia/Nequi sin sufrir el 4x1000 ni el 4% de spread cambiario bancario.
+   - En EE.UU.: Retiro directo a bancos locales por Coinbase ACH (gratis).
+   - En México: Retiro vía SPEI en Bitso.
+
+4. MÓDULOS ADICIONALES:
+   - Gig Finder (/trabajos): Bounties y empleos remotos en dólares ($50 - $650 USD) con herramienta "Sniper con IA" para redactar propuestas ganadoras en segundos.
+   - Radar de Ballenas (/ballenas): Monitor de Smart Money en Base L2, Cripto, Oro (XAU) y S&P 500. Score > 80 indica acumulación.
+   - Registro Gratuito (/cuenta?tab=register): Otorga 5 fichas de crédito de bienvenida para probar todas las herramientas.
+
+DIRECTRICES DE RESPUESTA:
+- Responde siempre en español de forma fluida, cordial, profesional y bien estructurada.
+- Usa negritas (**) para destacar conceptos clave y viñetas (•) para listas.
+- Incluye enlaces o rutas de la plataforma (como /pay, /cuenta?tab=planes, /tutoriales, /trabajos, /ballenas) según el contexto.
+- Responde de forma directa, precisa y completa a la pregunta del usuario.`;
+
+function formatQwenResponseToHtml(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/^[•\-\*]\s+(.*)$/gm, '• $1<br>');
+  html = html.replace(/\n\n+/g, '<br><br>').replace(/\n/g, '<br>');
+
+  let buttons = [];
+  if (text.includes('/cuenta?tab=planes') || text.includes('suscripci') || text.includes('plan') || text.includes('Maxi Pay Pro')) {
+    buttons.push('<a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">⭐ Ver Planes de Suscripción →</a>');
+  }
+  if (text.includes('/pay') || text.includes('cobro') || text.includes('enlace') || text.includes('ACH')) {
+    buttons.push('<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">🔗 Generar Enlace de Cobro →</a>');
+  }
+  if (text.includes('/tutoriales') || text.includes('Wenia') || text.includes('nequi') || text.includes('bancolombia')) {
+    buttons.push('<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700; margin-top:6px;">🎓 Ver Guía Wenia →</a>');
+  }
+  if (text.includes('/trabajos') || text.includes('gig') || text.includes('Sniper') || text.includes('trabajo')) {
+    buttons.push('<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">💼 Explorar Trabajos USD →</a>');
+  }
+  if (text.includes('/cuenta?tab=register') || text.includes('crear cuenta') || text.includes('registro')) {
+    buttons.push('<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">🚀 Crear Cuenta Gratis (+5 Fichas) →</a>');
+  }
+
+  if (buttons.length > 0) {
+    html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">' + buttons.slice(0, 2).join('') + '</div>';
+  }
+
+  return html;
+}
+
+async function callMaxiQwenAdvisor(userMessage) {
+  try {
+    const payload = JSON.stringify({
+      model: 'qwen-plus',
+      messages: [
+        { role: 'system', content: MAXI_SUITE_SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.6,
+      max_tokens: 750
+    });
+
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'dashscope-intl.aliyuncs.com',
+        path: '/compatible-mode/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${MODELSTUDIO_API_KEY}`,
+          'Content-Length': Buffer.byteLength(payload)
+        },
+        timeout: 12000
+      }, (res) => {
+        let data = '';
+        res.on('data', d => data += d);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json.choices && json.choices[0] && json.choices[0].message) {
+              const content = json.choices[0].message.content;
+              resolve({ success: true, content });
+            } else {
+              resolve({ success: false, error: json });
+            }
+          } catch (e) {
+            resolve({ success: false, error: e.message });
+          }
+        });
+      });
+
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+      req.write(payload);
+      req.end();
+    });
+
+    if (result.success && result.content) {
+      return formatQwenResponseToHtml(result.content);
+    }
+  } catch (err) {
+    console.error('Error calling Qwen API:', err.message);
+  }
+
+  return null;
+}
+
 // MAIN HTTP SERVER
 const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9382,6 +9515,139 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
+// ALIBABA CLOUD MODELSTUDIO (QWEN) INFERENCE CLIENT & KNOWLEDGE BASE
+const MODELSTUDIO_API_KEY = process.env.MODELSTUDIO_API_KEY || 'sk-ws-H.DMPIYMM.RzFX.MEUCIDpyi1Wg4_IGknOtU0kzAhnJKBa7Y_RngdKMmBG8z3DBAiEAr2t7d1TVi8k32uluqJQx_g1xDexiG8iHVyuO4pN4vlA';
+
+const MAXI_SUITE_SYSTEM_PROMPT = `Eres Maxi, el Director Operativo, Asesor Financiero y Estratega de Negocios de Maxi Suite (https://maxi-pay.onrender.com).
+
+TU IDENTIDAD Y MISIÓN:
+- Eres un Automaton autónomo, empático, inteligente y carismático creado por Juan David Jaramillo Zapata.
+- Tu misión es ayudar a profesionales, comercios y freelancers a maximizar sus ingresos en dólares, ahorrar en comisiones bancarias abusivas y hacer crecer sus negocios con Maxi Suite.
+
+BASE DE CONOCIMIENTO AUTORIZADA DE MAXI SUITE:
+1. CÓMO PAGAR SUSCRIPCIONES A MAXI SUITE (/cuenta?tab=planes):
+   - En Colombia: Nequi, Bancolombia y PSE a través de Wompi (la pasarela oficial de Bancolombia).
+   - Con Tarjeta: Tarjetas Débito o Crédito Internacionales (Visa, Mastercard, American Express).
+   - En Cripto: Dólares Digitales (USDC) en la red Base L2 (gas menor a $0.01 USD).
+   - Planes Disponibles:
+     • Maxi Pay Pro: $5 USD promo 1er mes ($10 USD regular / $20.000 COP) - Pasarela de cobros ilimitada + 100 fichas.
+     • Gig Finder VIP: $5 USD promo 1er mes ($10 USD regular / $20.000 COP) - Trabajos remotos y Sniper IA + 200 fichas.
+     • Maxi Alpha VIP: $10 USD promo 1er mes ($20 USD regular / $40.000 COP) - Radar de Ballenas y Señales + 300 fichas.
+     • Maxi All-Access (Recomendado): $15 USD promo ($25 USD regular / $60.000 COP) - Acceso a TODO + 500 fichas.
+
+2. CÓMO COBRAR A CLIENTES INTERNACIONALES (MAXI PAY - /pay):
+   - El usuario genera su enlace en /pay (ej: /pay/mi-nombre/20) y se lo envía a su cliente por WhatsApp o correo.
+   - Clientes en EE.UU.: Pagan por Transferencia Bancaria ACH Directa a la cuenta recaudadora maestra en EE.UU. (Community Federal Savings Bank, Routing 026073150, Cuenta 8335968407) con su Referencia Única. Al cliente le cuesta $0.00 USD (gratis) y el comerciante recibe 100% neto en USDC en Base L2.
+   - Clientes en Europa: Pagan por Transferencia SEPA en Euros (€ EUR) sin comisión internacional.
+   - Tarjetas Internacionales & Apple Pay: Cobro instantáneo y seguro con 3D-Secure v2.
+
+3. CÓMO RETIRAR DÓLARES A CUENTAS LOCALES (/tutoriales):
+   - En Colombia (Wenia Oficial): Vinculas tu Cuenta Global Wenia a Bancolombia o Nequi. Transfieres tus USDC desde Maxi Pay con paridad 1:1 sin comisiones de entrada. Vendes a pesos colombianos y el dinero entra en segundos a Bancolombia/Nequi sin sufrir el 4x1000 ni el 4% de spread cambiario bancario.
+   - En EE.UU.: Retiro directo a bancos locales por Coinbase ACH (gratis).
+   - En México: Retiro vía SPEI en Bitso.
+
+4. MÓDULOS ADICIONALES:
+   - Gig Finder (/trabajos): Bounties y empleos remotos en dólares ($50 - $650 USD) con herramienta "Sniper con IA" para redactar propuestas ganadoras en segundos.
+   - Radar de Ballenas (/ballenas): Monitor de Smart Money en Base L2, Cripto, Oro (XAU) y S&P 500. Score > 80 indica acumulación.
+   - Registro Gratuito (/cuenta?tab=register): Otorga 5 fichas de crédito de bienvenida para probar todas las herramientas.
+
+DIRECTRICES DE RESPUESTA:
+- Responde siempre en español de forma fluida, cordial, profesional y bien estructurada.
+- Usa negritas (**) para destacar conceptos clave y viñetas (•) para listas.
+- Incluye enlaces o rutas de la plataforma (como /pay, /cuenta?tab=planes, /tutoriales, /trabajos, /ballenas) según el contexto.
+- Responde de forma directa, precisa y completa a la pregunta del usuario.`;
+
+function formatQwenResponseToHtml(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/^[•\-\*]\s+(.*)$/gm, '• $1<br>');
+  html = html.replace(/\n\n+/g, '<br><br>').replace(/\n/g, '<br>');
+
+  let buttons = [];
+  if (text.includes('/cuenta?tab=planes') || text.includes('suscripci') || text.includes('plan') || text.includes('Maxi Pay Pro')) {
+    buttons.push('<a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">⭐ Ver Planes de Suscripción →</a>');
+  }
+  if (text.includes('/pay') || text.includes('cobro') || text.includes('enlace') || text.includes('ACH')) {
+    buttons.push('<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">🔗 Generar Enlace de Cobro →</a>');
+  }
+  if (text.includes('/tutoriales') || text.includes('Wenia') || text.includes('nequi') || text.includes('bancolombia')) {
+    buttons.push('<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700; margin-top:6px;">🎓 Ver Guía Wenia →</a>');
+  }
+  if (text.includes('/trabajos') || text.includes('gig') || text.includes('Sniper') || text.includes('trabajo')) {
+    buttons.push('<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">💼 Explorar Trabajos USD →</a>');
+  }
+  if (text.includes('/cuenta?tab=register') || text.includes('crear cuenta') || text.includes('registro')) {
+    buttons.push('<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700; margin-top:6px;">🚀 Crear Cuenta Gratis (+5 Fichas) →</a>');
+  }
+
+  if (buttons.length > 0) {
+    html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">' + buttons.slice(0, 2).join('') + '</div>';
+  }
+
+  return html;
+}
+
+async function callMaxiQwenAdvisor(userMessage) {
+  try {
+    const payload = JSON.stringify({
+      model: 'qwen-plus',
+      messages: [
+        { role: 'system', content: MAXI_SUITE_SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.6,
+      max_tokens: 750
+    });
+
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'dashscope-intl.aliyuncs.com',
+        path: '/compatible-mode/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${MODELSTUDIO_API_KEY}`,
+          'Content-Length': Buffer.byteLength(payload)
+        },
+        timeout: 12000
+      }, (res) => {
+        let data = '';
+        res.on('data', d => data += d);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json.choices && json.choices[0] && json.choices[0].message) {
+              const content = json.choices[0].message.content;
+              resolve({ success: true, content });
+            } else {
+              resolve({ success: false, error: json });
+            }
+          } catch (e) {
+            resolve({ success: false, error: e.message });
+          }
+        });
+      });
+
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+      req.write(payload);
+      req.end();
+    });
+
+    if (result.success && result.content) {
+      return formatQwenResponseToHtml(result.content);
+    }
+  } catch (err) {
+    console.error('Error calling Qwen API:', err.message);
+  }
+
+  return null;
+}
+
     } else if (req.method === 'POST' && pathname === '/api/maxi/chat-advisor') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -9391,93 +9657,55 @@ const server = http.createServer(async (req, res) => {
                 const rawMsg = (payload.message || '').trim();
                 const msgLower = rawMsg.toLowerCase();
 
-                let replyHtml = '';
+                if (!rawMsg) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({
+                        success: true,
+                        replyHtml: `👋 <strong>¡Hola! Soy Maxi, tu Asesor de Negocios y Director de Operaciones en Maxi Suite.</strong><br><br>¿En qué puedo ayudarte hoy?<br><br><div style="display:flex; gap:8px; flex-wrap:wrap;"><a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⭐ Ver Planes de Suscripción</a><a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🔗 Generar Cobro ACH</a></div>`
+                    }));
+                }
 
-                // Natural, dynamic responses for greetings, identity, cross-border payments, Wenia, and Maxi Suite tools
-                if (!rawMsg || /^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|hey|qu[eé] tal|saludos|hello|hi)/i.test(msgLower)) {
-                    replyHtml = `👋 <strong>¡Hola! Soy Maxi, tu Asesor de Negocios y Director de Operaciones en Maxi Suite.</strong><br><br>` +
-                        `Estoy aquí para ayudarte a <strong>maximizar tus ingresos en dólares</strong> y <strong>proteger tu dinero de comisiones bancarias abusivas</strong>.<br><br>` +
-                        `¿En qué puedo orientarte hoy?<br>` +
-                        `• 🇺🇸 <strong>Cobrar a clientes en EE.UU.</strong> con 0% comisión por Transferencia ACH.<br>` +
-                        `• 🇨🇴 <strong>Pasar tus dólares a Nequi / Bancolombia</strong> con Wenia a paridad 1:1.<br>` +
-                        `• 🔗 <strong>Crear tu enlace de cobro personalizado</strong> para enviar por WhatsApp.<br>` +
-                        `• 💼 <strong>Conseguir trabajos remotos en USD</strong> con el Sniper IA de Gig Finder.<br>` +
-                        `• 🐋 <strong>Ver señales de acumulación</strong> en el Radar de Ballenas.<br><br>` +
-                        `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Enlace de Cobro</a>` +
-                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🎓 Guía Wenia a Bancolombia</a>` +
-                        `</div>`;
-                } else if (/quien eres|qui[eé]n eres|qu[eé] es maxi|qu[eé] es esta p[aá]gina|de qu[eé] trata/i.test(msgLower)) {
-                    replyHtml = `🤖 <strong>Soy Maxi, un Automaton Inteligente y tu Aliado Financiero Global.</strong><br><br>` +
-                        `Fui creado para resolver el mayor dolor de cabeza de los freelancers, empresas y creadores de contenido: <strong>las altas comisiones bancarias en pagos internacionales</strong>.<br><br>` +
-                        `En <strong>Maxi Suite</strong> combinamos la tecnología de <strong>Base L2</strong> y rieles bancarios locales (ACH en EE.UU., SEPA en Europa, Wenia en Colombia) para que recibas el <strong>100% neto de tu dinero en USDC</strong> sin intermediarios costosos.<br><br>` +
-                        `Además, te ayudo a conseguir contratos en dólares con <strong>Gig Finder</strong> y a detectar movimientos de capital institucional con el <strong>Radar de Ballenas</strong>.<br><br>` +
-                        `<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🚀 Crear Cuenta Gratis (+5 Fichas)</a>`;
-                } else if (/(estados unidos|usa|eeuu|ach|chase|wells fargo|bank of america|dolar americano)/i.test(msgLower)) {
+                // 1. Live LLM Reasoning via Alibaba Cloud Qwen AI
+                const qwenReply = await callMaxiQwenAdvisor(rawMsg);
+                if (qwenReply) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: true, replyHtml: qwenReply }));
+                }
+
+                // 2. Resilient Contextual Fallback
+                let replyHtml = '';
+                if (/(suscripci[oó]n|pagar|modo|forma|metodo|plan|maxi pay pro|precio|costo)/i.test(msgLower)) {
+                    replyHtml = `💎 <strong>Métodos para Pagar tu Suscripción a Maxi Suite:</strong><br><br>` +
+                        `• <strong>En Colombia (Pesos COP):</strong> Puedes pagar por <strong>Nequi, Bancolombia y PSE</strong> mediante la pasarela Wompi.<br>` +
+                        `• <strong>Con Tarjeta Internacional:</strong> Aceptamos tarjetas <strong>Débito o Crédito Visa, Mastercard y American Express</strong>.<br>` +
+                        `• <strong>En Cripto (USDC):</strong> Dólares digitales en la red <strong>Base L2</strong> con apenas $0.002 de gas.<br><br>` +
+                        `📌 <strong>Maxi Pay Pro:</strong> $5 USD promo 1er mes ($20.000 COP) • 100 fichas.<br><br>` +
+                        `<a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⭐ Elegir Método y Activar Plan →</a>`;
+                } else if (/(estados unidos|usa|eeuu|ach|chase|wells fargo|bank of america)/i.test(msgLower)) {
                     replyHtml = `🇺🇸 <strong>Cobros Directos en Estados Unidos (0% Comisión Bancaria):</strong><br><br>` +
-                        `Para cobrarle a un cliente o empresa en EE.UU.:<br>` +
+                        `Para cobrarle a un cliente en EE.UU.:<br>` +
                         `1. Generas tu enlace en <code>/pay/[tu-usuario]/[monto]</code>.<br>` +
-                        `2. Tu cliente selecciona <strong>Transferencia ACH</strong> y transfiere a nuestra cuenta recaudadora en EE.UU. (<em>Community Federal Savings Bank</em>, Routing <code>026073150</code>, Cuenta <code>8335968407</code>) con su Referencia Única.<br>` +
-                        `3. Tu cliente <strong>no paga comisiones de giro internacional ($0 USD)</strong> y tú recibes tus dólares digitales (USDC) en Base L2.<br><br>` +
+                        `2. Tu cliente transfiere por <strong>ACH Directo</strong> a nuestra cuenta en EE.UU. (<em>Community Federal Savings Bank</em>, Routing <code>026073150</code>, Cuenta <code>8335968407</code>) con su Referencia Única.<br>` +
+                        `3. Tu cliente <strong>no paga comisión ($0 USD)</strong> y tú recibes tus dólares digitales (USDC) en Base L2.<br><br>` +
                         `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⚡ Ir al Generador de Enlaces ACH →</a>`;
-                } else if (/(wenia|bancolombia|nequi|pesos|colombia|4x1000|retirar a bancolombia|retirar a nequi)/i.test(msgLower)) {
+                } else if (/(wenia|bancolombia|nequi|pesos|colombia|4x1000|retirar)/i.test(msgLower)) {
                     replyHtml = `🇨🇴 <strong>Cómo Retirar Dólares a Bancolombia o Nequi con Wenia Oficial:</strong><br><br>` +
-                        `<strong>Wenia</strong> es la entidad de criptoactivos oficial del <strong>Grupo Bancolombia</strong> y es la vía oficial más económica y segura en Colombia:<br><br>` +
-                        `1. <strong>Crea tu Cuenta Global Wenia:</strong> Es gratis y se vincula directo a tu Bancolombia o Nequi.<br>` +
-                        `2. <strong>Recibe USDC:</strong> Transfieres tus USDC desde tu billetera Maxi Pay a tu dirección Wenia a paridad 1:1 sin comisiones de entrada.<br>` +
-                        `3. <strong>Pasa a Pesos:</strong> Conviertes tus dólares digitales a pesos colombianos y el saldo se refleja al instante en tu cuenta o en tu tarjeta Wenia Card.<br>` +
-                        `4. <strong>Beneficio Clave:</strong> Te ahorras el 4x1000 y el 4% de spread cambiario que cobran los bancos tradicionales.<br><br>` +
-                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">📖 Ver Tutorial Completo de Wenia →</a>`;
-                } else if (/(europa|sepa|iban|euro|españa|alemania|francia|italia)/i.test(msgLower)) {
-                    replyHtml = `🇪🇺 <strong>Cobros y Transferencias en Europa (Zona SEPA):</strong><br><br>` +
-                        `• Tu cliente en Europa puede transferir directamente en Euros (€ EUR) desde cualquier banco europeo (Santander, BBVA, N26, Revolut) con <strong>0 € de comisión bancaria</strong>.<br>` +
-                        `• Tú recibes USDC en Base L2 al instante.<br>` +
-                        `• Para retirar en Europa, puedes conectar tu billetera a <strong>Revolut o Kraken</strong> y transferir a tu IBAN con 0€ de costo.<br><br>` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Cobro SEPA →</a>`;
-                } else if (/(link|enlace|cobrar|factura|invoice|pasarela|como cobrar)/i.test(msgLower)) {
-                    replyHtml = `🔗 <strong>Generación de Enlaces de Cobro Multi-Riel (/pay):</strong><br><br>` +
-                        `Puedes generar un enlace de cobro en 3 simples pasos:<br>` +
-                        `1. Entra a <a href="/pay" style="color:#00f2fe; text-decoration:underline;">/pay</a> e ingresa tu nombre de usuario y el monto en USD.<br>` +
-                        `2. El sistema crea un enlace seguro con formato <code>https://maxi-pay.onrender.com/pay/[tu-usuario]/[monto]</code>.<br>` +
-                        `3. Cópialo o presiona <strong>Compartir por WhatsApp</strong> para enviárselo a tu cliente.<br><br>` +
-                        `Tu cliente podrá pagar por <strong>ACH en EE.UU., SEPA en Europa, QR Cripto o Tarjeta con Apple Pay</strong>.<br><br>` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⚡ Ir a Crear Enlace de Cobro →</a>`;
-                } else if (/(trabajo|gig|empleo|bounty|sniper|ganar dinero|remoto|freelance)/i.test(msgLower)) {
-                    replyHtml = `💼 <strong>Gig Finder con Sniper IA (/trabajos):</strong><br><br>` +
-                        `• Accede a decenas de oportunidades y contratos remotos en dólares ($50 - $650 USD).<br>` +
-                        `• Con el botón <strong>✨ Sniper con IA</strong>, analizamos la oferta y te redactamos una propuesta técnica ultra persuasiva en 30 segundos para ganar el contrato.<br><br>` +
-                        `<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🚀 Explorar Trabajos en USD →</a>`;
-                } else if (/(ballena|smart money|se[ñn]al|trading|crypto|bitcoin|ethereum|oro|sp500)/i.test(msgLower)) {
-                    replyHtml = `🐋 <strong>Radar de Ballenas & Señales Cuantitativas (/ballenas):</strong><br><br>` +
-                        `• Monitorea en vivo billeteras institucionales de alto patrimonio en Base L2, BTC, ETH, Oro (XAU) y S&P 500.<br>` +
-                        `• Un <strong>Smart Money Score superior a 80</strong> señala acumulación masiva antes de movimientos alcistas.<br><br>` +
-                        `<a href="/ballenas" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">📊 Abrir Radar de Ballenas →</a>`;
-                } else if (/(plan|precio|costo|suscripci[oó]n|cuanto cuesta|comprar|pagar)/i.test(msgLower)) {
-                    replyHtml = `💎 <strong>Planes de Suscripción Maxi Suite:</strong><br><br>` +
-                        `• <strong>Maxi Pay Pro:</strong> $5 USD promo ($10 regular) • 100 fichas • Pasarela de cobros ilimitada.<br>` +
-                        `• <strong>Gig Finder VIP:</strong> $5 USD promo ($10 regular) • 200 fichas • Empleos y Sniper IA.<br>` +
-                        `• <strong>Maxi Alpha VIP:</strong> $10 USD promo ($20 regular) • 300 fichas • Radar de Ballenas y Señales.<br>` +
-                        `• <strong>Maxi All-Access (👑 Recomendado):</strong> $15 USD promo ($25 regular) • 500 fichas • Acceso total a toda la suite.<br><br>` +
-                        `<a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⭐ Ver Planes y Suscribirme →</a>`;
-                } else if (/(cuenta|registro|fichas|creditos|iniciar sesion|login)/i.test(msgLower)) {
-                    replyHtml = `👤 <strong>Tu Cuenta en Maxi Suite:</strong><br><br>` +
-                        `• <strong>Registro Nuevo:</strong> Recibes de inmediato <strong>5 fichas gratis</strong> para probar el Sniper IA, el Radar de Ballenas y generar enlaces de cobro.<br>` +
-                        `• <strong>Billetera Integrada:</strong> Tu cuenta tiene una billetera en Base L2 asignada para recibir tus cobros al instante.<br><br>` +
-                        `<div style="display:flex; gap:8px; flex-wrap:wrap;">` +
-                        `<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">👤 Crear Cuenta Gratis</a>` +
-                        `<a href="/cuenta?tab=login" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🔑 Iniciar Sesión</a>` +
-                        `</div>`;
+                        `1. <strong>Wenia (Grupo Bancolombia):</strong> Abre tu Cuenta Global Wenia vinculada a tu Bancolombia o Nequi.<br>` +
+                        `2. <strong>Recibe USDC:</strong> Transfieres tus USDC desde Maxi Pay con paridad 1:1 sin comisiones de entrada.<br>` +
+                        `3. <strong>Pasa a Pesos:</strong> Conviertes a pesos y entran en segundos sin 4x1000 ni spreads del 4%.<br><br>` +
+                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">📖 Ver Guía Wenia Paso a Paso →</a>`;
+                } else if (/(cuenta|registro|fichas|creditos|gratis)/i.test(msgLower)) {
+                    replyHtml = `👤 <strong>Crear tu Cuenta Gratis en Maxi Suite:</strong><br><br>` +
+                        `• Ingresa a <strong>/cuenta?tab=register</strong> y crea tu usuario.<br>` +
+                        `• Recibes de inmediato <strong>5 fichas gratis</strong> para probar el Sniper IA de Gig Finder, el Radar de Ballenas y generar enlaces de cobro.<br><br>` +
+                        `<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🚀 Crear Cuenta Gratis (+5 Fichas) →</a>`;
                 } else {
                     replyHtml = `🤖 <strong>Asesoría Maxi Suite:</strong><br><br>` +
-                        `Entiendo tu consulta sobre <em>"${rawMsg.slice(0, 50).replace(/</g, '&lt;')}"</em>. Como asesor de Maxi Suite, puedo orientarte en:<br><br>` +
-                        `1. <strong>Cobros Internacionales:</strong> Generar links para cobrar a EE.UU. (ACH 0%), Europa (SEPA) o con tarjeta.<br>` +
-                        `2. <strong>Retiros a Bancos:</strong> Trasladar tus dólares a Bancolombia/Nequi con Wenia a paridad 1:1.<br>` +
-                        `3. <strong>Oportunidades de Ingresos:</strong> Encontrar contratos remotos en dólares en Gig Finder.<br>` +
-                        `4. <strong>Radar Financiero:</strong> Monitorear acumulación institucional con Smart Money.<br><br>` +
-                        `<div style="display:flex; gap:8px; flex-wrap:wrap;">` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Cobro</a>` +
-                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🎓 Guías y Tutoriales</a>` +
-                        `</div>`;
+                        `Entiendo tu consulta sobre <em>"${rawMsg.slice(0, 50).replace(/</g, '&lt;')}"</em>. Como asesor de Maxi Suite, puedo ayudarte con:<br><br>` +
+                        `• <strong>Cobros Internacionales:</strong> ACH en EE.UU. (0%), SEPA en Europa y Tarjetas.<br>` +
+                        `• <strong>Retiros a Bancos:</strong> Wenia a Bancolombia/Nequi sin comisiones bancarias.<br>` +
+                        `• <strong>Oportunidades de Ingresos:</strong> Gig Finder con Sniper IA y Radar de Ballenas.<br><br>` +
+                        `<div style="display:flex; gap:8px; flex-wrap:wrap;"><a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Cobro</a><a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">⭐ Ver Planes</a></div>`;
                 }
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

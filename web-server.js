@@ -244,6 +244,88 @@ async function sendTelegramAlert(text) {
   }
 }
 
+// TREASURY HEALTH SENTINEL (BASE L2 ETH GAS & USDC LIQUIDITY MONITOR)
+let lastTreasuryAlertTimestamp = 0;
+const TREASURY_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
+const MIN_ETH_GAS_THRESHOLD = 0.0001; // ~0.0001 ETH (~$0.25 USD on Base L2)
+const MIN_USDC_THRESHOLD = 2.00;      // ~$2.00 USDC
+
+async function checkTreasuryHealth(forceAlert = false) {
+  try {
+    // 1. Fetch ETH Balance on Base L2
+    const ethRes = await fetch(BASE_RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 101,
+        method: 'eth_getBalance',
+        params: [MAXI_WALLET, 'latest']
+      })
+    });
+    const ethJson = await ethRes.json();
+    const ethWei = BigInt(ethJson.result || '0x0');
+    const ethBalance = Number(ethWei) / 1e18;
+
+    // 2. Fetch USDC Balance on Base L2 (ERC-20 balanceOf)
+    const cleanWallet = MAXI_WALLET.replace(/^0x/i, '').padStart(64, '0');
+    const usdcData = '0x70a08231' + cleanWallet;
+    const usdcRes = await fetch(BASE_RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 102,
+        method: 'eth_call',
+        params: [{ to: BASE_USDC_CONTRACT, data: usdcData }, 'latest']
+      })
+    });
+    const usdcJson = await usdcRes.json();
+    const usdcRaw = BigInt(usdcJson.result || '0x0');
+    const usdcBalance = Number(usdcRaw) / 1e6;
+
+    const ethLow = ethBalance < MIN_ETH_GAS_THRESHOLD;
+    const usdcLow = usdcBalance < MIN_USDC_THRESHOLD;
+
+    const now = Date.now();
+    if ((ethLow || usdcLow) && (forceAlert || (now - lastTreasuryAlertTimestamp > TREASURY_ALERT_COOLDOWN_MS))) {
+      lastTreasuryAlertTimestamp = now;
+
+      let alertText = `⚠️ *¡ALERTA DE TESORERÍA • SALDO BAJO EN BASE L2!* ⛽🪙\n\n` +
+        `📥 *Billetera Bóveda:* \`${MAXI_WALLET}\`\n` +
+        `⛽ *Saldo ETH (Gas):* \`${ethBalance.toFixed(6)} ETH\` ${ethLow ? '*(⚠️ BAJO - Mínimo: 0.0001 ETH)*' : '*(✅ OK)*'}\n` +
+        `🪙 *Saldo USDC:* \`$${usdcBalance.toFixed(2)} USDC\` ${usdcLow ? '*(⚠️ BAJO - Mínimo: $2.00 USDC)*' : '*(✅ OK)*'}\n` +
+        `🌐 *Red:* Base L2 Blockchain\n` +
+        `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n\n` +
+        `💡 _Acción recomendada: Recarga una fracción de ETH o USDC para garantizar transferencias automáticas sin pausas._`;
+
+      await sendTelegramAlert(alertText);
+      console.log(`⚠️ [TREASURY SENTINEL ALERT DISPATCHED]: ETH=${ethBalance.toFixed(6)}, USDC=$${usdcBalance.toFixed(2)}`);
+    }
+
+    return {
+      success: true,
+      ethBalance,
+      usdcBalance,
+      ethLow,
+      usdcLow
+    };
+  } catch (err) {
+    console.error('Error checking treasury health on Base L2:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// Periodic check every 15 minutes
+setInterval(() => {
+  checkTreasuryHealth(false).catch(() => {});
+}, 15 * 60 * 1000);
+
+// Initial check after 10 seconds of startup
+setTimeout(() => {
+  checkTreasuryHealth(false).catch(() => {});
+}, 10000);
+
 // ADMIN MASTER SECURITY CONFIGURATION
 const ADMIN_MASTER_PASSWORD_HASH = crypto.createHash('sha256').update('MaxiMaster2026!').digest('hex');
 const ADMIN_EMAIL = 'admin@maxi.suite';
@@ -9218,6 +9300,19 @@ const server = http.createServer(async (req, res) => {
                 const token = crypto.randomBytes(24).toString('hex');
                 usersDb.sessions[token] = cleanEmail;
                 saveUsersDb();
+
+                // Rich Telegram Alert to Juan David (Admin)
+                const totalUsers = Object.keys(usersDb.users || {}).length;
+                sendTelegramAlert(
+                    `👤 *¡NUEVO USUARIO REGISTRADO EN MAXI SUITE!* 🚀\n\n` +
+                    `👤 *Nombre:* ${user.name}\n` +
+                    `📧 *Correo:* \`${user.email}\`\n` +
+                    `📱 *Celular:* \`${user.phone}\`\n` +
+                    `💳 *Billetera:* \`${user.wallet || 'No asignada aún'}\`\n` +
+                    `👑 *Plan Inicial:* *${user.plan}* (+${user.credits} Fichas de Bienvenida)\n` +
+                    `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n\n` +
+                    `🌐 *Total Usuarios Registrados:* *${totalUsers}*`
+                );
 
                 res.writeHead(200, { 
                     'Content-Type': 'application/json',

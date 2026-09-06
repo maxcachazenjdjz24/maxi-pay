@@ -9388,51 +9388,96 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                const msg = (payload.message || '').trim().toLowerCase();
+                const rawMsg = (payload.message || '').trim();
+                const msgLower = rawMsg.toLowerCase();
 
                 let replyHtml = '';
 
-                if (msg.includes('estados unidos') || msg.includes('eeuu') || msg.includes('usa') || msg.includes('ach')) {
-                    replyHtml = `🇺🇸 <strong>Cobros en Estados Unidos (0% Comisión Bancaria):</strong><br><br>` +
-                        `• <strong>Método Recomendado:</strong> Transferencia Bancaria ACH Doméstica.<br>` +
-                        `• <strong>Datos para tu cliente:</strong> Banco <em>Community Federal Savings Bank</em>, Routing <code>026073150</code>, Cuenta <code>8335968407</code> y la Referencia única del cobro.<br>` +
-                        `• <strong>Beneficio:</strong> A tu cliente le cuesta $0.00 USD transferir y tú recibes <strong>100% neto en USDC</strong> en Base L2.<br><br>` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🔗 Generar Enlace de Cobro ACH →</a>`;
-                } else if (msg.includes('europa') || msg.includes('sepa') || msg.includes('iban') || msg.includes('euro') || msg.includes('españa')) {
-                    replyHtml = `🇪🇺 <strong>Cobros en Europa (Zona Euro / SEPA):</strong><br><br>` +
-                        `• <strong>Método Recomendado:</strong> Transferencia SEPA Directa.<br>` +
-                        `• <strong>Beneficio:</strong> Tu cliente en Europa transfiere en Euros (€ EUR) desde su banco (Santander, BBVA, N26, Revolut) con <strong>0 € de comisión</strong> a tu IBAN Europeo.<br>` +
-                        `• <strong>Liquidación:</strong> Se convierte internamente y recibes USDC en Base L2 en tu billetera.<br><br>` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🔗 Crear Cobro Internacional →</a>`;
-                } else if (msg.includes('nequi') || msg.includes('bancolombia') || msg.includes('wenia') || msg.includes('pesos') || msg.includes('colombia')) {
-                    replyHtml = `🇨🇴 <strong>Retirar Dólares a Bancolombia y Nequi con Wenia Oficial:</strong><br><br>` +
-                        `1. <strong>Wenia (Grupo Bancolombia):</strong> Abre tu Cuenta Global Wenia desde la App Bancolombia o Nequi.<br>` +
-                        `2. <strong>Paridad 1:1:</strong> Envía tus USDC desde Maxi Pay sin comisión de entrada.<br>` +
-                        `3. <strong>Venta Inmediata:</strong> Vende a pesos y el dinero entra en segundos a tu cuenta o gasta con tu <strong>Wenia Card</strong> sin cuota de manejo.<br><br>` +
-                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🎓 Ver Guía Wenia Paso a Paso →</a>`;
-                } else if (msg.includes('enlace') || msg.includes('link') || msg.includes('cobrar') || msg.includes('factura')) {
-                    replyHtml = `🔗 <strong>Generador de Enlaces de Cobro (/pay):</strong><br><br>` +
-                        `Puedes generar tu link personalizado en 5 segundos con el formato:<br>` +
-                        `<code>https://maxi-pay.onrender.com/pay/[tu-nombre]/[monto]</code><br><br>` +
-                        `Tus clientes podrán elegir entre <strong>ACH EE.UU., SEPA Europa, QR Cripto o Tarjeta con Apple Pay</strong>.<br><br>` +
-                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">⚡ Ir al Generador de Links →</a>`;
-                } else if (msg.includes('trabajo') || msg.includes('gig') || msg.includes('empleo') || msg.includes('bounty')) {
-                    replyHtml = `💼 <strong>Ganar Dinero en Gig Finder con IA:</strong><br><br>` +
-                        `• Encuentra cientos de ofertas remotas y convocatorias en dólares de $50 a $650 USD.<br>` +
-                        `• Usa el botón <strong>✨ Sniper con IA</strong> para redactar propuestas técnicas ganadoras en 30 segundos.<br><br>` +
-                        `<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">🚀 Explorar Trabajos Disponibles →</a>`;
-                } else if (msg.includes('ballena') || msg.includes('smart money') || msg.includes('señal') || msg.includes('trading')) {
-                    replyHtml = `🐋 <strong>Radar de Ballenas & Señales Cuantitativas:</strong><br><br>` +
-                        `• Monitorea los movimientos de billeteras de alto patrimonio en Base L2, Cripto, Oro (XAU) y S&P 500.<br>` +
-                        `• Un <strong>Smart Money Score > 80</strong> indica acumulación masiva de capital.<br><br>` +
-                        `<a href="/ballenas" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px;">📊 Abrir Radar de Ballenas →</a>`;
+                // Natural, dynamic responses for greetings, identity, cross-border payments, Wenia, and Maxi Suite tools
+                if (!rawMsg || /^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|hey|qu[eé] tal|saludos|hello|hi)/i.test(msgLower)) {
+                    replyHtml = `👋 <strong>¡Hola! Soy Maxi, tu Asesor de Negocios y Director de Operaciones en Maxi Suite.</strong><br><br>` +
+                        `Estoy aquí para ayudarte a <strong>maximizar tus ingresos en dólares</strong> y <strong>proteger tu dinero de comisiones bancarias abusivas</strong>.<br><br>` +
+                        `¿En qué puedo orientarte hoy?<br>` +
+                        `• 🇺🇸 <strong>Cobrar a clientes en EE.UU.</strong> con 0% comisión por Transferencia ACH.<br>` +
+                        `• 🇨🇴 <strong>Pasar tus dólares a Nequi / Bancolombia</strong> con Wenia a paridad 1:1.<br>` +
+                        `• 🔗 <strong>Crear tu enlace de cobro personalizado</strong> para enviar por WhatsApp.<br>` +
+                        `• 💼 <strong>Conseguir trabajos remotos en USD</strong> con el Sniper IA de Gig Finder.<br>` +
+                        `• 🐋 <strong>Ver señales de acumulación</strong> en el Radar de Ballenas.<br><br>` +
+                        `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Enlace de Cobro</a>` +
+                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🎓 Guía Wenia a Bancolombia</a>` +
+                        `</div>`;
+                } else if (/quien eres|qui[eé]n eres|qu[eé] es maxi|qu[eé] es esta p[aá]gina|de qu[eé] trata/i.test(msgLower)) {
+                    replyHtml = `🤖 <strong>Soy Maxi, un Automaton Inteligente y tu Aliado Financiero Global.</strong><br><br>` +
+                        `Fui creado para resolver el mayor dolor de cabeza de los freelancers, empresas y creadores de contenido: <strong>las altas comisiones bancarias en pagos internacionales</strong>.<br><br>` +
+                        `En <strong>Maxi Suite</strong> combinamos la tecnología de <strong>Base L2</strong> y rieles bancarios locales (ACH en EE.UU., SEPA en Europa, Wenia en Colombia) para que recibas el <strong>100% neto de tu dinero en USDC</strong> sin intermediarios costosos.<br><br>` +
+                        `Además, te ayudo a conseguir contratos en dólares con <strong>Gig Finder</strong> y a detectar movimientos de capital institucional con el <strong>Radar de Ballenas</strong>.<br><br>` +
+                        `<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🚀 Crear Cuenta Gratis (+5 Fichas)</a>`;
+                } else if (/(estados unidos|usa|eeuu|ach|chase|wells fargo|bank of america|dolar americano)/i.test(msgLower)) {
+                    replyHtml = `🇺🇸 <strong>Cobros Directos en Estados Unidos (0% Comisión Bancaria):</strong><br><br>` +
+                        `Para cobrarle a un cliente o empresa en EE.UU.:<br>` +
+                        `1. Generas tu enlace en <code>/pay/[tu-usuario]/[monto]</code>.<br>` +
+                        `2. Tu cliente selecciona <strong>Transferencia ACH</strong> y transfiere a nuestra cuenta recaudadora en EE.UU. (<em>Community Federal Savings Bank</em>, Routing <code>026073150</code>, Cuenta <code>8335968407</code>) con su Referencia Única.<br>` +
+                        `3. Tu cliente <strong>no paga comisiones de giro internacional ($0 USD)</strong> y tú recibes tus dólares digitales (USDC) en Base L2.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⚡ Ir al Generador de Enlaces ACH →</a>`;
+                } else if (/(wenia|bancolombia|nequi|pesos|colombia|4x1000|retirar a bancolombia|retirar a nequi)/i.test(msgLower)) {
+                    replyHtml = `🇨🇴 <strong>Cómo Retirar Dólares a Bancolombia o Nequi con Wenia Oficial:</strong><br><br>` +
+                        `<strong>Wenia</strong> es la entidad de criptoactivos oficial del <strong>Grupo Bancolombia</strong> y es la vía oficial más económica y segura en Colombia:<br><br>` +
+                        `1. <strong>Crea tu Cuenta Global Wenia:</strong> Es gratis y se vincula directo a tu Bancolombia o Nequi.<br>` +
+                        `2. <strong>Recibe USDC:</strong> Transfieres tus USDC desde tu billetera Maxi Pay a tu dirección Wenia a paridad 1:1 sin comisiones de entrada.<br>` +
+                        `3. <strong>Pasa a Pesos:</strong> Conviertes tus dólares digitales a pesos colombianos y el saldo se refleja al instante en tu cuenta o en tu tarjeta Wenia Card.<br>` +
+                        `4. <strong>Beneficio Clave:</strong> Te ahorras el 4x1000 y el 4% de spread cambiario que cobran los bancos tradicionales.<br><br>` +
+                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">📖 Ver Tutorial Completo de Wenia →</a>`;
+                } else if (/(europa|sepa|iban|euro|españa|alemania|francia|italia)/i.test(msgLower)) {
+                    replyHtml = `🇪🇺 <strong>Cobros y Transferencias en Europa (Zona SEPA):</strong><br><br>` +
+                        `• Tu cliente en Europa puede transferir directamente en Euros (€ EUR) desde cualquier banco europeo (Santander, BBVA, N26, Revolut) con <strong>0 € de comisión bancaria</strong>.<br>` +
+                        `• Tú recibes USDC en Base L2 al instante.<br>` +
+                        `• Para retirar en Europa, puedes conectar tu billetera a <strong>Revolut o Kraken</strong> y transferir a tu IBAN con 0€ de costo.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Cobro SEPA →</a>`;
+                } else if (/(link|enlace|cobrar|factura|invoice|pasarela|como cobrar)/i.test(msgLower)) {
+                    replyHtml = `🔗 <strong>Generación de Enlaces de Cobro Multi-Riel (/pay):</strong><br><br>` +
+                        `Puedes generar un enlace de cobro en 3 simples pasos:<br>` +
+                        `1. Entra a <a href="/pay" style="color:#00f2fe; text-decoration:underline;">/pay</a> e ingresa tu nombre de usuario y el monto en USD.<br>` +
+                        `2. El sistema crea un enlace seguro con formato <code>https://maxi-pay.onrender.com/pay/[tu-usuario]/[monto]</code>.<br>` +
+                        `3. Cópialo o presiona <strong>Compartir por WhatsApp</strong> para enviárselo a tu cliente.<br><br>` +
+                        `Tu cliente podrá pagar por <strong>ACH en EE.UU., SEPA en Europa, QR Cripto o Tarjeta con Apple Pay</strong>.<br><br>` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⚡ Ir a Crear Enlace de Cobro →</a>`;
+                } else if (/(trabajo|gig|empleo|bounty|sniper|ganar dinero|remoto|freelance)/i.test(msgLower)) {
+                    replyHtml = `💼 <strong>Gig Finder con Sniper IA (/trabajos):</strong><br><br>` +
+                        `• Accede a decenas de oportunidades y contratos remotos en dólares ($50 - $650 USD).<br>` +
+                        `• Con el botón <strong>✨ Sniper con IA</strong>, analizamos la oferta y te redactamos una propuesta técnica ultra persuasiva en 30 segundos para ganar el contrato.<br><br>` +
+                        `<a href="/trabajos" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🚀 Explorar Trabajos en USD →</a>`;
+                } else if (/(ballena|smart money|se[ñn]al|trading|crypto|bitcoin|ethereum|oro|sp500)/i.test(msgLower)) {
+                    replyHtml = `🐋 <strong>Radar de Ballenas & Señales Cuantitativas (/ballenas):</strong><br><br>` +
+                        `• Monitorea en vivo billeteras institucionales de alto patrimonio en Base L2, BTC, ETH, Oro (XAU) y S&P 500.<br>` +
+                        `• Un <strong>Smart Money Score superior a 80</strong> señala acumulación masiva antes de movimientos alcistas.<br><br>` +
+                        `<a href="/ballenas" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">📊 Abrir Radar de Ballenas →</a>`;
+                } else if (/(plan|precio|costo|suscripci[oó]n|cuanto cuesta|comprar|pagar)/i.test(msgLower)) {
+                    replyHtml = `💎 <strong>Planes de Suscripción Maxi Suite:</strong><br><br>` +
+                        `• <strong>Maxi Pay Pro:</strong> $5 USD promo ($10 regular) • 100 fichas • Pasarela de cobros ilimitada.<br>` +
+                        `• <strong>Gig Finder VIP:</strong> $5 USD promo ($10 regular) • 200 fichas • Empleos y Sniper IA.<br>` +
+                        `• <strong>Maxi Alpha VIP:</strong> $10 USD promo ($20 regular) • 300 fichas • Radar de Ballenas y Señales.<br>` +
+                        `• <strong>Maxi All-Access (👑 Recomendado):</strong> $15 USD promo ($25 regular) • 500 fichas • Acceso total a toda la suite.<br><br>` +
+                        `<a href="/cuenta?tab=planes" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">⭐ Ver Planes y Suscribirme →</a>`;
+                } else if (/(cuenta|registro|fichas|creditos|iniciar sesion|login)/i.test(msgLower)) {
+                    replyHtml = `👤 <strong>Tu Cuenta en Maxi Suite:</strong><br><br>` +
+                        `• <strong>Registro Nuevo:</strong> Recibes de inmediato <strong>5 fichas gratis</strong> para probar el Sniper IA, el Radar de Ballenas y generar enlaces de cobro.<br>` +
+                        `• <strong>Billetera Integrada:</strong> Tu cuenta tiene una billetera en Base L2 asignada para recibir tus cobros al instante.<br><br>` +
+                        `<div style="display:flex; gap:8px; flex-wrap:wrap;">` +
+                        `<a href="/cuenta?tab=register" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">👤 Crear Cuenta Gratis</a>` +
+                        `<a href="/cuenta?tab=login" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🔑 Iniciar Sesión</a>` +
+                        `</div>`;
                 } else {
-                    replyHtml = `🤖 <strong>Asesoría Maxi IA:</strong><br><br>` +
-                        `En Maxi Suite estamos listos para ayudarte a <strong>cuidar tu dinero y optimizar tus finanzas</strong>:<br><br>` +
-                        `• <strong>Cobros Internacionales:</strong> ACH EE.UU., SEPA Europa, QR Base L2 y Tarjeta.<br>` +
-                        `• <strong>Retiros Seguros:</strong> Wenia (Bancolombia/Nequi), Coinbase ACH, Bitso y P2P.<br>` +
-                        `• <strong>Oportunidades:</strong> Trabajos remotos en dólares y Radar de Ballenas.<br><br>` +
-                        `¿Deseas generar un enlace de cobro o aprender a retirar a tu banco?`;
+                    replyHtml = `🤖 <strong>Asesoría Maxi Suite:</strong><br><br>` +
+                        `Entiendo tu consulta sobre <em>"${rawMsg.slice(0, 50).replace(/</g, '&lt;')}"</em>. Como asesor de Maxi Suite, puedo orientarte en:<br><br>` +
+                        `1. <strong>Cobros Internacionales:</strong> Generar links para cobrar a EE.UU. (ACH 0%), Europa (SEPA) o con tarjeta.<br>` +
+                        `2. <strong>Retiros a Bancos:</strong> Trasladar tus dólares a Bancolombia/Nequi con Wenia a paridad 1:1.<br>` +
+                        `3. <strong>Oportunidades de Ingresos:</strong> Encontrar contratos remotos en dólares en Gig Finder.<br>` +
+                        `4. <strong>Radar Financiero:</strong> Monitorear acumulación institucional con Smart Money.<br><br>` +
+                        `<div style="display:flex; gap:8px; flex-wrap:wrap;">` +
+                        `<a href="/pay" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; font-weight:700;">🔗 Generar Cobro</a>` +
+                        `<a href="/tutoriales" class="btn-primary" style="display:inline-block; text-decoration:none; padding:8px 14px; font-size:12px; border-radius:8px; background:#1e293b; color:#38bdf8; border:1px solid #38bdf8; font-weight:700;">🎓 Guías y Tutoriales</a>` +
+                        `</div>`;
                 }
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

@@ -41,6 +41,35 @@ function saveStorage() {
 
 loadStorage();
 
+// REGISTERED USERS DATABASE INTEGRATION (MAXI SUITE SYNC)
+const USERS_DB_FILE = path.join(__dirname, 'data', 'registered_users.json');
+const FALLBACK_DB_FILE = path.join(os.homedir(), '.automaton', 'registered_users.json');
+
+function getRegisteredUsersDb() {
+  let db = { users: {}, sessions: {}, telegramTokens: {} };
+  try {
+    if (fs.existsSync(USERS_DB_FILE)) {
+      db = JSON.parse(fs.readFileSync(USERS_DB_FILE, 'utf8'));
+    } else if (fs.existsSync(FALLBACK_DB_FILE)) {
+      db = JSON.parse(fs.readFileSync(FALLBACK_DB_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error reading users db in telegram-bot:', e.message);
+  }
+  if (!db.users) db.users = {};
+  if (!db.telegramTokens) db.telegramTokens = {};
+  return db;
+}
+
+function saveRegisteredUsersDb(db) {
+  try {
+    fs.writeFileSync(USERS_DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    try { fs.writeFileSync(FALLBACK_DB_FILE, JSON.stringify(db, null, 2), 'utf8'); } catch (e) {}
+  } catch (e) {
+    console.error('Error saving users db in telegram-bot:', e.message);
+  }
+}
+
 function getMerchant(userId, username = '', referrerId = null) {
   const id = String(userId);
   let isNew = false;
@@ -340,6 +369,96 @@ async function handleMessage(msg) {
   }
 
   console.log(`[Telegram] Mensaje de ${firstName} (@${username || userId}): ${text}`);
+
+  // 1. LINKING BY TOKEN (/start link_...)
+  if (text.startsWith('/start link_') || text.startsWith('/start link-')) {
+    const linkToken = text.replace('/start', '').trim();
+    const db = getRegisteredUsersDb();
+    if (linkToken && db.telegramTokens && db.telegramTokens[linkToken]) {
+      const userEmail = db.telegramTokens[linkToken];
+      const user = db.users[userEmail];
+      if (user) {
+        user.telegramChatId = String(chatId);
+        user.telegramUsername = username ? ('@' + username) : firstName;
+        delete db.telegramTokens[linkToken];
+        saveRegisteredUsersDb(db);
+
+        const welcomeMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO A MAXI SUITE!</b> 🚀\n\n` +
+          `Hola <b>${user.name || firstName}</b>, tu cuenta (<code>${user.email}</code>) ha quedado vinculada con este chat privado de Telegram.\n\n` +
+          `🔔 <b>Alertas privadas activadas:</b>\n` +
+          `• 💵 Pagos de clientes en EE.UU. (Transferencias ACH).\n` +
+          `• 💳 Cobros internacionales con tarjeta.\n` +
+          `• 🪙 Depósitos y transferencias en USDC en Base L2.\n` +
+          `• 📲 Notificaciones de retiros a Nequi / Bancolombia.\n\n` +
+          `🔒 <i>Tus alertas son 100% privadas y seguras.</i>`;
+
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: welcomeMsg,
+          parse_mode: 'HTML'
+        });
+        return;
+      }
+    }
+  }
+
+  // 2. LINKING DIRECTLY BY EMAIL
+  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (emailMatch) {
+    const emailInput = emailMatch[0].toLowerCase();
+    const db = getRegisteredUsersDb();
+    if (db.users && db.users[emailInput]) {
+      const matchedUser = db.users[emailInput];
+      matchedUser.telegramChatId = String(chatId);
+      matchedUser.telegramUsername = username ? ('@' + username) : firstName;
+      saveRegisteredUsersDb(db);
+
+      const successMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
+        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado vinculada con este chat de Telegram.\n\n` +
+        `Recibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`;
+
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: successMsg,
+        parse_mode: 'HTML'
+      });
+      return;
+    } else {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: `⚠️ <b>Correo no encontrado:</b> No encontramos una cuenta registrada con el correo <code>${emailInput}</code>.\n\nCrea tu cuenta gratis en <b>https://maxi-pay.onrender.com/cuenta</b> o verifica si lo escribiste correctamente.`,
+        parse_mode: 'HTML'
+      });
+      return;
+    }
+  }
+
+  // 3. LINKING DIRECTLY BY PHONE NUMBER
+  const digitsMatch = text.replace(/\D/g, '');
+  if (digitsMatch && digitsMatch.length >= 7 && !text.startsWith('/')) {
+    const db = getRegisteredUsersDb();
+    const matchedUser = Object.values(db.users || {}).find(u => {
+      const uDigits = (u.phone || '').replace(/\D/g, '');
+      return uDigits && (uDigits.endsWith(digitsMatch) || digitsMatch.endsWith(uDigits));
+    });
+
+    if (matchedUser) {
+      matchedUser.telegramChatId = String(chatId);
+      matchedUser.telegramUsername = username ? ('@' + username) : firstName;
+      saveRegisteredUsersDb(db);
+
+      const successMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
+        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado vinculada con este chat de Telegram.\n\n` +
+        `Recibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`;
+
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: successMsg,
+        parse_mode: 'HTML'
+      });
+      return;
+    }
+  }
 
   if (text.startsWith('/start') || text.startsWith('/help') || text.toLowerCase() === 'hola') {
     userStates.delete(chatId);

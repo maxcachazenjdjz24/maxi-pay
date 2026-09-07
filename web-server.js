@@ -276,6 +276,7 @@ async function sendTelegramAlert(text) {
 // User 1-on-1 Private Telegram Notification Dispatcher
 async function sendUserTelegramNotification(userEmail, text) {
   if (!userEmail) return { success: false };
+  try { loadUsersDb(); } catch (e) {}
   const cleanEmail = userEmail.trim().toLowerCase();
   const user = usersDb.users ? usersDb.users[cleanEmail] : null;
   if (!user || !user.telegramChatId) return { success: false, error: 'User has no linked telegramChatId' };
@@ -9507,6 +9508,7 @@ const server = http.createServer(async (req, res) => {
                 const invoiceId = 'ACH-NOTIFY-' + Date.now();
 
                 // Find merchant in usersDb
+                try { loadUsersDb(); } catch (e) {}
                 let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
                     (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
                 ) || 'jdavidjaramillo@hotmail.com';
@@ -9633,6 +9635,7 @@ const server = http.createServer(async (req, res) => {
                 const invoiceId = 'CARD-ONRAMP-' + Date.now();
 
                 // Find merchant in usersDb
+                try { loadUsersDb(); } catch (e) {}
                 let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
                     (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
                 ) || 'jdavidjaramillo@hotmail.com';

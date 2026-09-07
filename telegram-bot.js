@@ -370,6 +370,33 @@ async function handleMessage(msg) {
 
   console.log(`[Telegram] Mensaje de ${firstName} (@${username || userId}): ${text}`);
 
+  // 0. CHECK CHAT ID / STATUS (/myid, /status)
+  if (text === '/myid' || text === '/status' || text === '/id') {
+    const db = getRegisteredUsersDb();
+    const linkedUser = Object.values(db.users || {}).find(u => String(u.telegramChatId) === String(chatId));
+    
+    let statusText = `🆔 <b>Información de tu Telegram:</b>\n\n` +
+      `• <b>Chat ID:</b> <code>${chatId}</code>\n` +
+      `• <b>Nombre:</b> ${firstName || 'Sin nombre'}\n` +
+      `• <b>Usuario:</b> @${username || 'sin_username'}\n\n`;
+
+    if (linkedUser) {
+      statusText += `✅ <b>Cuenta Vinculada:</b> <code>${linkedUser.email}</code> (${linkedUser.name})\n` +
+        `💼 <b>Plan:</b> ${linkedUser.plan || 'Gratuito'}\n` +
+        `🔔 <i>Recibes aquí todas las notificaciones privadas de tus cobros y retiros.</i>`;
+    } else {
+      statusText += `⚠️ <b>Estado:</b> No tienes ninguna cuenta vinculada aún.\n\n` +
+        `👉 <b>Para vincular tu cuenta:</b> Simplemente escribe tu correo registrado (ej: <code>maxcachazen3@gmail.com</code>) aquí en este chat.`;
+    }
+
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: statusText,
+      parse_mode: 'HTML'
+    });
+    return;
+  }
+
   // 1. LINKING BY TOKEN (/start link_...)
   if (text.startsWith('/start link_') || text.startsWith('/start link-')) {
     const linkToken = text.replace('/start', '').trim();

@@ -3859,6 +3859,11 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
     <script>
         let currentUserState = ${JSON.stringify(user || null)};
 
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? match[2] : '';
+        }
+
         // TOAST NOTIFICATION UTILITY
         function showToast(message, type = 'success') {
             const container = document.getElementById('cuentaToast');

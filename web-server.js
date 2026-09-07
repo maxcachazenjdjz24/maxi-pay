@@ -721,12 +721,13 @@ function loadUsersDb() {
     if (!usersDb.withdrawals) usersDb.withdrawals = [];
     if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
 
-    // Auto-link Master Account (Juan David) with Admin Telegram
+    // Auto-link Master Account (Juan David) with Admin Telegram & Official Wallet
     if (usersDb.users && usersDb.users['jdavidjaramillo@hotmail.com']) {
       if (!usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId) {
         usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId = TELEGRAM_ADMIN_CHAT_ID;
         usersDb.users['jdavidjaramillo@hotmail.com'].telegramUsername = '@jdavidjaramillo';
       }
+      usersDb.users['jdavidjaramillo@hotmail.com'].wallet = '0x355BAB72e5d6f5FF5ab46116C5beC522047f2004';
     }
   } catch (e) {
     console.error('Error loading users db:', e.message);

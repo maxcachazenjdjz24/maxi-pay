@@ -523,6 +523,21 @@
   },
   "withdrawals": [
     {
+      "id": "WTH-1788744638965",
+      "userEmail": "maxcachazen3@gmail.com",
+      "userName": "Andrés Gómez",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3003823930",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T01:30:38.965Z"
+    },
+    {
       "id": "WTH-1788743852086",
       "userEmail": "maxcachazen3@gmail.com",
       "userName": "Andrés Gómez",

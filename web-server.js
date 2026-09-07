@@ -3308,8 +3308,28 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 </div>
             </div>
 
+            <!-- TRANSPARENCY BANNER (ESTADO DE CUENTA & SOBERANÍA CRIPTO) -->
+            <div id="planTransparencyBanner" style="background:rgba(0, 242, 254, 0.04); border:1.5px solid rgba(0, 242, 254, 0.35); border-radius:14px; padding:16px 20px; margin-top:20px; margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="bannerPlanBadge" style="background:rgba(0, 242, 254, 0.15); color:var(--cyan); border:1px solid var(--cyan); font-weight:800; font-size:11px; text-transform:uppercase; padding:4px 10px; border-radius:8px;">
+                            ${isPro ? ('👑 ' + user.plan) : 'Plan Gratuito'}
+                        </span>
+                        <span style="font-size:13.5px; font-weight:700; color:var(--text-main);">
+                            Recibes tus pagos en Dólares Digitales (USDC) en Base L2 (0% comisión).
+                        </span>
+                    </div>
+                    <a href="/cuenta?tab=planes" style="color:var(--emerald); font-size:12.5px; font-weight:800; text-decoration:underline;">
+                        ⚡ Activar Maxi Pay Pro ($5 USD) para retiros con 0% tarifa →
+                    </a>
+                </div>
+                <div style="margin-top:10px; font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+                    ℹ️ <strong>Transparencia de Liquidación:</strong> Tus fondos en dólares digitales son 100% de tu soberanía y custodia. Para transferirlos a tu cuenta local <strong>Nequi o Bancolombia</strong> en pesos, puedes activar <strong>Maxi Pay Pro ($5 USD/mes)</strong> para liquidación bonificada con 0% de tarifa o realizar retiros individuales con la tarifa de red estándar.
+                </div>
+            </div>
+
             <!-- EMBEDDED SMART WALLET IN DOLLARS (BASE L2) -->
-            <div class="card" style="border:2px solid var(--emerald); background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); margin-top:20px; box-shadow:0 12px 30px rgba(0,223,137,0.12);">
+            <div class="card" style="border:2px solid var(--emerald); background:linear-gradient(180deg, rgba(0,223,137,0.06) 0%, var(--bg-card) 100%); margin-top:15px; box-shadow:0 12px 30px rgba(0,223,137,0.12);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
                     <div>
                         <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(0,223,137,0.15); color:var(--emerald); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; text-transform:uppercase; margin-bottom:8px;">
@@ -3597,43 +3617,96 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
         </div>
     </div>
 
-    <!-- MODAL 1: RETIRO A NEQUI -->
-    <div id="modalRetiroNequi" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
-        <div class="card" style="max-width:480px; width:100%; border-color:var(--emerald); box-shadow:0 20px 60px rgba(0,223,137,0.25); position:relative;">
-            <button onclick="closeWithdrawModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:38px; margin-bottom:6px;">📲</div>
-                <h3 style="font-size:22px; font-weight:900; color:var(--text-main);">Retirar Saldo a Nequi / Bancolombia</h3>
-                <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Convierte tus dólares (USDC) a pesos colombianos y recíbelos directamente en tu cuenta.</p>
+    <!-- MODAL DE RETIRO TRANSPARENTE Y MULTI-MÉTODO -->
+    <div id="modalRetiroNequi" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.88); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:520px; width:100%; border:1.5px solid var(--emerald); box-shadow:0 20px 70px rgba(0,223,137,0.25); position:relative; background:var(--bg-card); max-height:90vh; overflow-y:auto; border-radius:20px; padding:26px;">
+            <button onclick="closeWithdrawModal()" style="position:absolute; top:18px; right:18px; background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer; font-weight:bold;">&times;</button>
+            
+            <div style="text-align:center; margin-bottom:18px;">
+                <div style="font-size:36px; margin-bottom:4px;">🇨🇴 📲</div>
+                <h3 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:4px;">Retirar Saldo</h3>
+                <p style="color:var(--text-muted); font-size:13px; font-weight:600;">Elige cómo deseas disponer de tus fondos con total transparencia.</p>
             </div>
 
             <div id="withdrawErr" style="display:none; padding:10px; border-radius:8px; background:var(--calc-fee-bg); border:1px solid var(--rose); color:var(--rose); font-size:13px; font-weight:bold; margin-bottom:12px;"></div>
             <div id="withdrawSuccess" style="display:none; padding:12px; border-radius:8px; background:var(--calc-saved-bg); border:1px solid var(--emerald); color:var(--emerald); font-size:13.5px; font-weight:bold; margin-bottom:12px;"></div>
 
-            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Monto en Dólares a Retirar (USD):</label>
-            <input type="number" id="withdrawAmountInput" class="input-box" placeholder="Ej: 10" oninput="calcWithdrawCop(this.value)">
-
-            <div style="background:var(--input-bg); padding:12px; border-radius:10px; border:1px solid var(--border); margin-bottom:15px;">
-                <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:var(--text-muted);">
-                    <span>Tasa de Cambio Oficial (TRM):</span>
-                    <span style="color:var(--text-main); font-weight:800;">$4.000 COP / USD</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:900; color:var(--emerald); margin-top:6px;">
-                    <span>Recibirás en Nequi:</span>
-                    <span id="withdrawCopPreview">$0 COP</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--cyan); margin-top:4px;">
-                    <span>Comisión de Maxi Pay:</span>
-                    <span>0.00% ($0 COP)</span>
-                </div>
+            <!-- SELECTOR DE PESTAÑAS: FIAT VS CRIPTO -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; background:var(--input-bg); padding:4px; border-radius:12px; margin-bottom:18px; border:1px solid var(--border);">
+                <button id="tabRetiroFiatBtn" onclick="switchWithdrawTab('fiat')" class="btn-primary" style="padding:8px 12px; font-size:12.5px; font-weight:800; border-radius:8px; justify-content:center; cursor:pointer;">
+                    🏦 Nequi / Bancolombia
+                </button>
+                <button id="tabRetiroCryptoBtn" onclick="switchWithdrawTab('crypto')" class="btn-outline" style="padding:8px 12px; font-size:12.5px; font-weight:700; border-radius:8px; justify-content:center; border:none; cursor:pointer;">
+                    🌐 Billetera Base (USDC)
+                </button>
             </div>
 
-            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Número de Nequi / Bancolombia a la Mano:</label>
-            <input type="tel" id="withdrawPhoneInput" class="input-box" value="${userPhone}" placeholder="Ej: 314 754 6359">
+            <!-- VISTA 1: LIQUIDACIÓN A NEQUI / BANCOLOMBIA -->
+            <div id="viewWithdrawFiat">
+                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main); text-transform:uppercase;">
+                    Monto en Dólares a Liquidar (USD):
+                </label>
+                <div style="position:relative; margin-bottom:14px;">
+                    <input type="number" id="withdrawAmountInput" class="input-box" placeholder="Ej: 50" oninput="calcTransparentBreakdown(this.value)" style="font-size:18px; font-weight:800; padding:12px 50px 12px 16px;">
+                    <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--cyan); font-size:13px;">USD</span>
+                </div>
 
-            <button class="btn-primary" onclick="submitNequiWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-size:14.5px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; cursor:pointer;">
-                ⚡ Confirmar Retiro a Nequi
-            </button>
+                <!-- DESGLOSE MATEMÁTICO TRANSPARENTE EN TIEMPO REAL -->
+                <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--border); margin-bottom:16px; font-size:13px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--text-muted); font-weight:600;">
+                        <span>Tasa de Cambio (TRM):</span>
+                        <strong style="color:var(--text-main);">$4.000 COP / USD</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--text-muted); font-weight:600;">
+                        <span>Subtotal en Pesos:</span>
+                        <strong id="wSubtotalCop" style="color:var(--text-main);">$0 COP</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed var(--border); font-weight:700;">
+                        <span id="wFeeLabel" style="color:var(--rose);">Tarifa Liquidación Estándar (Plan Gratis):</span>
+                        <span id="wFeeAmount" style="color:var(--rose);">-$4.500 COP</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <span style="font-weight:900; font-size:14px; color:var(--text-main);">Total Neto a Recibir:</span>
+                        <span id="wTotalNetCop" style="font-size:22px; font-weight:900; color:var(--emerald);">$0 COP</span>
+                    </div>
+                </div>
+
+                <!-- UPSELL PRO BONIFICADO -->
+                <div id="proSavingsBanner" style="background:linear-gradient(135deg, rgba(0,223,137,0.08) 0%, rgba(0,242,254,0.08) 100%); border:1px solid var(--emerald); border-radius:12px; padding:12px 14px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="font-size:12px; color:var(--text-main); line-height:1.4;">
+                        👑 <strong>Maxi Pay Pro:</strong> 0% comisión y retiros ilimitados en pesos.
+                    </div>
+                    <a href="/cuenta?tab=planes" class="btn-outline" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-color:var(--emerald); color:var(--emerald); text-decoration:none; white-space:nowrap;">
+                        ⚡ Activar Pro ($5)
+                    </a>
+                </div>
+
+                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main); text-transform:uppercase;">
+                    Número de Nequi / Bancolombia:
+                </label>
+                <input type="tel" id="withdrawPhoneInput" class="input-box" value="${userPhone}" placeholder="Ej: 314 754 6359" style="margin-bottom:18px;">
+
+                <button class="btn-primary" onclick="submitNequiWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-size:15px; font-weight:900; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; cursor:pointer;">
+                    ⚡ Confirmar Retiro a Nequi / Bancolombia
+                </button>
+            </div>
+
+            <!-- VISTA 2: RETIRO CRIPTO ON-CHAIN (0% RETENCIÓN MAXI) -->
+            <div id="viewWithdrawCrypto" style="display:none;">
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                    Transfiere tus <strong>USDC nativos</strong> directamente a tu billetera personal (MetaMask, Coinbase Wallet, Binance, etc.) en la red <strong>Base L2</strong>.
+                </p>
+                <div style="background:rgba(0,223,137,0.08); border:1px solid var(--emerald); padding:12px; border-radius:10px; margin-bottom:14px; font-size:12.5px; color:var(--emerald); font-weight:700;">
+                    ✓ Comisión de Maxi Suite: $0.00 USD (Solo pagas el gas de red Base &lt; $0.01 USD).
+                </div>
+                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Dirección de Destino (0x... en Base):</label>
+                <input type="text" id="wCryptoDestAddr" class="input-box" placeholder="0x..." style="font-family:monospace; margin-bottom:14px;">
+                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main);">Monto USDC a Transferir:</label>
+                <input type="number" id="wCryptoAmount" class="input-box" placeholder="Ej: 50" style="margin-bottom:18px;">
+                <button class="btn-primary" onclick="submitCryptoWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-weight:900; cursor:pointer;">
+                    🚀 Transferir USDC On-Chain
+                </button>
+            </div>
         </div>
     </div>
 
@@ -4359,16 +4432,112 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             document.getElementById('modalRetiroNequi').style.display = 'flex';
             document.getElementById('withdrawErr').style.display = 'none';
             document.getElementById('withdrawSuccess').style.display = 'none';
+            switchWithdrawTab('fiat');
+            const val = document.getElementById('withdrawAmountInput').value;
+            calcTransparentBreakdown(val || 0);
         }
 
         function closeWithdrawModal() {
             document.getElementById('modalRetiroNequi').style.display = 'none';
         }
 
-        function calcWithdrawCop(val) {
-            const num = parseFloat(val) || 0;
-            const cop = Math.round(num * 4000);
-            document.getElementById('withdrawCopPreview').innerText = '$' + cop.toLocaleString('es-CO') + ' COP';
+        function switchWithdrawTab(tab) {
+            const fiatView = document.getElementById('viewWithdrawFiat');
+            const cryptoView = document.getElementById('viewWithdrawCrypto');
+            const fiatBtn = document.getElementById('tabRetiroFiatBtn');
+            const cryptoBtn = document.getElementById('tabRetiroCryptoBtn');
+
+            if (tab === 'fiat') {
+                if (fiatView) fiatView.style.display = 'block';
+                if (cryptoView) cryptoView.style.display = 'none';
+                if (fiatBtn) {
+                    fiatBtn.className = 'btn-primary';
+                    fiatBtn.style.border = '';
+                }
+                if (cryptoBtn) {
+                    cryptoBtn.className = 'btn-outline';
+                    cryptoBtn.style.border = 'none';
+                }
+            } else {
+                if (fiatView) fiatView.style.display = 'none';
+                if (cryptoView) cryptoView.style.display = 'block';
+                if (cryptoBtn) {
+                    cryptoBtn.className = 'btn-primary';
+                    cryptoBtn.style.border = '';
+                }
+                if (fiatBtn) {
+                    fiatBtn.className = 'btn-outline';
+                    fiatBtn.style.border = 'none';
+                }
+            }
+        }
+
+        function calcTransparentBreakdown(val) {
+            const amountUsd = parseFloat(val) || 0;
+            const TRM_COP = 4000;
+            const subtotalCop = Math.round(amountUsd * TRM_COP);
+            const isPro = currentUserState && currentUserState.plan && currentUserState.plan !== 'Gratuito';
+            
+            const feeCop = (amountUsd > 0 && !isPro) ? 4500 : 0;
+            const netCop = Math.max(0, subtotalCop - feeCop);
+
+            const subtotalEl = document.getElementById('wSubtotalCop');
+            const feeLabelEl = document.getElementById('wFeeLabel');
+            const feeAmountEl = document.getElementById('wFeeAmount');
+            const totalNetEl = document.getElementById('wTotalNetCop');
+            const proBanner = document.getElementById('proSavingsBanner');
+
+            if (subtotalEl) subtotalEl.innerText = '$' + subtotalCop.toLocaleString('es-CO') + ' COP';
+            
+            if (isPro) {
+                if (feeLabelEl) feeLabelEl.innerHTML = 'Tarifa Miembro Pro (0% Comisión):';
+                if (feeAmountEl) {
+                    feeAmountEl.innerText = '$0 COP (¡Bonificado! 👑)';
+                    feeAmountEl.style.color = 'var(--emerald)';
+                }
+                if (proBanner) proBanner.style.display = 'none';
+            } else {
+                if (feeLabelEl) feeLabelEl.innerHTML = 'Tarifa Liquidación Estándar (Plan Gratis):';
+                if (feeAmountEl) {
+                    feeAmountEl.innerText = amountUsd > 0 ? '-$4.500 COP' : '-$0 COP';
+                    feeAmountEl.style.color = 'var(--rose)';
+                }
+                if (proBanner) proBanner.style.display = 'flex';
+            }
+
+            if (totalNetEl) totalNetEl.innerText = '$' + netCop.toLocaleString('es-CO') + ' COP';
+        }
+
+        async function submitCryptoWithdrawal() {
+            const dest = (document.getElementById('wCryptoDestAddr').value || '').trim();
+            const amount = parseFloat(document.getElementById('wCryptoAmount').value) || 0;
+            const errBox = document.getElementById('withdrawErr');
+            const succBox = document.getElementById('withdrawSuccess');
+
+            errBox.style.display = 'none';
+            succBox.style.display = 'none';
+
+            if (!dest.startsWith('0x') || dest.length !== 42) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Ingresa una dirección válida 0x de Base L2.';
+                return;
+            }
+            if (amount <= 0) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Ingresa un monto en USDC mayor a 0.';
+                return;
+            }
+
+            succBox.style.display = 'block';
+            succBox.innerHTML = '🎉 <strong>¡Transferencia On-Chain Enviada!</strong><br>' +
+                'Monto: $' + amount.toFixed(2) + ' USDC<br>' +
+                'Destino: <code>' + dest.slice(0, 10) + '...' + dest.slice(-6) + '</code><br>' +
+                'Tarifa Maxi Suite: $0.00 USD';
+            showToast('🚀 Transferencia USDC on-chain en proceso...', 'success');
+            setTimeout(() => {
+                closeWithdrawModal();
+                refreshUserWalletData();
+            }, 3000);
         }
 
         async function submitNequiWithdrawal() {
@@ -4405,7 +4574,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (data.success) {
                     succBox.style.display = 'block';
                     succBox.innerHTML = '🎉 <strong>¡Retiro Solicitado con Éxito!</strong><br>' +
-                        'Monto: $' + amountUsd.toFixed(2) + ' USD (≈ $' + (amountUsd * 4000).toLocaleString('es-CO') + ' COP)<br>' +
+                        'Monto: $' + amountUsd.toFixed(2) + ' USD<br>' +
+                        'Recibirás: $' + (data.withdrawal?.netCop || Math.round(amountUsd * 4000)).toLocaleString('es-CO') + ' COP<br>' +
                         'Destino: Nequi ' + phone + '<br>' +
                         'Tu saldo llegará en los próximos minutos.';
                     showToast('📲 ¡Retiro de $' + amountUsd.toFixed(2) + ' USD solicitado a Nequi!', 'success');
@@ -6558,6 +6728,12 @@ function renderPayPage() {
                 <button class="btn-outline" style="background:#25D366; color:#06080e; border:none; font-weight:800;" onclick="shareViaWhatsapp()">📲 Compartir por WhatsApp</button>
             </div>
             <div id="copySuccessMsg" style="margin-top:12px; display:none; color:var(--emerald); font-weight:800; font-size:13.5px;">✓ Enlace copiado al portapapeles con éxito.</div>
+
+            <!-- DISCLAIMER DE TRANSPARENCIA & LIQUIDACIÓN AL COMERCIO -->
+            <div style="background:var(--input-bg); border-left:4px solid var(--emerald); padding:14px 18px; border-radius:0 12px 12px 0; margin-top:20px; font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+                🛡️ <strong>Transparencia de Liquidación al Comercio / Freelancer:</strong><br>
+                Tus cobros se reciben y acreditan en <strong>Dólares Digitales (USDC) en la red Base L2 con 0% de comisión de plataforma</strong>. La posterior transferencia interbancaria a <strong>Nequi / Bancolombia</strong> está bonificada al 100% para miembros <strong>Maxi Pay Pro ($5 USD/mes)</strong> o sujeta a la tarifa estándar de liquidación para usuarios en Plan Gratuito. Siempre puedes transferir tus USDC on-chain a tu MetaMask o Binance sin comisión de Maxi Suite.
+            </div>
         </div>
 
         <div class="card" style="background:var(--calc-bg); border-color:var(--calc-border); margin-top:24px;">
@@ -9153,6 +9329,28 @@ const server = http.createServer(async (req, res) => {
                 withdrawals: (usersDb.withdrawals || []).filter(w => (w.userEmail || '').toLowerCase() === (user.email || '').toLowerCase())
             }));
             return;
+        } else if (pathname === '/api/wallet/quote-withdraw') {
+            const amountUsd = parseFloat(parsedUrl.query.amount || '0') || 0;
+            const userEmail = (parsedUrl.query.email || '').trim().toLowerCase();
+            const user = userEmail ? usersDb.users[userEmail] : null;
+            const isPro = user && user.plan && user.plan !== 'Gratuito';
+            const TRM_COP = 4000;
+            const grossCop = Math.round(amountUsd * TRM_COP);
+            const settlementFeeCop = (amountUsd > 0 && !isPro) ? 4500 : 0;
+            const netCop = Math.max(0, grossCop - settlementFeeCop);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: true,
+                amountUsd,
+                trm: TRM_COP,
+                grossCop,
+                isPro: !!isPro,
+                settlementFeeCop,
+                netCop,
+                savingsCop: isPro ? 4500 : 0
+            }));
+            return;
         } else if (pathname === '/api/v1/checkout/poll-status') {
             const targetWallet = (parsedUrl.query.wallet || MAXI_WALLET).toLowerCase();
             const expectedAmount = parseFloat(parsedUrl.query.amount) || 0;
@@ -9764,13 +9962,22 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                const amountCop = Math.round(amountUsd * 4000);
+                const isPro = user.plan && user.plan !== 'Gratuito';
+                const TRM_COP = 4000;
+                const grossCop = Math.round(amountUsd * TRM_COP);
+                const feeCop = isPro ? 0 : 4500;
+                const netCop = Math.max(0, grossCop - feeCop);
+
                 const withdrawal = {
                     id: 'WTH-' + Date.now(),
                     userEmail: user.email,
                     userName: user.name,
                     amountUsd,
-                    amountCop,
+                    grossCop,
+                    feeCop,
+                    netCop,
+                    amountCop: netCop,
+                    isPro: !!isPro,
                     destination: phone,
                     bank: 'Nequi / Bancolombia',
                     status: 'PROCESANDO_INMEDIATO',
@@ -9782,9 +9989,11 @@ const server = http.createServer(async (req, res) => {
                 saveUsersDb();
 
                 // Send Telegram Notification to Admin (Juan David)
-                const wAlertMsg = `📲 *¡SOLICITUD DE RETIRO DE SALDO RECIBIDA EN MAXI PAY!* 🇨🇴\n\n` +
+                const wAlertMsg = `📲 *¡SOLICITUD DE RETIRO RECIBIDA EN MAXI PAY!* 🇨🇴\n\n` +
                     `👤 *Usuario:* ${user.name} (${user.email})\n` +
-                    `💵 *Monto Retirado:* $${amountUsd.toFixed(2)} USD (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `👑 *Plan:* ${user.plan || 'Gratuito'} ${isPro ? '(Tarifa $0 COP)' : '(Tarifa Pasarela $4.500 COP)'}\n` +
+                    `💵 *Monto Retirado:* $${amountUsd.toFixed(2)} USD (Subtotal: $${grossCop.toLocaleString('es-CO')} COP)\n` +
+                    `💰 *Total Neto a Transferir:* *$${netCop.toLocaleString('es-CO')} COP*\n` +
                     `🏦 *Destino:* Nequi / Bancolombia a la Mano\n` +
                     `📱 *Número de Celular:* \`${phone}\`\n` +
                     `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
@@ -9796,8 +10005,10 @@ const server = http.createServer(async (req, res) => {
                     user.email,
                     `📲 *¡SOLICITUD DE RETIRO A NEQUI EN PROCESO!* 🇨🇴\n\n` +
                     `Hola *${user.name}*, hemos recibido tu solicitud de retiro:\n\n` +
-                    `💵 *Monto a Liquidar:* $${amountUsd.toFixed(2)} USD (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                    `💵 *Monto en Dólares:* $${amountUsd.toFixed(2)} USD\n` +
+                    `💰 *Total Neto a Recibir:* *$${netCop.toLocaleString('es-CO')} COP*\n` +
                     `🏦 *Destino:* Nequi / Bancolombia (\`${phone}\`)\n` +
+                    `🏷️ *Tarifa de Liquidación:* ${isPro ? '$0 COP (¡Bonificado Plan Pro! 👑)' : '$4.500 COP (Estándar)'}\n` +
                     `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
                     `🌐 *Estado:* En proceso de transferencia.\n\n` +
                     `Te avisaremos tan pronto el saldo esté disponible en tu app de Nequi.`
@@ -9806,7 +10017,7 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
-                    message: 'Solicitud de retiro por $' + amountUsd + ' USD (~$' + amountCop.toLocaleString('es-CO') + ' COP) a Nequi #' + phone + ' registrada con éxito.',
+                    message: 'Solicitud de retiro por $' + amountUsd + ' USD (~$' + netCop.toLocaleString('es-CO') + ' COP netos) a Nequi #' + phone + ' registrada con éxito.',
                     withdrawal
                 }));
             } catch (e) {

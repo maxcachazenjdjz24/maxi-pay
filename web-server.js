@@ -3005,7 +3005,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
   const userCustomPayLink = hasCustomWallet ? `https://maxi-pay.onrender.com/pay/${userSlug}/10?concept=Curso%20Online&wallet=${encodeURIComponent(walletAddress)}` : '';
 
   const telegramLinked = !!user?.telegramChatId;
-  const telegramUser = user?.telegramUsername || (user?.telegramChatId ? ('ID ' + user.telegramChatId) : '');
+  const telegramUser = user?.name || 'Usuario';
 
   // Pre-render Invoices Table
   let invoicesTableHtml = '';
@@ -4222,13 +4222,14 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             const linkedView = document.getElementById('telegramLinkedView');
             const statusBadge = document.getElementById('telegramStatusBadge');
             const usernameDisplay = document.getElementById('telegramUsernameDisplay');
+            const currentName = currentUserState?.name || username || 'Usuario';
 
             if (isLinked) {
                 if (unlinkedView) unlinkedView.style.display = 'none';
                 if (linkedView) linkedView.style.display = 'block';
-                if (usernameDisplay) usernameDisplay.innerText = username || 'Conectado';
+                if (usernameDisplay) usernameDisplay.innerText = currentName;
                 if (statusBadge) {
-                    statusBadge.innerHTML = '<span style="background:var(--calc-saved-bg); color:var(--emerald); border:1px solid var(--emerald); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--emerald); border-radius:50%; display:inline-block;"></span> Conectado: ' + (username || 'ID') + '</span>';
+                    statusBadge.innerHTML = '<span style="background:var(--calc-saved-bg); color:var(--emerald); border:1px solid var(--emerald); padding:6px 14px; border-radius:20px; font-size:12.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; background:var(--emerald); border-radius:50%; display:inline-block;"></span> Conectado: ' + currentName + '</span>';
                 }
             } else {
                 if (unlinkedView) unlinkedView.style.display = 'block';

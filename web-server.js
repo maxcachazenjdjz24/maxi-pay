@@ -227,46 +227,64 @@ async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
 const TELEGRAM_BOT_TOKEN = '8006933644:AAHF-kBCjrSIL5hOh5TksCvL6Cq7gGnOvcg';
 const TELEGRAM_ADMIN_CHAT_ID = '7959552395';
 
-// Admin Alert Dispatcher
-async function sendTelegramAlert(text) {
+// Robust Telegram Message Dispatcher with Markdown and Plain Text Fallback
+async function dispatchTelegramMessage(chatId, rawText) {
+  if (!chatId) return { success: false, error: 'No chat ID' };
   try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    // 1. Try Markdown
+    let res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: TELEGRAM_ADMIN_CHAT_ID,
-        text,
+        chat_id: String(chatId),
+        text: rawText,
         parse_mode: 'Markdown',
         disable_web_page_preview: true
       })
     });
+    let data = await res.json();
+    if (data.ok) return { success: true, messageId: data.result?.message_id };
+
+    // 2. If Markdown fails, convert to clean plain text
+    const cleanText = rawText
+      .replace(/\*([^\*]+)\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/_([^_]+)_/g, '$1');
+
+    res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: String(chatId),
+        text: cleanText,
+        disable_web_page_preview: true
+      })
+    });
+    data = await res.json();
+    return { success: data.ok, messageId: data.result?.message_id };
   } catch (e) {
-    console.error('Error sending Admin Telegram alert:', e.message);
+    console.error(`Telegram dispatch error to chat ${chatId}:`, e.message);
+    return { success: false, error: e.message };
   }
+}
+
+// Admin Alert Dispatcher
+async function sendTelegramAlert(text) {
+  return dispatchTelegramMessage(TELEGRAM_ADMIN_CHAT_ID, text);
 }
 
 // User 1-on-1 Private Telegram Notification Dispatcher
 async function sendUserTelegramNotification(userEmail, text) {
-  try {
-    if (!userEmail) return;
-    const cleanEmail = userEmail.trim().toLowerCase();
-    const user = usersDb.users[cleanEmail];
-    if (!user || !user.telegramChatId) return;
+  if (!userEmail) return { success: false };
+  const cleanEmail = userEmail.trim().toLowerCase();
+  const user = usersDb.users ? usersDb.users[cleanEmail] : null;
+  if (!user || !user.telegramChatId) return { success: false, error: 'User has no linked telegramChatId' };
 
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: user.telegramChatId,
-        text,
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true
-      })
-    });
+  const result = await dispatchTelegramMessage(user.telegramChatId, text);
+  if (result.success) {
     console.log(`📲 [USER TELEGRAM NOTIFIED]: ${cleanEmail} -> ChatID: ${user.telegramChatId}`);
-  } catch (e) {
-    console.error(`Error sending user Telegram notification to ${userEmail}:`, e.message);
   }
+  return result;
 }
 
 // TRANSACTIONAL RECEIPT EMAIL ENGINE (RESEND API INTEGRATION)
@@ -3319,7 +3337,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                             Recibes tus pagos en Dólares Digitales (USDC) en Base L2 (0% comisión).
                         </span>
                     </div>
-                    <a href="/cuenta?tab=planes" style="color:var(--emerald); font-size:12.5px; font-weight:800; text-decoration:underline;">
+                    <a href="#planes" onclick="scrollToPlanes(); return false;" style="color:var(--emerald); font-size:12.5px; font-weight:800; text-decoration:underline; cursor:pointer;">
                         ⚡ Activar Maxi Pay Pro ($5 USD) para retiros con 0% tarifa →
                     </a>
                 </div>
@@ -3450,7 +3468,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             </div>
 
             <!-- MEMBERSHIP CATALOG (4 TIERS) -->
-            <div id="planes" style="margin-top:30px;">
+            <div id="planes" style="margin-top:30px; scroll-margin-top:80px;">
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="display:inline-flex; align-items:center; gap:6px; color:var(--emerald); font-size:12px; font-weight:800; text-transform:uppercase;">
                         💎 PLANES & MEMBRESÍAS MAXI SUITE
@@ -3676,7 +3694,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <div style="font-size:12px; color:var(--text-main); line-height:1.4;">
                         👑 <strong>Maxi Pay Pro:</strong> 0% comisión y retiros ilimitados en pesos.
                     </div>
-                    <a href="/cuenta?tab=planes" class="btn-outline" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-color:var(--emerald); color:var(--emerald); text-decoration:none; white-space:nowrap;">
+                    <a href="#planes" onclick="closeWithdrawModal(); scrollToPlanes(); return false;" class="btn-outline" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-color:var(--emerald); color:var(--emerald); text-decoration:none; white-space:nowrap; cursor:pointer;">
                         ⚡ Activar Pro ($5)
                     </a>
                 </div>
@@ -4626,11 +4644,22 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }, 400);
         }
 
-        async function initAccountPage() {
+        function scrollToPlanes() {
+            const el = document.getElementById('planes');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.location.href = '/cuenta#planes';
+            }
+        }
+
+        function initAccountPage() {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
             if (tabParam === 'register' || tabParam === 'login') {
                 switchAuthTab(tabParam);
+            } else if (tabParam === 'planes' || window.location.hash === '#planes') {
+                setTimeout(scrollToPlanes, 350);
             }
             if (currentUserState) {
                 refreshUserWalletData();

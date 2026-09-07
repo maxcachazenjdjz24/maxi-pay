@@ -5,7 +5,7 @@
       "name": "Juan David Jaramillo Zapata",
       "email": "jdavidjaramillo@hotmail.com",
       "phone": "+573147546359",
-      "wallet": "0x355BAB72e5d6f5FF5ab46116C5beC522047f2004",
+      "wallet": "0x65ccA60F5b20006b87E01BcB534E7c06849ECB9F",
       "passwordHash": "134415ca1b36e1dab38e7bd5625aa105929669d081cb4e91d09fbf24826bb1dc927226e6b039068a7783be790ef014d91449b346c5aedb1f9ca081384bf2a7a0",
       "passwordSalt": "76ebbfd82ab72c8acea9615bcab8239d",
       "credits": 55,
@@ -17,10 +17,41 @@
         "date": "2026-09-04T15:02:18.058Z",
         "txId": "1526018-1788534094-90406"
       },
-      "privateKey": "0x4335bacaa10f589016136b79e1babfbb10ffe07015a4213286eda1e1087b9735",
+      "privateKey": "0xb0475998c65c646ae2a8a940b69970ffb9e089cd8ccd29f5964a3f9c74dc83a5",
       "telegramChatId": "7959552395",
       "telegramUsername": "@jdavidjaramillo",
       "sales": [
+        {
+          "txHash": "0x304ef888b604fa6104b44df3b8b1906b0fad88126c9f80985f00f53afea2d869",
+          "invoiceId": "CARD-ONRAMP-1788780072964",
+          "orderId": "PAY-974038",
+          "amountUsd": 30,
+          "amountPaid": 30.46,
+          "fee": 0.46,
+          "amountCop": 120000,
+          "concept": "Suscripción de Asesoría Web3",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Robert Green",
+          "from": "Tarjeta •••• 5544",
+          "to": "0x65cca60f5b20006b87e01bcb534e7c06849ecb9f",
+          "date": "2026-09-07T11:21:12.965Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788780072944",
+          "orderId": "PAY-925141",
+          "amountUsd": 45,
+          "amountCop": 180000,
+          "concept": "Auditoría y Consultoría Smart Contract",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Apex Capital US",
+          "senderEmail": "billing@apexcapital.us",
+          "from": "Apex Capital US (billing@apexcapital.us)",
+          "to": "0x65cca60f5b20006b87e01bcb534e7c06849ecb9f",
+          "date": "2026-09-07T11:21:12.945Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-ACH-AUDIT-1010"
+        },
         {
           "txHash": "0x8f7b10af81d3c22ac7b12ef37525a9211197a6b50a6bb8437af9c5621a4755f5",
           "invoiceId": "CARD-ONRAMP-1788739437673",
@@ -307,6 +338,239 @@
           "reference": "REF-ACH-ANDRES-4900"
         }
       ]
+    },
+    "audit_user_1788780072668@gmail.com": {
+      "id": "usr_1788780072680",
+      "name": "Carlos Mendoza",
+      "email": "audit_user_1788780072668@gmail.com",
+      "phone": "+57 310 999 8877",
+      "wallet": null,
+      "passwordHash": "d980ef6cc018a5bbc5a1d85612859c5f4df853365e8af5b000b3bc3224c980666a2852e35f90fb06ed28412488771d1e93f6a03728de82645bb5f6cdda493c07",
+      "passwordSalt": "f1b08b27e66d93a8fe57b32f474b3b6e",
+      "credits": 6,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:21:12.680Z"
+    },
+    "carlos_audit_1788780103710@gmail.com": {
+      "id": "usr_1788780103732",
+      "name": "Carlos Mendoza",
+      "email": "carlos_audit_1788780103710@gmail.com",
+      "phone": "+57 310 999 8877",
+      "wallet": "0xd2839C0eFC1AecC754d9971Cd5d73d667d7F8aDE",
+      "passwordHash": "eb4b3624d8ebef65b7cf575018988c8717645f64437c6b9b854be8d137cbfef7916e42964f11a6055c603482bba27b891f5961fb21f56d9fc8c010ce27702db9",
+      "passwordSalt": "2c6696a30e7e50b4da1b9f203d07d077",
+      "credits": 9,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:21:43.732Z",
+      "privateKey": "0x0f1e86e85df2358ee33b20c3297a9e975cc7d9bc6fb170b888b03b4c0b83808f",
+      "completedTutorials": {
+        "tut-ach-usa": {
+          "date": "2026-09-07T11:21:43.872Z",
+          "score": 100
+        }
+      },
+      "sales": [
+        {
+          "txHash": "0x1f6c57732e30702805d107b11fbe582d4bff4a2b24bb5f159d8a4b36f3f19e77",
+          "invoiceId": "CARD-ONRAMP-1788780103971",
+          "orderId": "PAY-180190",
+          "amountUsd": 30,
+          "amountPaid": 30.46,
+          "fee": 0.46,
+          "amountCop": 120000,
+          "concept": "Curso Intensivo de Finanzas Web3",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 7711",
+          "to": "0xd2839c0efc1aecc754d9971cd5d73d667d7f8ade",
+          "date": "2026-09-07T11:21:43.972Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788780103959",
+          "orderId": "PAY-425093",
+          "amountUsd": 45,
+          "amountCop": 180000,
+          "concept": "Auditoría y Consultoría Smart Contract",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Apex Capital US",
+          "senderEmail": "billing@apexcapital.us",
+          "from": "Apex Capital US (billing@apexcapital.us)",
+          "to": "0xd2839c0efc1aecc754d9971cd5d73d667d7f8ade",
+          "date": "2026-09-07T11:21:43.960Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-ACH-AUDIT-2026"
+        }
+      ]
+    },
+    "carlos_audit_1788780122723@gmail.com": {
+      "id": "usr_1788780122743",
+      "name": "Carlos Mendoza",
+      "email": "carlos_audit_1788780122723@gmail.com",
+      "phone": "+57 310 999 8877",
+      "wallet": "0xc62432a991353808F48676c0566A318a37f5F351",
+      "passwordHash": "914aa2da5f598ef31bba61d07255fd79ad414c72a5c32b992a2c65ef1f59e3566ae415786d0172d264ddebf3d058285c14894b57b18d9cc8aabe251c3fd919d3",
+      "passwordSalt": "c214459b094695a38ab2f54f6dec685b",
+      "credits": 9,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:22:02.743Z",
+      "privateKey": "0x905c1f34723ffb0d52062a606d5b2ec642205b7b381073322ff6d13a14da6c99",
+      "completedTutorials": {
+        "tut-ach-usa": {
+          "date": "2026-09-07T11:22:02.866Z",
+          "score": 100
+        }
+      },
+      "sales": [
+        {
+          "txHash": "0x2317a55cfaaff21285ae1903257af3c97756a54c0566f82a2665d972d3272aa8",
+          "invoiceId": "CARD-ONRAMP-1788780122973",
+          "orderId": "PAY-743187",
+          "amountUsd": 30,
+          "amountPaid": 30.46,
+          "fee": 0.46,
+          "amountCop": 120000,
+          "concept": "Curso Intensivo de Finanzas Web3",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 7711",
+          "to": "0xc62432a991353808f48676c0566a318a37f5f351",
+          "date": "2026-09-07T11:22:02.975Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788780122951",
+          "orderId": "PAY-353251",
+          "amountUsd": 45,
+          "amountCop": 180000,
+          "concept": "Auditoría y Consultoría Smart Contract",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Apex Capital US",
+          "senderEmail": "billing@apexcapital.us",
+          "from": "Apex Capital US (billing@apexcapital.us)",
+          "to": "0xc62432a991353808f48676c0566a318a37f5f351",
+          "date": "2026-09-07T11:22:02.951Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-ACH-AUDIT-2026"
+        }
+      ]
+    },
+    "carlos_audit_1788780139276@gmail.com": {
+      "id": "usr_1788780139284",
+      "name": "Carlos Mendoza",
+      "email": "carlos_audit_1788780139276@gmail.com",
+      "phone": "+57 310 999 8877",
+      "wallet": "0x2739AeF0248A3610f32C0f035e64C44c5CAB499A",
+      "passwordHash": "ccac281a3abdb09eec98b8043dbca530acaf156944ea1658172ca5c76f82ebae4caca6177054652cf25aebf9c19ade50a63ce013d151bf614ca26d6ff355c9c4",
+      "passwordSalt": "12603afc3ae5a2361dad8bdbb60353a8",
+      "credits": 9,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:22:19.284Z",
+      "privateKey": "0x6dac1047e7c8d291d28b2fd93233f3a50f3c1b45896cb95a87b0414e9597ba32",
+      "completedTutorials": {
+        "tut-ach-usa": {
+          "date": "2026-09-07T11:22:19.412Z",
+          "score": 100
+        }
+      },
+      "sales": [
+        {
+          "txHash": "0x3c1f7eef7d10b4162f4e475cfb6df67941a8432d614df6b92e2bbf5618d06bc4",
+          "invoiceId": "CARD-ONRAMP-1788780139474",
+          "orderId": "PAY-817130",
+          "amountUsd": 30,
+          "amountPaid": 30.46,
+          "fee": 0.46,
+          "amountCop": 120000,
+          "concept": "Curso Intensivo de Finanzas Web3",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 7711",
+          "to": "0x2739aef0248a3610f32c0f035e64c44c5cab499a",
+          "date": "2026-09-07T11:22:19.475Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788780139465",
+          "orderId": "PAY-571948",
+          "amountUsd": 45,
+          "amountCop": 180000,
+          "concept": "Auditoría y Consultoría Smart Contract",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Apex Capital US",
+          "senderEmail": "billing@apexcapital.us",
+          "from": "Apex Capital US (billing@apexcapital.us)",
+          "to": "0x2739aef0248a3610f32c0f035e64c44c5cab499a",
+          "date": "2026-09-07T11:22:19.466Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-ACH-AUDIT-2026"
+        }
+      ]
+    },
+    "carlos_audit_1788781663988@gmail.com": {
+      "id": "usr_1788781664071",
+      "name": "Carlos Mendoza",
+      "email": "carlos_audit_1788781663988@gmail.com",
+      "phone": "+57 310 999 8877",
+      "wallet": "0x9162638748180126886a9f1E4c64234D8481135c",
+      "privateKey": "0x0a700afd618341dd1cca5158a6003fea4a01a36a0adb1cd73425d7071eee607d",
+      "passwordHash": "5dd458a7579a9343228c2df67c54eaa02863232035f659cbcfdef64428dc5835702c9b77950d7fe3c1a2f111ba9771c7c639e5a097e995c97fcd4c05d1acd98f",
+      "passwordSalt": "80e7e18bb9b70b00457487cbb3de42c6",
+      "credits": 9,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:47:44.071Z",
+      "completedTutorials": {
+        "tut-ach-usa": {
+          "date": "2026-09-07T11:47:44.137Z",
+          "score": 100
+        }
+      },
+      "sales": [
+        {
+          "txHash": "0xe118498f1b48da7f69fa3b553eb0902e2b2d87fe251f241ccc58a2aaf065afb9",
+          "invoiceId": "CARD-ONRAMP-1788781664247",
+          "orderId": "PAY-392464",
+          "amountUsd": 30,
+          "amountPaid": 30.46,
+          "fee": 0.46,
+          "amountCop": 120000,
+          "concept": "Curso Intensivo de Finanzas Web3",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 7711",
+          "to": "0x9162638748180126886a9f1e4c64234d8481135c",
+          "date": "2026-09-07T11:47:44.247Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
+          "invoiceId": "ACH-NOTIFY-1788781664231",
+          "orderId": "PAY-281403",
+          "amountUsd": 45,
+          "amountCop": 180000,
+          "concept": "Auditoría y Consultoría Smart Contract",
+          "paymentMethod": "Transferencia Bancaria ACH en EE.UU. (FedACH / 0% Fee)",
+          "senderName": "Apex Capital US",
+          "senderEmail": "billing@apexcapital.us",
+          "from": "Apex Capital US (billing@apexcapital.us)",
+          "to": "0x9162638748180126886a9f1e4c64234d8481135c",
+          "date": "2026-09-07T11:47:44.231Z",
+          "status": "PENDIENTE_CONCILIACION_ACH",
+          "reference": "REF-ACH-AUDIT-2026"
+        }
+      ]
+    },
+    "sanitized_test_1788781678071@gmail.com": {
+      "id": "usr_1788781678193",
+      "name": "Test Sanitized User",
+      "email": "sanitized_test_1788781678071@gmail.com",
+      "phone": "+573001234567",
+      "wallet": "0x0a9b4ec9f413d887d29752b092e7487672E8eDc7",
+      "privateKey": "0x3980962d7d91ad9bfd97065ef0d2104fd56c5a0a72973ab787bbb2ffb5856efa",
+      "passwordHash": "48ae2200d7c86352ab5ffcfbb672c74fab8c7137c0e5480baa4fd208fc537fcd4c59ff817b16dad4701e602b16d713c4d3c013e893c3fa4d173f1073d8303432",
+      "passwordSalt": "2345cfc9e60d74d868e2b51a68eb74d4",
+      "credits": 5,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T11:47:58.193Z"
     }
   },
   "sessions": {
@@ -317,7 +581,13 @@
     "f2904277f02b0a484a7112e373ec96308a189cc9863cc0c7": "testuser_1788710210794@example.com",
     "0a22d2cae886ea46ba4bd2212e8f3c22f9ce8c19bf680207": "jdavidjaramillo@hotmail.com",
     "99ab0637fa9882049f7777fbffdf98c4c442ff7dd5881112": "testuser_1788735999999@example.com",
-    "0bf965a7e95f5f8022f00a9bee3fb7e4336c18c171d79113": "testuser_1788739437533@example.com"
+    "0bf965a7e95f5f8022f00a9bee3fb7e4336c18c171d79113": "testuser_1788739437533@example.com",
+    "66a99ab1dc30fe26c4606aab4785ceecd7fad0e1abf07e2c": "audit_user_1788780072668@gmail.com",
+    "e82558d95dbc60391639eaecb768329af2a7804711df3a7e": "carlos_audit_1788780103710@gmail.com",
+    "3f8737858c1833b12a04ae434ba1acde7604eb83867e9d69": "carlos_audit_1788780122723@gmail.com",
+    "9026697e115231c638a628cc78590ae74c315de58c61e330": "carlos_audit_1788780139276@gmail.com",
+    "447fee24ace371e258c4b8afff264ccbc05fedbcd6c59425": "carlos_audit_1788781663988@gmail.com",
+    "7a2190252ce96a664f5d4cd30240d14ab60622c65e8b00d6": "sanitized_test_1788781678071@gmail.com"
   },
   "adminSessions": {
     "adm_e985b7ba016e9281220224a97ba0c543d65de0f7bdc2efe5": {
@@ -329,6 +599,21 @@
       "name": "Juan David (Administrador)",
       "email": "admin@maxi.suite",
       "loginAt": "2026-09-06T16:04:48.142Z"
+    },
+    "adm_699a413951591295a7571cdf3deb74d69f0e53f8942487e2": {
+      "name": "Juan David (Administrador)",
+      "email": "admin@maxi.suite",
+      "loginAt": "2026-09-07T11:22:02.996Z"
+    },
+    "adm_c40b9adddc94276e58b64eefcdb6256ffb36302f7f5e6ab4": {
+      "name": "Juan David (Administrador)",
+      "email": "admin@maxi.suite",
+      "loginAt": "2026-09-07T11:22:19.490Z"
+    },
+    "adm_bfeede5339cdd2eef38f0b8b25101c28b0bebfea8ce10375": {
+      "name": "Juan David (Administrador)",
+      "email": "admin@maxi.suite",
+      "loginAt": "2026-09-07T11:47:44.262Z"
     }
   },
   "invoices": {
@@ -579,9 +864,229 @@
       "buyerName": "Sarah Connor",
       "buyerEmail": "sarah.connor@skyline.com",
       "txHash": "0x39ebeb9a2dd7345062b30f91c34e7832b92959e9320f7ba610abad0902ab8671"
+    },
+    "ACH-NOTIFY-1788780072944": {
+      "invoiceId": "ACH-NOTIFY-1788780072944",
+      "orderId": "PAY-925141",
+      "amountUsd": "45.00",
+      "amountCop": 180000,
+      "concept": "Auditoría y Consultoría Smart Contract",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-07T11:21:12.945Z",
+      "buyerName": "Apex Capital US",
+      "buyerEmail": "billing@apexcapital.us",
+      "reference": "REF-ACH-AUDIT-1010",
+      "targetWallet": "0x65cca60f5b20006b87e01bcb534e7c06849ecb9f"
+    },
+    "CARD-ONRAMP-1788780072964": {
+      "invoiceId": "CARD-ONRAMP-1788780072964",
+      "orderId": "PAY-974038",
+      "amountUsd": "30.00",
+      "amountPaid": "30.46",
+      "fee": "0.46",
+      "amountCop": 120000,
+      "concept": "Suscripción de Asesoría Web3",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T11:21:12.965Z",
+      "buyerName": "Robert Green",
+      "buyerEmail": "robert@green.io",
+      "txHash": "0x304ef888b604fa6104b44df3b8b1906b0fad88126c9f80985f00f53afea2d869"
+    },
+    "ACH-NOTIFY-1788780103959": {
+      "invoiceId": "ACH-NOTIFY-1788780103959",
+      "orderId": "PAY-425093",
+      "amountUsd": "45.00",
+      "amountCop": 180000,
+      "concept": "Auditoría y Consultoría Smart Contract",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-07T11:21:43.960Z",
+      "buyerName": "Apex Capital US",
+      "buyerEmail": "billing@apexcapital.us",
+      "reference": "REF-ACH-AUDIT-2026",
+      "targetWallet": "0xd2839c0efc1aecc754d9971cd5d73d667d7f8ade"
+    },
+    "CARD-ONRAMP-1788780103971": {
+      "invoiceId": "CARD-ONRAMP-1788780103971",
+      "orderId": "PAY-180190",
+      "amountUsd": "30.00",
+      "amountPaid": "30.46",
+      "fee": "0.46",
+      "amountCop": 120000,
+      "concept": "Curso Intensivo de Finanzas Web3",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T11:21:43.972Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah.connor@skyline.com",
+      "txHash": "0x1f6c57732e30702805d107b11fbe582d4bff4a2b24bb5f159d8a4b36f3f19e77"
+    },
+    "ACH-NOTIFY-1788780122951": {
+      "invoiceId": "ACH-NOTIFY-1788780122951",
+      "orderId": "PAY-353251",
+      "amountUsd": "45.00",
+      "amountCop": 180000,
+      "concept": "Auditoría y Consultoría Smart Contract",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-07T11:22:02.951Z",
+      "buyerName": "Apex Capital US",
+      "buyerEmail": "billing@apexcapital.us",
+      "reference": "REF-ACH-AUDIT-2026",
+      "targetWallet": "0xc62432a991353808f48676c0566a318a37f5f351"
+    },
+    "CARD-ONRAMP-1788780122973": {
+      "invoiceId": "CARD-ONRAMP-1788780122973",
+      "orderId": "PAY-743187",
+      "amountUsd": "30.00",
+      "amountPaid": "30.46",
+      "fee": "0.46",
+      "amountCop": 120000,
+      "concept": "Curso Intensivo de Finanzas Web3",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T11:22:02.975Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah.connor@skyline.com",
+      "txHash": "0x2317a55cfaaff21285ae1903257af3c97756a54c0566f82a2665d972d3272aa8"
+    },
+    "ACH-NOTIFY-1788780139465": {
+      "invoiceId": "ACH-NOTIFY-1788780139465",
+      "orderId": "PAY-571948",
+      "amountUsd": "45.00",
+      "amountCop": 180000,
+      "concept": "Auditoría y Consultoría Smart Contract",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-07T11:22:19.466Z",
+      "buyerName": "Apex Capital US",
+      "buyerEmail": "billing@apexcapital.us",
+      "reference": "REF-ACH-AUDIT-2026",
+      "targetWallet": "0x2739aef0248a3610f32c0f035e64c44c5cab499a"
+    },
+    "CARD-ONRAMP-1788780139474": {
+      "invoiceId": "CARD-ONRAMP-1788780139474",
+      "orderId": "PAY-817130",
+      "amountUsd": "30.00",
+      "amountPaid": "30.46",
+      "fee": "0.46",
+      "amountCop": 120000,
+      "concept": "Curso Intensivo de Finanzas Web3",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T11:22:19.475Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah.connor@skyline.com",
+      "txHash": "0x3c1f7eef7d10b4162f4e475cfb6df67941a8432d614df6b92e2bbf5618d06bc4"
+    },
+    "ACH-NOTIFY-1788781664231": {
+      "invoiceId": "ACH-NOTIFY-1788781664231",
+      "orderId": "PAY-281403",
+      "amountUsd": "45.00",
+      "amountCop": 180000,
+      "concept": "Auditoría y Consultoría Smart Contract",
+      "method": "Transferencia Bancaria ACH (EE.UU.)",
+      "status": "Pendiente Conciliación ACH",
+      "timestamp": "2026-09-07T11:47:44.231Z",
+      "buyerName": "Apex Capital US",
+      "buyerEmail": "billing@apexcapital.us",
+      "reference": "REF-ACH-AUDIT-2026",
+      "targetWallet": "0x9162638748180126886a9f1e4c64234d8481135c"
+    },
+    "CARD-ONRAMP-1788781664247": {
+      "invoiceId": "CARD-ONRAMP-1788781664247",
+      "orderId": "PAY-392464",
+      "amountUsd": "30.00",
+      "amountPaid": "30.46",
+      "fee": "0.46",
+      "amountCop": 120000,
+      "concept": "Curso Intensivo de Finanzas Web3",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T11:47:44.247Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah.connor@skyline.com",
+      "txHash": "0xe118498f1b48da7f69fa3b553eb0902e2b2d87fe251f241ccc58a2aaf065afb9"
     }
   },
   "withdrawals": [
+    {
+      "id": "WTH-1788781664255",
+      "userEmail": "carlos_audit_1788781663988@gmail.com",
+      "userName": "Carlos Mendoza",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3109998877",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T11:47:44.255Z"
+    },
+    {
+      "id": "WTH-1788780139483",
+      "userEmail": "carlos_audit_1788780139276@gmail.com",
+      "userName": "Carlos Mendoza",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3109998877",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T11:22:19.483Z"
+    },
+    {
+      "id": "WTH-1788780122988",
+      "userEmail": "carlos_audit_1788780122723@gmail.com",
+      "userName": "Carlos Mendoza",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3109998877",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T11:22:02.988Z"
+    },
+    {
+      "id": "WTH-1788780103981",
+      "userEmail": "carlos_audit_1788780103710@gmail.com",
+      "userName": "Carlos Mendoza",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3109998877",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T11:21:43.981Z"
+    },
+    {
+      "id": "WTH-1788780072977",
+      "userEmail": "audit_user_1788780072668@gmail.com",
+      "userName": "Carlos Mendoza",
+      "amountUsd": 25,
+      "grossCop": 100000,
+      "feeCop": 4500,
+      "netCop": 95500,
+      "amountCop": 95500,
+      "isPro": false,
+      "destination": "3109998877",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T11:21:12.977Z"
+    },
     {
       "id": "WTH-1788745549794",
       "userEmail": "maxcachazen3@gmail.com",

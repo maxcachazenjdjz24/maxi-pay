@@ -742,6 +742,13 @@ function saveUsersDb() {
   }
 }
 
+// SECURITY DTO SANITIZER (OWASP & HABEAS DATA COMPLIANT)
+function sanitizeUser(user) {
+  if (!user) return null;
+  const { passwordHash, passwordSalt, privateKey, ...safeUser } = user;
+  return safeUser;
+}
+
 loadUsersDb();
 
 const PLAN_CATALOG = {
@@ -3662,9 +3669,14 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
             <!-- VISTA 1: LIQUIDACIÓN A NEQUI / BANCOLOMBIA -->
             <div id="viewWithdrawFiat">
-                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main); text-transform:uppercase;">
-                    Monto en Dólares a Liquidar (USD):
-                </label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="font-size:12.5px; font-weight:800; color:var(--text-main); text-transform:uppercase; margin:0;">
+                        Monto en Dólares a Liquidar (USD):
+                    </label>
+                    <button type="button" onclick="setWithdrawMaxAmount()" style="background:rgba(0, 242, 254, 0.15); border:1px solid var(--cyan); color:var(--cyan); font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px; cursor:pointer;">
+                        ⚡ MAX (Retirar Todo)
+                    </button>
+                </div>
                 <div style="position:relative; margin-bottom:14px;">
                     <input type="number" id="withdrawAmountInput" class="input-box" placeholder="Ej: 50" oninput="calcTransparentBreakdown(this.value)" style="font-size:18px; font-weight:800; padding:12px 50px 12px 16px;">
                     <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--cyan); font-size:13px;">USD</span>
@@ -4525,6 +4537,19 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
 
             if (totalNetEl) totalNetEl.innerText = '$' + netCop.toLocaleString('es-CO') + ' COP';
+        }
+
+        function setWithdrawMaxAmount() {
+            const balanceEl = document.getElementById('walletUsdcBalance');
+            let bal = 0;
+            if (balanceEl) {
+                bal = parseFloat(balanceEl.innerText.replace('$', '').trim()) || 0;
+            }
+            const input = document.getElementById('withdrawAmountInput');
+            if (input) {
+                input.value = bal > 0 ? bal : 10;
+                calcTransparentBreakdown(input.value);
+            }
         }
 
         async function submitCryptoWithdrawal() {
@@ -7991,6 +8016,14 @@ function renderTutorialesPage() {
                     </div>
                 </div>
             </div>
+            <!-- VISUAL ANIMATED PROGRESS BAR -->
+            <div style="margin-top:16px; background:rgba(255,255,255,0.08); border-radius:10px; height:10px; overflow:hidden; border:1px solid rgba(0,242,254,0.2); position:relative;">
+                <div id="academyProgressBarFill" style="height:100%; width:0%; background:linear-gradient(90deg, #00f2fe 0%, #00df89 100%); transition:width 0.6s cubic-bezier(0.16, 1, 0.3, 1); border-radius:10px;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:11.5px; color:var(--text-muted); font-weight:700;">
+                <span>Progreso hacia Certificación Pro</span>
+                <span id="academyProgressPercent" style="color:var(--cyan); font-weight:800;">0%</span>
+            </div>
         </div>
 
         <!-- ROLE SWITCHER TABS -->
@@ -8828,15 +8861,21 @@ function renderTutorialesPage() {
         function updateAcademyProgressUI() {
             const completed = JSON.parse(localStorage.getItem('maxi_completed_tuts') || '[]');
             const count = completed.length;
+            const totalTuts = 8;
+            const pct = Math.min(100, Math.round((count / totalTuts) * 100));
             const display = document.getElementById('completedCountDisplay');
             const fichasDisplay = document.getElementById('fichasEarnedDisplay');
             const rankDisplay = document.getElementById('academyRankDisplay');
+            const fillEl = document.getElementById('academyProgressBarFill');
+            const pctEl = document.getElementById('academyProgressPercent');
 
-            if (display) display.innerText = count + ' / 8 Lecciones';
+            if (display) display.innerText = count + ' / ' + totalTuts + ' Lecciones';
             if (fichasDisplay) fichasDisplay.innerText = count * 3;
+            if (fillEl) fillEl.style.width = pct + '%';
+            if (pctEl) pctEl.innerText = pct + '%';
 
             if (rankDisplay) {
-                if (count >= 7) rankDisplay.innerText = '👑 Maestro Maxi Suite Pro';
+                if (count >= 7) rankDisplay.innerText = '👑 Maestro Maxi Suite Pro (Certificado)';
                 else if (count >= 4) rankDisplay.innerText = '⚡ Comerciante Avanzado';
                 else if (count >= 1) rankDisplay.innerText = '🌱 Estudiante Activo';
                 else rankDisplay.innerText = '🎓 Alumno Novato Maxi';
@@ -9318,7 +9357,7 @@ const server = http.createServer(async (req, res) => {
                     mrr: totalRevenue,
                     totalWithdrawals: (usersDb.withdrawals || []).length
                 },
-                users: userList,
+                users: userList.map(sanitizeUser),
                 withdrawals: usersDb.withdrawals || []
             }));
         } else if (pathname === '/api/user/wallet-data') {
@@ -9451,7 +9490,7 @@ const server = http.createServer(async (req, res) => {
                         (inv.buyerEmail || '').toLowerCase() === email.toLowerCase()
                     );
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ authenticated: true, user, invoices: userInvoices }));
+                    res.end(JSON.stringify({ authenticated: true, user: sanitizeUser(user), invoices: userInvoices }));
                     return;
                 }
             }
@@ -10391,12 +10430,17 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 const { hash, salt } = hashPassword(password);
+                const newWallet = generateNewPersonalWallet();
+                const assignedWallet = (wallet && wallet.trim().startsWith('0x')) ? wallet.trim() : newWallet.walletAddress;
+                const assignedPrivateKey = (wallet && wallet.trim().startsWith('0x')) ? null : newWallet.privateKey;
+
                 user = {
                     id: 'usr_' + Date.now(),
                     name: name.trim(),
                     email: cleanEmail,
                     phone: phone.trim(),
-                    wallet: wallet ? wallet.trim() : null,
+                    wallet: assignedWallet,
+                    privateKey: assignedPrivateKey,
                     passwordHash: hash,
                     passwordSalt: salt,
                     credits: 5,
@@ -10409,6 +10453,8 @@ const server = http.createServer(async (req, res) => {
                 usersDb.sessions[token] = cleanEmail;
                 saveUsersDb();
 
+                console.log(`⚡ [NUEVO USUARIO + BILLETERA BASE L2 AUTO-GENERADA]: ${user.email} -> ${user.wallet}`);
+
                 // Rich Telegram Alert to Juan David (Admin)
                 const totalUsers = Object.keys(usersDb.users || {}).length;
                 sendTelegramAlert(
@@ -10416,7 +10462,7 @@ const server = http.createServer(async (req, res) => {
                     `👤 *Nombre:* ${user.name}\n` +
                     `📧 *Correo:* \`${user.email}\`\n` +
                     `📱 *Celular:* \`${user.phone}\`\n` +
-                    `💳 *Billetera:* \`${user.wallet || 'No asignada aún'}\`\n` +
+                    `💳 *Billetera Base L2:* \`${user.wallet}\`\n` +
                     `👑 *Plan Inicial:* *${user.plan}* (+${user.credits} Fichas de Bienvenida)\n` +
                     `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n\n` +
                     `🌐 *Total Usuarios Registrados:* *${totalUsers}*`
@@ -10430,7 +10476,7 @@ const server = http.createServer(async (req, res) => {
                         `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
                     ]
                 });
-                res.end(JSON.stringify({ success: true, token, user, invoices: [] }));
+                res.end(JSON.stringify({ success: true, token, user: sanitizeUser(user), invoices: [] }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
@@ -10498,7 +10544,7 @@ const server = http.createServer(async (req, res) => {
                         `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
                     ]
                 });
-                res.end(JSON.stringify({ success: true, token, user, invoices: userInvoices }));
+                res.end(JSON.stringify({ success: true, token, user: sanitizeUser(user), invoices: userInvoices }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));

@@ -245,6 +245,22 @@
       "telegramUsername": "@maxcachazen3",
       "sales": [
         {
+          "txHash": "0x3f5d625b822dcf4e6e6b2d398ed4824323fec5d2434eb8f213a93b9adf8b96c9",
+          "invoiceId": "CARD-ONRAMP-1788743843502",
+          "orderId": "PAY-206793",
+          "amountUsd": 20,
+          "amountPaid": 20.3,
+          "fee": 0.3,
+          "amountCop": 80000,
+          "concept": "Curso Intensivo de Trading & Señales On-Chain",
+          "paymentMethod": "Tarjeta Débito/Crédito Internacional (USDC Base L2)",
+          "cardHolder": "Sarah Connor",
+          "from": "Tarjeta •••• 8899",
+          "to": "0x71c568a7831d1e7881c1cdb95a703d92a1e23363",
+          "date": "2026-09-07T01:17:23.502Z",
+          "status": "CONFIRMADO_ONRAMP_USDC"
+        },
+        {
           "invoiceId": "ACH-NOTIFY-1788743827516",
           "orderId": "PAY-961405",
           "amountUsd": 35,
@@ -488,9 +504,35 @@
       "buyerEmail": "david.wallace@dundermifflin.com",
       "reference": "REF-ACH-ANDRES-4900",
       "targetWallet": "0x71c568a7831d1e7881c1cdb95a703d92a1e23363"
+    },
+    "CARD-ONRAMP-1788743843502": {
+      "invoiceId": "CARD-ONRAMP-1788743843502",
+      "orderId": "PAY-206793",
+      "amountUsd": "20.00",
+      "amountPaid": "20.30",
+      "fee": "0.30",
+      "amountCop": 80000,
+      "concept": "Curso Intensivo de Trading & Señales On-Chain",
+      "method": "Tarjeta Internacional (Liquidación USDC en Base L2)",
+      "status": "Aprobado 100% (Liquidado en USDC)",
+      "timestamp": "2026-09-07T01:17:23.504Z",
+      "buyerName": "Sarah Connor",
+      "buyerEmail": "sarah.connor@skyline.com",
+      "txHash": "0x3f5d625b822dcf4e6e6b2d398ed4824323fec5d2434eb8f213a93b9adf8b96c9"
     }
   },
   "withdrawals": [
+    {
+      "id": "WTH-1788743852086",
+      "userEmail": "maxcachazen3@gmail.com",
+      "userName": "Andrés Gómez",
+      "amountUsd": 15,
+      "amountCop": 60000,
+      "destination": "3003823930",
+      "bank": "Nequi / Bancolombia",
+      "status": "PROCESANDO_INMEDIATO",
+      "timestamp": "2026-09-07T01:17:32.086Z"
+    },
     {
       "id": "WTH-1788551792166",
       "userEmail": "jdavidjaramillo@hotmail.com",

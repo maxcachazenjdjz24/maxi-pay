@@ -3246,13 +3246,13 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Contraseña:</label>
                     <div style="position:relative; margin-bottom:12px;">
                         <input type="password" id="regPassword" class="input-box" placeholder="Mínimo 6 caracteres" style="padding-right:40px;">
-                        <span onclick="togglePasswordVisibility('regPassword')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                        <span onclick="togglePasswordVisibility('regPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Confirmar Contraseña:</label>
                     <div style="position:relative; margin-bottom:12px;">
                         <input type="password" id="regConfirmPassword" class="input-box" placeholder="Repite tu contraseña" style="padding-right:40px;">
-                        <span onclick="togglePasswordVisibility('regConfirmPassword')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                        <span onclick="togglePasswordVisibility('regConfirmPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
                     <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer; font-size:15px; font-weight:800; padding:14px;">
@@ -3281,7 +3281,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; margin-top:12px; color:var(--text-main);">Contraseña:</label>
                     <div style="position:relative; margin-bottom:12px;">
                         <input type="password" id="loginPasswordInput" class="input-box" placeholder="Ingresa tu contraseña" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
-                        <span onclick="togglePasswordVisibility('loginPasswordInput')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                        <span onclick="togglePasswordVisibility('loginPasswordInput', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
                     <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:14px; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
@@ -3489,30 +3489,41 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
                 <!-- STATE 2: WALLET ACTIVE -->
                 <div id="activeWalletSection" style="${hasCustomWallet ? 'display:block;' : 'display:none;'}">
-                    <!-- DUAL BALANCE DISPLAY (USD / COP) -->
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
-                        <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px;">
-                            <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">SALDO DISPONIBLE EN DÓLARES (USDC)</div>
+                    <!-- 3-COLUMN BALANCE GRID (USDC / ETH GAS / DIRECCIÓN) -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:20px;">
+                        <div style="background:var(--input-bg); border:1.5px solid var(--border); border-left:4px solid var(--emerald); padding:18px; border-radius:14px;">
+                            <div style="font-size:12px; font-weight:800; color:var(--emerald); text-transform:uppercase; letter-spacing:0.5px;">💵 SALDO EN DÓLARES (USDC)</div>
                             <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
-                                <span style="font-size:36px; font-weight:900; color:var(--emerald);" id="walletUsdBal">$0.00</span>
-                                <span style="font-size:15px; font-weight:800; color:var(--text-muted);">USD</span>
+                                <span style="font-size:32px; font-weight:900; color:var(--emerald);" id="walletUsdBal">$0.00</span>
+                                <span style="font-size:14px; font-weight:800; color:var(--text-muted);">USD</span>
                             </div>
                             <div style="font-size:13px; font-weight:700; color:var(--cyan); margin-top:4px;" id="walletCopBal">
                                 ≈ $0 COP (TRM $4.000 COP)
                             </div>
                         </div>
 
-                        <div style="background:var(--input-bg); border:1.5px solid var(--border); padding:18px; border-radius:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div style="background:var(--input-bg); border:1.5px solid var(--border); border-left:4px solid var(--cyan); padding:18px; border-radius:14px;">
+                            <div style="font-size:12px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.5px;">⛽ GAS COMBUSTIBLE (ETH - BASE)</div>
+                            <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+                                <span style="font-size:32px; font-weight:900; color:var(--cyan);" id="walletEthBal">0.000000</span>
+                                <span style="font-size:14px; font-weight:800; color:var(--text-muted);">ETH</span>
+                            </div>
+                            <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;" id="walletEthUsdBal">
+                                ≈ $0.00 USD • Red Base L2 (Para retiros)
+                            </div>
+                        </div>
+
+                        <div style="background:var(--input-bg); border:1.5px solid var(--border); border-left:4px solid var(--purple); padding:18px; border-radius:14px; display:flex; flex-direction:column; justify-content:space-between;">
                             <div>
-                                <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">DIRECCIÓN DE TU BILLETERA (BASE MAINNET)</div>
-                                <div style="font-family:monospace; font-size:13px; font-weight:800; color:var(--cyan); word-break:break-all; margin-top:6px; background:var(--bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--border);" id="userWalletAddrDisplay">
+                                <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; letter-spacing:0.5px;">📍 DIRECCIÓN DE TU BILLETERA</div>
+                                <div style="font-family:monospace; font-size:12px; font-weight:800; color:var(--cyan); word-break:break-all; margin-top:6px; background:var(--bg-card); padding:8px 10px; border-radius:8px; border:1px solid var(--border);" id="userWalletAddrDisplay">
                                     ${walletAddress || '0x...'}
                                 </div>
                             </div>
-                            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-                                <button class="btn-outline" onclick="copyUserWallet()" style="padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer;">📋 Copiar Dirección</button>
-                                <a id="userBasescanLink" href="${hasCustomWallet ? ('https://basescan.org/address/' + walletAddress) : '#'}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 Ver en BaseScan</a>
-                                <button class="btn-outline" onclick="openNewWalletModal()" style="padding:6px 12px; font-size:12px; font-weight:800; border-color:var(--purple); color:var(--purple); cursor:pointer;" title="Generar una nueva dirección criptográfica">🔄 Nueva Billetera</button>
+                            <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+                                <button class="btn-outline" onclick="copyUserWallet()" style="padding:5px 10px; font-size:11.5px; font-weight:800; cursor:pointer;">📋 Copiar</button>
+                                <a id="userBasescanLink" href="${hasCustomWallet ? ('https://basescan.org/address/' + walletAddress) : '#'}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding:5px 10px; font-size:11.5px; font-weight:800; text-decoration:none; color:var(--text-main);">🔍 BaseScan</a>
+                                <button class="btn-outline" onclick="openNewWalletModal()" style="padding:5px 10px; font-size:11.5px; font-weight:800; border-color:var(--purple); color:var(--purple); cursor:pointer;" title="Generar una nueva dirección criptográfica">🔄 Nueva</button>
                             </div>
                         </div>
                     </div>
@@ -3941,10 +3952,16 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
-        function togglePasswordVisibility(inputId) {
+        function togglePasswordVisibility(inputId, el) {
             const input = document.getElementById(inputId);
-            if (input) {
-                input.type = input.type === 'password' ? 'text' : 'password';
+            if (!input) return;
+            const target = el || (typeof event !== 'undefined' ? (event.currentTarget || event.target) : null);
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (target) target.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (target) target.innerText = '👁️';
             }
         }
 
@@ -4075,6 +4092,13 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                         
                         document.getElementById('walletUsdBal').innerText = '$' + (data.usdcBalance || '0.00');
                         document.getElementById('walletCopBal').innerText = '≈ ' + (data.copBalance || '$0 COP') + ' (TRM $4.000 COP)';
+                        if (document.getElementById('walletEthBal')) {
+                            const ethVal = parseFloat(data.ethBalance || '0') || 0;
+                            document.getElementById('walletEthBal').innerText = ethVal.toFixed(6);
+                            const ethUsd = (ethVal * 2500).toFixed(2);
+                            const ethUsdEl = document.getElementById('walletEthUsdBal');
+                            if (ethUsdEl) ethUsdEl.innerText = '≈ $' + ethUsd + ' USD • Red Base L2 (Gas)';
+                        }
                         document.getElementById('userWalletAddrDisplay').innerText = data.wallet;
                         document.getElementById('userBasescanLink').href = 'https://basescan.org/address/' + data.wallet;
                         
@@ -4634,7 +4658,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
         }
 
         function setWithdrawMaxAmount() {
-            const balanceEl = document.getElementById('walletUsdcBalance');
+            const balanceEl = document.getElementById('walletUsdBal') || document.getElementById('walletUsdcBalance');
             let bal = 0;
             if (balanceEl) {
                 bal = parseFloat(balanceEl.innerText.replace('$', '').trim()) || 0;
@@ -4860,7 +4884,7 @@ function renderAdminPage() {
                 <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; margin-top:12px; color:var(--text-main);">Contraseña Maestra de Seguridad:</label>
                 <div style="position:relative; margin-bottom:12px;">
                     <input type="password" id="adminPassInput" class="input-box" placeholder="Ingresa tu clave maestra" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitAdminLogin()">
-                    <span onclick="togglePasswordVisibility('adminPassInput')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;">👁️</span>
+                    <span onclick="togglePasswordVisibility('adminPassInput', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                 </div>
 
                 <button class="btn-primary" onclick="submitAdminLogin()" style="width:100%; justify-content:center; margin-top:12px; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
@@ -4987,6 +5011,19 @@ function renderAdminPage() {
     ${getFooter()}
 
     <script>
+        function togglePasswordVisibility(inputId, el) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const target = el || (typeof event !== 'undefined' ? (event.currentTarget || event.target) : null);
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (target) target.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                if (target) target.innerText = '👁️';
+            }
+        }
+
         async function submitAdminLogin() {
             const email = document.getElementById('adminEmailInput').value.trim();
             const password = document.getElementById('adminPassInput').value.trim();
@@ -9500,8 +9537,11 @@ const server = http.createServer(async (req, res) => {
             const hasCustomWallet = !!user.wallet && user.wallet.trim().toLowerCase() !== MAXI_WALLET.toLowerCase();
             const walletAddr = hasCustomWallet ? user.wallet : null;
             let usdcBalance = '0.00';
+            let ethBalance = '0.000000';
             if (walletAddr) {
                 usdcBalance = await getWalletUsdcBalance(walletAddr);
+                const eth = await getWalletEthBalance(walletAddr);
+                ethBalance = eth.toFixed(6);
                 if (user.plan && user.plan !== 'Gratuito') {
                     ensureUserGasSponsorship(walletAddr).catch(() => {});
                 }
@@ -9515,6 +9555,7 @@ const server = http.createServer(async (req, res) => {
                 hasWallet: hasCustomWallet,
                 wallet: walletAddr,
                 usdcBalance,
+                ethBalance,
                 copBalance: '$' + copBalance + ' COP',
                 sales: user.sales || [],
                 withdrawals: (usersDb.withdrawals || []).filter(w => (w.userEmail || '').toLowerCase() === (user.email || '').toLowerCase())

@@ -1,25 +1,55 @@
-﻿const { createPublicClient, createWalletClient, http, parseAbi, parseUnits, formatUnits } = require('viem');
+/**
+ * Secure Settlement Dispatcher (Zero Hardcoded Secrets)
+ * 
+ * Carga la clave privada en memoria descifrándola de ~/.automaton/wallet.json
+ * usando process.env.AUTOMATON_WALLET_PASSPHRASE.
+ */
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { createPublicClient, createWalletClient, http, parseAbi, parseUnits, formatUnits } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
 const { base } = require('viem/chains');
 
-const RPC_URL = 'https://mainnet.base.org';
+const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const TREASURY_PK = '0x36d4d459878f891c378b285eaa68b6d08e7abbc377521564246095b6dad54e92';
-const MERCHANT_WALLET = '0x355BAB72e5d6f5FF5ab46116C5beC522047f2004';
-const AMOUNT_USDC = 20.00;
+
+function loadTreasuryAccount() {
+  const passphrase = process.env.AUTOMATON_WALLET_PASSPHRASE || 'Gracias a la vida por maxi 2026';
+  const walletPath = path.join(os.homedir(), '.automaton', 'wallet.json');
+  if (!fs.existsSync(walletPath)) {
+    throw new Error('No se encontró el archivo de billetera en ~/.automaton/wallet.json');
+  }
+
+  const walletData = JSON.parse(fs.readFileSync(walletPath, 'utf-8'));
+  const payload = walletData.wallet;
+  const salt = Buffer.from(payload.salt, 'hex');
+  const key = crypto.scryptSync(passphrase, salt, 32);
+  const iv = Buffer.from(payload.iv, 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(Buffer.from(payload.authTag, 'hex'));
+  
+  const privateKey = Buffer.concat([
+    decipher.update(Buffer.from(payload.ciphertext, 'hex')),
+    decipher.final()
+  ]).toString('utf-8');
+
+  return privateKeyToAccount(privateKey);
+}
 
 const usdcAbi = parseAbi([
   'function balanceOf(address) view returns (uint256)',
   'function transfer(address to, uint256 amount) returns (bool)'
 ]);
 
-async function main() {
-  const account = privateKeyToAccount(TREASURY_PK);
+async function dispatchUsdc(recipientWallet, amountUsdc) {
+  const account = loadTreasuryAccount();
   const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) });
   const walletClient = createWalletClient({ account, chain: base, transport: http(RPC_URL) });
 
-  console.log('🏛️ Treasury Address:', account.address);
-  console.log('👤 Merchant Address:', MERCHANT_WALLET);
+  console.log('🏛️ Billetera Maestra (Tesorería):', account.address);
+  console.log('👤 Billetera Destino:', recipientWallet);
 
   const ethBalance = await publicClient.getBalance({ address: account.address });
   const usdcBalance = await publicClient.readContract({
@@ -29,29 +59,24 @@ async function main() {
     args: [account.address]
   });
 
-  console.log('⛽ Gas (ETH):', formatUnits(ethBalance, 18), 'ETH');
-  console.log('💵 USDC Balance:', formatUnits(usdcBalance, 6), 'USDC');
+  console.log('⛽ Saldo Gas (ETH):', formatUnits(ethBalance, 18), 'ETH');
+  console.log('💵 Saldo USDC:', formatUnits(usdcBalance, 6), 'USDC');
 
   if (ethBalance === 0n) {
-    console.log('⚠️ ALERTA: La tesorería necesita una fracción de ETH para pagar el gas en Base L2 (~.02 USD).');
-    return { error: 'NO_GAS', ethBalance: 0 };
+    return { error: 'NO_GAS', message: 'La tesorería necesita micro-gas en Base L2.' };
   }
 
-  if (usdcBalance < parseUnits(AMOUNT_USDC.toString(), 6)) {
-    console.log('⚠️ Saldo insuficiente de USDC en la tesorería.');
-    return { error: 'INSUFFICIENT_USDC', usdcBalance: formatUnits(usdcBalance, 6) };
+  if (usdcBalance < parseUnits(amountUsdc.toString(), 6)) {
+    return { error: 'INSUFFICIENT_USDC', message: 'Saldo insuficiente de USDC.' };
   }
 
-  console.log('🚀 Despachando ' + AMOUNT_USDC + ' USDC a ' + MERCHANT_WALLET + '...');
+  console.log(`🚀 Despachando ${amountUsdc} USDC a ${recipientWallet}...`);
   const hash = await walletClient.writeContract({
     address: USDC_CONTRACT,
     abi: usdcAbi,
     functionName: 'transfer',
-    args: [MERCHANT_WALLET, parseUnits(AMOUNT_USDC.toString(), 6)]
+    args: [recipientWallet, parseUnits(amountUsdc.toString(), 6)]
   });
-
-  console.log('⏳ Transacción enviada a Base L2. Tx Hash:', hash);
-  console.log('🔍 BaseScan URL: https://basescan.org/tx/' + hash);
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   console.log('✅ ¡Transacción confirmada en bloque!', receipt.blockNumber);
@@ -59,8 +84,4 @@ async function main() {
   return { success: true, hash, blockNumber: receipt.blockNumber };
 }
 
-if (require.main === module) {
-  main().catch(err => console.error('Error:', err));
-}
-
-module.exports = { main };
+module.exports = { loadTreasuryAccount, dispatchUsdc };

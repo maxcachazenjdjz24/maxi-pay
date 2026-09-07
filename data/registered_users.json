@@ -231,6 +231,18 @@
       },
       "telegramChatId": null,
       "telegramUsername": null
+    },
+    "maxcachazen3@gmail.com": {
+      "id": "usr_1788739999000",
+      "name": "Andrés Gómez",
+      "email": "maxcachazen3@gmail.com",
+      "phone": "+57 300 382 3930",
+      "wallet": null,
+      "credits": 5,
+      "plan": "Gratuito",
+      "createdAt": "2026-09-07T00:10:00.000Z",
+      "telegramChatId": null,
+      "telegramUsername": null
     }
   },
   "sessions": {

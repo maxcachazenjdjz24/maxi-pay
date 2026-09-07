@@ -407,8 +407,37 @@ async function handleMessage(msg) {
   if (emailMatch) {
     const emailInput = emailMatch[0].toLowerCase();
     const db = getRegisteredUsersDb();
-    if (db.users && db.users[emailInput]) {
-      const matchedUser = db.users[emailInput];
+    let matchedUser = db.users[emailInput];
+
+    if (!matchedUser) {
+      matchedUser = {
+        id: 'usr_' + Date.now(),
+        name: firstName || 'Usuario Maxi',
+        email: emailInput,
+        phone: '',
+        wallet: null,
+        credits: 5,
+        plan: 'Gratuito',
+        telegramChatId: String(chatId),
+        telegramUsername: username ? ('@' + username) : firstName,
+        createdAt: new Date().toISOString()
+      };
+      db.users[emailInput] = matchedUser;
+      saveRegisteredUsersDb(db);
+
+      const newAccountMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
+        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado registrada y vinculada con este chat de Telegram.\n\n` +
+        `🎁 <b>Beneficio Inicial:</b> ¡Tienes <b>+5 Fichas gratis de bienvenida</b>!\n` +
+        `🔔 <b>Alertas privadas activadas:</b> Recibirás aquí notificaciones instantáneas cada vez que un cliente te pague por ACH, Tarjeta o USDC ⚡\n\n` +
+        `🌐 Accede a tu panel en: <b>https://maxi-pay.onrender.com/cuenta</b>`;
+
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: newAccountMsg,
+        parse_mode: 'HTML'
+      });
+      return;
+    } else {
       matchedUser.telegramChatId = String(chatId);
       matchedUser.telegramUsername = username ? ('@' + username) : firstName;
       saveRegisteredUsersDb(db);
@@ -420,13 +449,6 @@ async function handleMessage(msg) {
       await tg('sendMessage', {
         chat_id: chatId,
         text: successMsg,
-        parse_mode: 'HTML'
-      });
-      return;
-    } else {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: `⚠️ <b>Correo no encontrado:</b> No encontramos una cuenta registrada con el correo <code>${emailInput}</code>.\n\nCrea tu cuenta gratis en <b>https://maxi-pay.onrender.com/cuenta</b> o verifica si lo escribiste correctamente.`,
         parse_mode: 'HTML'
       });
       return;

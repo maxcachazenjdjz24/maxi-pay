@@ -534,20 +534,47 @@ async function pollTelegramUpdates() {
         } else {
           // Check if message is an email address to link directly
           const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+          const digitsMatch = text.replace(/\D/g, '');
+          let matchedUser = null;
+
           if (emailMatch) {
             const emailInput = emailMatch[0].toLowerCase();
             if (usersDb.users && usersDb.users[emailInput]) {
-              const matchedUser = usersDb.users[emailInput];
-              matchedUser.telegramChatId = chatId;
-              matchedUser.telegramUsername = username;
-              saveUsersDb();
+              matchedUser = usersDb.users[emailInput];
+            }
+          } else if (digitsMatch && digitsMatch.length >= 7) {
+            // Check if matches phone number
+            matchedUser = Object.values(usersDb.users || {}).find(u => {
+              const uDigits = (u.phone || '').replace(/\D/g, '');
+              return uDigits && (uDigits.endsWith(digitsMatch) || digitsMatch.endsWith(uDigits));
+            });
+          }
 
+          if (matchedUser) {
+            matchedUser.telegramChatId = chatId;
+            matchedUser.telegramUsername = username;
+            saveUsersDb();
+
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text: `🎉 *¡CUENTA VINCULADA CON ÉXITO!* 🚀\n\nHola *${matchedUser.name}*, tu cuenta (\`${matchedUser.email}\`) ha quedado vinculada con este chat de Telegram.\n\nRecibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`,
+                parse_mode: 'Markdown'
+              })
+            });
+            console.log(`📲 [TELEGRAM DIRECT MSG LINK SUCCESS]: ${matchedUser.email} linked with chat ID ${chatId}`);
+          } else {
+            // Unrecognized text from unlinked chat
+            const existingLinked = Object.values(usersDb.users || {}).find(u => String(u.telegramChatId) === chatId);
+            if (!existingLinked) {
               await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
-                  text: `🎉 *¡CUENTA VINCULADA CON ÉXITO!* 🚀\n\nHola *${matchedUser.name}*, tu cuenta (\`${matchedUser.email}\`) ha quedado vinculada con este chat de Telegram.\n\nRecibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`,
+                  text: `🤖 *Maxi Bot • Asistente de Maxi Suite*\n\nPara vincular tu cuenta y recibir alertas privadas de pagos en tiempo real, escribe tu *correo electrónico* registrado en Maxi Suite (ej: \`tu-correo@gmail.com\`) o tu número de celular.`,
                   parse_mode: 'Markdown'
                 })
               });
@@ -3226,17 +3253,36 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     </div>
                 </div>
 
-                <div id="telegramUnlinkedView" style="${telegramLinked ? 'display:none;' : 'display:block;'} background:var(--input-bg); padding:16px 18px; border-radius:12px; border:1px solid var(--border);">
+                <div id="telegramUnlinkedView" style="${telegramLinked ? 'display:none;' : 'display:block;'} background:var(--input-bg); padding:18px 20px; border-radius:14px; border:1px solid var(--border);">
                     <p style="color:var(--text-main); font-size:13.5px; line-height:1.5; margin:0 0 14px 0; font-weight:600;">
-                        Conecta tu cuenta con <strong style="color:var(--cyan);">@Maxi_pay_official_bot</strong> para que Maxi te avise al instante en tu Telegram personal cuando un cliente complete una transferencia o cuando recibas dólares digitales. Tus datos y alertas son estrictamente privados.
+                        Conecta tu cuenta con <strong style="color:var(--cyan);">@Maxi_pay_official_bot</strong> para que Maxi te avise al instante en tu Telegram personal cada vez que un cliente te pague o recibas dólares digitales.
                     </p>
                     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
                         <button id="btnLinkTelegram" onclick="linkTelegramBot()" class="btn-primary" style="padding:12px 22px; font-size:14px; font-weight:800; background:linear-gradient(135deg, #229ED9 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(34,158,217,0.3); cursor:pointer;">
                             📲 Vincular mi Telegram con Maxi Bot
                         </button>
-                        <span id="telegramLinkSpinner" style="display:none; font-size:13px; color:var(--cyan); font-weight:700;">
-                            ⏳ Abriendo bot y esperando confirmación...
-                        </span>
+                    </div>
+
+                    <div id="telegramLinkingBox" style="display:none; margin-top:16px; background:rgba(34,158,217,0.08); border:1.5px solid #229ED9; border-radius:12px; padding:16px;">
+                        <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:10px;">
+                            <span style="font-size:18px;">⏳</span> Abriendo Telegram y esperando confirmación...
+                        </div>
+                        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px 0; line-height:1.4;">
+                            Si tu app no se abrió de forma automática en el celular, usa estos accesos directos:
+                        </p>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                            <a id="btnTgDirectApp" href="#" class="btn-primary" style="padding:10px 16px; font-size:13px; text-decoration:none; background:#229ED9; color:white; font-weight:800; border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+                                🚀 Abrir App de Telegram
+                            </a>
+                            <a id="btnTgWebBrowser" href="#" target="_blank" class="btn-outline" style="padding:10px 16px; font-size:13px; text-decoration:none; color:var(--cyan); border-color:var(--cyan); font-weight:800; border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+                                🌐 Abrir en Web
+                            </a>
+                        </div>
+                        <div style="background:var(--bg-card); padding:12px 14px; border-radius:10px; border:1px solid var(--border); font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+                            💡 <strong>Vinculación Directa por Chat:</strong><br>
+                            Abre Telegram, busca a <strong style="color:var(--cyan);">@Maxi_pay_official_bot</strong> y envíale tu correo: <strong style="color:var(--emerald);" id="telegramUserEmailHelp">${user ? user.email : ''}</strong>
+                            <button type="button" onclick="copyTelegramEmail()" class="btn-outline" style="padding:4px 10px; font-size:11.5px; margin-left:8px; cursor:pointer; font-weight:700;">📋 Copiar Correo</button>
+                        </div>
                     </div>
                 </div>
 
@@ -4017,9 +4063,19 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
         async function linkTelegramBot() {
             const btn = document.getElementById('btnLinkTelegram');
-            const spinner = document.getElementById('telegramLinkSpinner');
-            if (btn) btn.disabled = true;
-            if (spinner) spinner.style.display = 'inline-block';
+            const linkingBox = document.getElementById('telegramLinkingBox');
+            const tgAppBtn = document.getElementById('btnTgDirectApp');
+            const tgWebBtn = document.getElementById('btnTgWebBrowser');
+            const emailHelp = document.getElementById('telegramUserEmailHelp');
+
+            const userEmail = currentUserState?.email || '';
+            if (emailHelp && userEmail) emailHelp.innerText = userEmail;
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Conectando...';
+            }
+            if (linkingBox) linkingBox.style.display = 'block';
 
             try {
                 const token = localStorage.getItem('maxi_user_token');
@@ -4031,19 +4087,33 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     }
                 });
                 const data = await res.json();
-                if (data.success && data.linkUrl) {
-                    window.open(data.linkUrl, '_blank');
-                    showToast('📲 Abriendo Telegram... Presiona "Iniciar" en el bot para vincular.', 'info');
-                    
-                    // Poll for link confirmation
+                if (data.success && data.token) {
+                    const directTgScheme = 'tg://resolve?domain=Maxi_pay_official_bot&start=' + data.token;
+                    const webTgUrl = data.linkUrl || ('https://t.me/Maxi_pay_official_bot?start=' + data.token);
+
+                    if (tgAppBtn) tgAppBtn.href = directTgScheme;
+                    if (tgWebBtn) tgWebBtn.href = webTgUrl;
+
+                    // Try opening native Telegram app immediately
+                    try {
+                        window.location.href = directTgScheme;
+                    } catch (e) {
+                        // Suppress scheme redirect fallback
+                    }
+
+                    showToast('📲 Abriendo Telegram... Presiona "Iniciar" en el bot para confirmar.', 'info');
+
+                    // Start polling for link confirmation
                     if (telegramPollTimer) clearInterval(telegramPollTimer);
                     let attempts = 0;
                     telegramPollTimer = setInterval(async () => {
                         attempts++;
-                        if (attempts > 30) {
+                        if (attempts > 60) {
                             clearInterval(telegramPollTimer);
-                            if (spinner) spinner.style.display = 'none';
-                            if (btn) btn.disabled = false;
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerText = '📲 Vincular mi Telegram con Maxi Bot';
+                            }
                             return;
                         }
                         const authRes = await fetch('/api/auth/me', {
@@ -4052,26 +4122,50 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                         const authData = await authRes.json();
                         if (authData.authenticated && authData.user?.telegramChatId) {
                             clearInterval(telegramPollTimer);
-                            if (spinner) spinner.style.display = 'none';
-                            if (btn) btn.disabled = false;
+                            if (linkingBox) linkingBox.style.display = 'none';
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerText = '📲 Vincular mi Telegram con Maxi Bot';
+                            }
                             if (currentUserState) {
                                 currentUserState.telegramChatId = authData.user.telegramChatId;
                                 currentUserState.telegramUsername = authData.user.telegramUsername;
                             }
                             updateTelegramUI(true, authData.user.telegramUsername || authData.user.telegramChatId);
-                            showToast('🎉 ¡Telegram vinculado con éxito! Recibirás tus alertas aquí.');
+                            showToast('🎉 ¡Telegram vinculado con éxito! Recibirás tus alertas privadas aquí.');
                         }
-                    }, 2500);
+                    }, 2000);
                 } else {
                     showToast(data.error || 'Error al generar enlace de Telegram.', 'error');
-                    if (spinner) spinner.style.display = 'none';
-                    if (btn) btn.disabled = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = '📲 Vincular mi Telegram con Maxi Bot';
+                    }
                 }
             } catch (err) {
                 showToast('Error de conexión: ' + err.message, 'error');
-                if (spinner) spinner.style.display = 'none';
-                if (btn) btn.disabled = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '📲 Vincular mi Telegram con Maxi Bot';
+                }
             }
+        }
+
+        function copyTelegramEmail() {
+            const emailSpan = document.getElementById('telegramUserEmailHelp');
+            const emailToCopy = currentUserState?.email || (emailSpan ? emailSpan.innerText : '');
+            if (!emailToCopy) return;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(emailToCopy);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = emailToCopy;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            showToast('📋 ¡Correo copiado! Envíalo a @Maxi_pay_official_bot en Telegram', 'success');
         }
 
         async function unlinkTelegramBot() {

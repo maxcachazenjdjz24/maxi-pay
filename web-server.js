@@ -1142,20 +1142,65 @@ function getFooter() {
                 </div>
             </div>
             <div>
+                <div class="footer-title">Legal &amp; Soporte</div>
+                <div class="footer-links-col">
+                    <a href="#legal" onclick="openLegalModal('terminos'); return false;">📄 Términos de Servicio (Ley 1480)</a>
+                    <a href="#legal" onclick="openLegalModal('privacidad'); return false;">🔒 Política de Privacidad &amp; Habeas Data</a>
+                    <a href="https://t.me/Maxi_pay_official_bot" target="_blank">💬 Soporte Telegram Oficial 24/7</a>
+                    <a href="mailto:maxcachazenjdjz24@gmail.com">📬 Contacto &amp; PQRs</a>
+                </div>
+            </div>
+            <div>
                 <div class="footer-title">Recursos Clave</div>
                 <div class="footer-links-col">
-                    <a href="https://www.coindesk.com" target="_blank">📰 CoinDesk Noticias</a>
-                    <a href="https://coinmarketcap.com" target="_blank">🪙 CoinMarketCap</a>
+                    <a href="https://basescan.org" target="_blank">🔍 Explorador BaseScan</a>
+                    <a href="https://defillama.com/chain/Base" target="_blank">📊 DeFiLlama (Base)</a>
                     <a href="https://www.bountycaster.xyz" target="_blank">🎯 Bountycaster Web3</a>
                     <a href="https://web3.career" target="_blank">💼 Web3 Careers Global</a>
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <div>© 2026 Maxi Suite 9.0 • Infraestructura Autónoma Desplegada en Base Mainnet (8453)</div>
+            <div>© 2026 Maxi Suite 9.0 • Infraestructura Autónoma Desplegada en Base Mainnet (8453) • Cumplimiento Ley 1480 / 1581 (SIC)</div>
             <div style="color:var(--cyan); font-weight:800;">🔒 100% On-Chain Math Certainty</div>
         </div>
     </footer>
+
+    <!-- MODAL DE TÉRMINOS & PRIVACIDAD (LEGALTECH SIC / LEY 1480 / HABEAS DATA) -->
+    <div id="modalLegalNotice" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.92); backdrop-filter:blur(12px); z-index:999999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:680px; width:100%; max-height:85vh; overflow-y:auto; border:1.5px solid var(--cyan); border-radius:20px; background:#0c101c; padding:30px; position:relative; box-shadow:0 25px 70px rgba(0,242,254,0.25);">
+            <button onclick="closeLegalModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--text-muted); font-size:26px; cursor:pointer; font-weight:bold;">&times;</button>
+            <div id="legalModalContent"></div>
+            <div style="text-align:center; margin-top:24px;">
+                <button class="btn-primary" onclick="closeLegalModal()" style="padding:10px 28px; font-size:14px; font-weight:800;">Entendido y Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openLegalModal(type) {
+            const modal = document.getElementById('modalLegalNotice');
+            const content = document.getElementById('legalModalContent');
+            if (!modal || !content) return;
+            if (type === 'terminos') {
+                content.innerHTML = '<h3 style="font-size:22px; font-weight:900; color:var(--cyan); margin-bottom:12px;">📄 Términos y Condiciones de Servicio (Ley 1480 de 2011)</h3>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;"><strong>1. Naturaleza del Servicio:</strong> Maxi Suite es una plataforma de software y enrutamiento tecnológico que permite la interacción con la red blockchain descentralizada Base L2 y rieles de pago estándar. Maxi Suite no es una entidad bancaria ni custodia fondos de los usuarios.</p>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;"><strong>2. Soberanía y No Retención:</strong> Los dólares digitales (USDC) recibidos por el usuario son de su exclusiva propiedad y custodia en su Smart Wallet en Base L2. El usuario puede exportar sus fondos a billeteras externas en cualquier momento.</p>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;"><strong>3. Liquidación a Moneda Local:</strong> La transferencia hacia cuentas Nequi / Bancolombia es un servicio voluntario de liquidación puente que aplica una tarifa estándar de $4.500 COP en plan gratuito o tarifa 0% para suscriptores activos de Maxi Pay Pro.</p>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6;"><strong>4. Contacto y PQRs:</strong> Para cualquier consulta, solicitud de soporte o aclaración sobre transacciones, el usuario cuenta con el canal oficial de Telegram @Maxi_pay_official_bot con respuesta garantizada.</p>';
+            } else {
+                content.innerHTML = '<h3 style="font-size:22px; font-weight:900; color:var(--emerald); margin-bottom:12px;">🔒 Política de Tratamiento de Datos (Ley 1581 de 2012)</h3>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;"><strong>1. Finalidad:</strong> Los datos recolectados (nombre, correo electrónico y número de celular) son utilizados exclusivamente para la autenticación de la cuenta, emisión de comprobantes digitales de pago y envío de notificaciones de cobro autorizadas por el usuario.</p>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;"><strong>2. Seguridad:</strong> Las contraseñas están cifradas con el estándar bancario PBKDF2 y HMAC-SHA-512. Ningún dato sensible de acceso viaja en texto claro.</p>' +
+                    '<p style="font-size:13px; color:var(--text-muted); line-height:1.6;"><strong>3. Derechos ARCO:</strong> Como titular de la información, el usuario puede solicitar en cualquier momento la actualización, rectificación o eliminación de sus datos escribiendo a soporte@maxi-pay.onrender.com o a través del bot oficial.</p>';
+            }
+            modal.style.display = 'flex';
+        }
+        function closeLegalModal() {
+            const modal = document.getElementById('modalLegalNotice');
+            if (modal) modal.style.display = 'none';
+        }
+    </script>
 
     <!-- 🤖 FLOATING MAXI AI ADVISOR WIDGET -->
     <div id="maxiFloatingContainer" style="position:fixed; bottom:24px; right:24px; z-index:99999; font-family:'Plus Jakarta Sans',sans-serif;">

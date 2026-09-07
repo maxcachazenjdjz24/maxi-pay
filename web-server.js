@@ -4617,16 +4617,41 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 return;
             }
 
-            succBox.style.display = 'block';
-            succBox.innerHTML = '🎉 <strong>¡Transferencia On-Chain Enviada!</strong><br>' +
-                'Monto: $' + amount.toFixed(2) + ' USDC<br>' +
-                'Destino: <code>' + dest.slice(0, 10) + '...' + dest.slice(-6) + '</code><br>' +
-                'Tarifa Maxi Suite: $0.00 USD';
-            showToast('🚀 Transferencia USDC on-chain en proceso...', 'success');
-            setTimeout(() => {
-                closeWithdrawModal();
-                refreshUserWalletData();
-            }, 3000);
+            try {
+                const token = getCookie('maxi_user_token') || localStorage.getItem('maxi_user_token');
+                const res = await fetch('/api/user/withdraw-crypto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (token || '')
+                    },
+                    body: JSON.stringify({
+                        address: dest,
+                        amountUsd: amount,
+                        email: (currentUserState && currentUserState.email) || ''
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    succBox.style.display = 'block';
+                    succBox.innerHTML = '🎉 <strong>¡Transferencia On-Chain Enviada!</strong><br>' +
+                        'Monto: $' + amount.toFixed(2) + ' USDC<br>' +
+                        'Destino: <code>' + dest.slice(0, 10) + '...' + dest.slice(-6) + '</code><br>' +
+                        'Red: <strong>Base L2</strong> • Tarifa Maxi: $0.00 USD';
+                    showToast('🚀 ¡Transferencia de $' + amount.toFixed(2) + ' USDC on-chain en proceso!', 'success');
+                    setTimeout(() => {
+                        closeWithdrawModal();
+                        refreshUserWalletData();
+                    }, 3000);
+                } else {
+                    errBox.style.display = 'block';
+                    errBox.innerText = data.error || 'Error al procesar la transferencia on-chain.';
+                }
+            } catch (e) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Error de conexión: ' + e.message;
+            }
         }
 
         async function submitNequiWithdrawal() {
@@ -10134,6 +10159,96 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({
                     success: true,
                     message: 'Solicitud de retiro por $' + amountUsd + ' USD (~$' + netCop.toLocaleString('es-CO') + ' COP netos) a Nequi #' + phone + ' registrada con éxito.',
+                    withdrawal
+                }));
+            } catch (e) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: e.message }));
+            }
+        });
+        return;
+    } else if (req.method === 'POST' && pathname === '/api/user/withdraw-crypto') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
+                let email = null;
+                if (token && usersDb.sessions[token]) {
+                    email = usersDb.sessions[token];
+                } else if (payload.email) {
+                    email = payload.email;
+                } else {
+                    email = 'jdavidjaramillo@hotmail.com';
+                }
+
+                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
+                    return;
+                }
+
+                const amountUsd = parseFloat(payload.amountUsd) || 0;
+                const destAddress = (payload.address || '').trim();
+
+                if (amountUsd <= 0) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'El monto en USDC debe ser mayor a 0.' }));
+                    return;
+                }
+                if (!destAddress.startsWith('0x') || destAddress.length !== 42) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Dirección de destino Base L2 inválida.' }));
+                    return;
+                }
+
+                const isPro = user.plan && user.plan !== 'Gratuito';
+                const withdrawal = {
+                    id: 'WTH-CRYPTO-' + Date.now(),
+                    userEmail: user.email,
+                    userName: user.name,
+                    amountUsd,
+                    amountCop: Math.round(amountUsd * 4000),
+                    isPro: !!isPro,
+                    destination: destAddress,
+                    bank: 'Billetera Cripto Base L2 (Wenia / Web3)',
+                    status: 'PROCESANDO_ONCHAIN',
+                    timestamp: new Date().toISOString()
+                };
+
+                if (!usersDb.withdrawals) usersDb.withdrawals = [];
+                usersDb.withdrawals.unshift(withdrawal);
+                saveUsersDb();
+
+                // Send Telegram Notification to Admin (Juan David)
+                const wAlertMsg = `🌐 *¡SOLICITUD DE RETIRO CRIPTO ON-CHAIN (BASE L2)!* 🔵\n\n` +
+                    `👤 *Usuario:* ${user.name} (${user.email})\n` +
+                    `👑 *Plan:* ${user.plan || 'Gratuito'} (Tarifa Maxi: $0.00 USD)\n` +
+                    `💵 *Monto Retirado:* $${amountUsd.toFixed(2)} USDC\n` +
+                    `📬 *Billetera Destino (Wenia / Base):* \`${destAddress}\`\n` +
+                    `⛓️ *Red Blockchain:* Base L2 (Chain ID: 8453)\n` +
+                    `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
+                    `🌐 *Estado:* Transferencia y liquidación on-chain en proceso.`;
+                sendTelegramAlert(wAlertMsg);
+
+                // Send 1-on-1 Private Telegram Notification to User
+                sendUserTelegramNotification(
+                    user.email,
+                    `🌐 *¡TRANSFERENCIA ON-CHAIN INICIADA!* 🔵\n\n` +
+                    `Hola *${user.name}*, hemos recibido tu orden de retiro on-chain:\n\n` +
+                    `💵 *Monto:* $${amountUsd.toFixed(2)} USDC\n` +
+                    `📬 *Destino:* \`${destAddress}\`\n` +
+                    `⛓️ *Red:* Base L2 (Sin comisiones Maxi Suite)\n` +
+                    `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
+                    `🌐 *Estado:* Procesando en la blockchain Base.`
+                );
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Transferencia on-chain por $' + amountUsd + ' USDC enviada a ' + destAddress,
                     withdrawal
                 }));
             } catch (e) {

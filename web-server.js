@@ -83,13 +83,10 @@ const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY || process.env.MAX
 
 async function executeAutoSettlementOnBase(orderId, merchantWallet, netUsdcAmount) {
   try {
-    if (!TREASURY_PRIVATE_KEY || !viemModule || !viemAccountsModule) {
-      const deterministicHash = '0x' + crypto.createHash('sha256').update(orderId + merchantWallet + Date.now()).digest('hex');
+    if (!TREASURY_PRIVATE_KEY || !viemModule || !viemAccountsModule || !baseChainModule) {
       return {
-        success: true,
-        txHash: deterministicHash,
-        simulated: true,
-        basescanUrl: 'https://basescan.org/tx/' + deterministicHash
+        success: false,
+        error: 'Llave privada de Tesorería no configurada en el servidor (TREASURY_PRIVATE_KEY missing)'
       };
     }
 
@@ -123,13 +120,9 @@ async function executeAutoSettlementOnBase(orderId, merchantWallet, netUsdcAmoun
     };
   } catch (err) {
     console.error('❌ [BASE L2 SETTLEMENT ERROR]:', err.message);
-    const deterministicHash = '0x' + crypto.createHash('sha256').update(orderId + merchantWallet + Date.now()).digest('hex');
     return {
-      success: true,
-      txHash: deterministicHash,
-      simulated: true,
-      error: err.message,
-      basescanUrl: 'https://basescan.org/tx/' + deterministicHash
+      success: false,
+      error: 'Fallo on-chain en Base L2: ' + (err.shortMessage || err.message || 'Transacción fallida')
     };
   }
 }
@@ -139,15 +132,57 @@ const WENIA_TREASURY_ADDRESS = '0xf2Ae7b828BCceF34B484760A1D698dEd0f790651';
 
 async function executeWithdrawalToWenia(user, amountUsdc) {
   try {
-    if (!user) return { success: false, error: 'Usuario no válido' };
+    if (!user) return { success: false, error: 'Usuario no válido en la sesión.' };
     const pk = user.privateKey;
-    if (!pk || !viemModule || !viemAccountsModule || !baseChainModule) {
-      const fallbackHash = '0x' + crypto.createHash('sha256').update((user.email || 'user') + Date.now()).digest('hex');
-      return { success: true, txHash: fallbackHash, simulated: true, basescanUrl: 'https://basescan.org/tx/' + fallbackHash };
+    if (!pk) {
+      return { 
+        success: false, 
+        error: 'Esta billetera está configurada en modo No Custodial (Externa). Para retiros automáticos desde el servidor, utiliza la Bóveda Maxi Pay integrada o transfiere tus fondos directamente desde tu billetera externa (MetaMask/Coinbase) a la dirección de Wenia.' 
+      };
+    }
+    if (!viemModule || !viemAccountsModule || !baseChainModule) {
+      return { success: false, error: 'Módulos Web3/Viem no inicializados en el servidor.' };
     }
 
     const cleanPk = pk.startsWith('0x') ? pk : ('0x' + pk);
     const account = viemAccountsModule.privateKeyToAccount(cleanPk);
+
+    // Cryptographic validation: Verify key corresponds to user wallet
+    if (user.wallet && user.wallet.toLowerCase() !== account.address.toLowerCase()) {
+      console.warn(`⚠️ [WALLET MISMATCH IN WITHDRAWAL]: user.wallet=${user.wallet} vs derived=${account.address}. Sincronizando...`);
+      user.wallet = account.address;
+    }
+
+    // Pre-flight checks on Base L2: ETH Gas & USDC Balance
+    if (basePublicClient) {
+      try {
+        const ethBalWei = await basePublicClient.getBalance({ address: account.address });
+        if (ethBalWei < 25000000000000n) { // ~0.000025 ETH minimum gas
+          return {
+            success: false,
+            error: `Reserva insuficiente de micro-gas ETH en la billetera (${(Number(ethBalWei) / 1e18).toFixed(6)} ETH). Se requieren ~0.00005 ETH en Base L2 para procesar el envío on-chain.`
+          };
+        }
+
+        const usdcUnits = await basePublicClient.readContract({
+          address: BASE_USDC_CONTRACT,
+          abi: BASE_USDC_ABI,
+          functionName: 'balanceOf',
+          args: [account.address]
+        });
+        const requestedUnits = viemModule.parseUnits(amountUsdc.toFixed(2), 6);
+        if (BigInt(usdcUnits) < requestedUnits) {
+          const availUsdc = (Number(usdcUnits) / 1e6).toFixed(2);
+          return {
+            success: false,
+            error: `Saldo insuficiente de USDC en Base L2. Saldo disponible: $${availUsdc} USDC, monto solicitado: $${amountUsdc.toFixed(2)} USDC.`
+          };
+        }
+      } catch (preCheckErr) {
+        console.warn('⚠️ [PRE-FLIGHT CHECK WARNING]:', preCheckErr.message);
+      }
+    }
+
     const walletClient = viemModule.createWalletClient({
       account,
       chain: baseChainModule.base,
@@ -164,15 +199,20 @@ async function executeWithdrawalToWenia(user, amountUsdc) {
       args: [WENIA_TREASURY_ADDRESS, amountUnits]
     });
 
-    console.log(`✅ [WITHDRAW TO WENIA BROADCAST]: Hash ${txHash}`);
+    console.log(`✅ [WITHDRAW TO WENIA BROADCAST]: Hash ${txHash}. Confirmando en blockchain...`);
     if (basePublicClient) {
-      basePublicClient.waitForTransactionReceipt({ hash: txHash }).catch(() => {});
+      const receipt = await basePublicClient.waitForTransactionReceipt({ hash: txHash, timeout: 45000 });
+      if (receipt.status !== 'success') {
+        return { success: false, error: 'La transacción fue revertida en la red Base L2.' };
+      }
     }
-    return { success: true, txHash, basescanUrl: 'https://basescan.org/tx/' + txHash };
+    return { success: true, txHash, simulated: false, basescanUrl: 'https://basescan.org/tx/' + txHash };
   } catch (err) {
     console.error('❌ [WITHDRAW TO WENIA ERROR]:', err.message);
-    const fallbackHash = '0x' + crypto.createHash('sha256').update((user.email || 'user') + Date.now()).digest('hex');
-    return { success: true, txHash: fallbackHash, simulated: true, error: err.message, basescanUrl: 'https://basescan.org/tx/' + fallbackHash };
+    return { 
+      success: false, 
+      error: 'Fallo al despachar en Base L2: ' + (err.shortMessage || err.message || 'Error desconocido')
+    };
   }
 }
 
@@ -763,13 +803,30 @@ function loadUsersDb() {
     if (!usersDb.withdrawals) usersDb.withdrawals = [];
     if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
 
-    // Auto-link Master Account (Juan David) with Admin Telegram & Official Wallet
+    // Auto-link Master Account (Juan David) with Admin Telegram
     if (usersDb.users && usersDb.users['jdavidjaramillo@hotmail.com']) {
       if (!usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId) {
         usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId = TELEGRAM_ADMIN_CHAT_ID;
         usersDb.users['jdavidjaramillo@hotmail.com'].telegramUsername = '@jdavidjaramillo';
       }
-      usersDb.users['jdavidjaramillo@hotmail.com'].wallet = '0x355BAB72e5d6f5FF5ab46116C5beC522047f2004';
+    }
+
+    // Cryptographic Key Invariant & Auto-Sync for all registered users
+    if (usersDb.users && viemAccountsModule && viemAccountsModule.privateKeyToAccount) {
+      for (const [email, u] of Object.entries(usersDb.users)) {
+        if (u && u.privateKey) {
+          try {
+            const cleanPk = u.privateKey.startsWith('0x') ? u.privateKey : ('0x' + u.privateKey);
+            const derived = viemAccountsModule.privateKeyToAccount(cleanPk).address;
+            if (!u.wallet || u.wallet.toLowerCase() !== derived.toLowerCase()) {
+              console.log(`🔒 [CRYPTOGRAPHIC WALLET SYNC]: Sincronizando wallet para ${email}: ${u.wallet} -> ${derived}`);
+              u.wallet = derived;
+            }
+          } catch (syncErr) {
+            console.error(`⚠️ Error al derivar llave para ${email}:`, syncErr.message);
+          }
+        }
+      }
     }
   } catch (e) {
     console.error('Error loading users db:', e.message);
@@ -789,6 +846,26 @@ function saveUsersDb() {
 function sanitizeUser(user) {
   if (!user) return null;
   const { passwordHash, passwordSalt, privateKey, ...safeUser } = user;
+  
+  // Attach wallet sync diagnostic flag
+  let syncStatus = 'NO_WALLET';
+  if (user.wallet) {
+    if (!user.privateKey) {
+      syncStatus = 'NO_KEY_EXTERNAL';
+    } else if (viemAccountsModule && viemAccountsModule.privateKeyToAccount) {
+      try {
+        const cleanPk = user.privateKey.startsWith('0x') ? user.privateKey : ('0x' + user.privateKey);
+        const derived = viemAccountsModule.privateKeyToAccount(cleanPk).address;
+        syncStatus = (derived.toLowerCase() === user.wallet.toLowerCase()) ? 'SYNCED' : 'MISMATCH';
+      } catch (e) {
+        syncStatus = 'INVALID_KEY';
+      }
+    } else {
+      syncStatus = 'MANAGED';
+    }
+  }
+  safeUser.walletSyncStatus = syncStatus;
+  safeUser.hasPrivateKey = !!user.privateKey;
   return safeUser;
 }
 
@@ -5105,6 +5182,7 @@ function renderAdminPage() {
                                 <th>Correo</th>
                                 <th>WhatsApp</th>
                                 <th>Billetera Base</th>
+                                <th>Estado Bóveda</th>
                                 <th>Plan Activo</th>
                                 <th>Fichas</th>
                                 <th>Acciones</th>
@@ -5112,7 +5190,7 @@ function renderAdminPage() {
                         </thead>
                         <tbody id="usersTableBody">
                             <tr>
-                                <td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Cargando usuarios...</td>
+                                <td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">Cargando usuarios...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -5206,7 +5284,7 @@ function renderAdminPage() {
         function renderUsersTable(users) {
             const tbody = document.getElementById('usersTableBody');
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">No hay clientes registrados aún.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No hay clientes registrados aún.</td></tr>';
                 return;
             }
 
@@ -5215,11 +5293,21 @@ function renderAdminPage() {
                 const waLink = cleanPhone ? 'https://wa.me/' + cleanPhone : '#';
                 const walletShort = u.wallet ? (u.wallet.slice(0, 6) + '...' + u.wallet.slice(-4)) : '<span style="color:var(--text-muted);">Sin vincular</span>';
                 const isPro = u.plan && u.plan !== 'Gratuito';
+                let statusBadge = '<span style="color:var(--text-muted); font-size:11px;">⚪ Sin Billetera</span>';
+                if (u.walletSyncStatus === 'SYNCED') {
+                    statusBadge = '<span style="color:var(--emerald); background:rgba(0,223,137,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">✅ Bóveda Activa</span>';
+                } else if (u.walletSyncStatus === 'NO_KEY_EXTERNAL') {
+                    statusBadge = '<span style="color:var(--amber); background:rgba(245,158,11,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">⚠️ No Custodial</span>';
+                } else if (u.walletSyncStatus === 'MISMATCH') {
+                    statusBadge = '<span style="color:var(--rose); background:rgba(244,63,94,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 Desajuste</span>';
+                }
+
                 return '<tr>' +
                     '<td><strong>' + (u.name || 'Sin Nombre') + '</strong></td>' +
                     '<td>' + (u.email || '') + '</td>' +
                     '<td><a href="' + waLink + '" target="_blank" style="color:var(--emerald); text-decoration:none; font-weight:bold;">📱 ' + (u.phone || 'N/A') + '</a></td>' +
                     '<td><code>' + walletShort + '</code></td>' +
+                    '<td>' + statusBadge + '</td>' +
                     '<td><span style="background:' + (isPro ? 'rgba(0,223,137,0.15)' : 'rgba(0, 242, 254, 0.1)') + '; color:' + (isPro ? 'var(--emerald)' : 'var(--cyan)') + '; padding:3px 8px; border-radius:8px; font-weight:800; font-size:11.5px;">' + (u.plan || 'Gratuito') + '</span></td>' +
                     '<td><strong style="color:var(--emerald);">' + (u.credits || 0) + ' Fichas</strong></td>' +
                     '<td>' +
@@ -10334,6 +10422,28 @@ const server = http.createServer(async (req, res) => {
 
                 // AUTOMATIC ON-CHAIN USDC TRANSFER FROM USER WALLET TO WENIA (BASE L2)
                 const onChainSettlement = await executeWithdrawalToWenia(user, amountUsd);
+                if (!onChainSettlement || !onChainSettlement.success) {
+                    const failReason = onChainSettlement?.error || 'No se pudo completar la transferencia on-chain a Wenia.';
+                    console.error(`❌ [WITHDRAWAL ABORTED]: ${user.email} -> ${failReason}`);
+                    
+                    // Alert Admin of on-chain withdrawal failure
+                    sendTelegramAlert(
+                        `🚨 *[ALERTA DE ERROR ON-CHAIN]* Solicitud de Retiro Rechazada\n\n` +
+                        `👤 *Comercio:* ${user.name} (${user.email})\n` +
+                        `💵 *Monto:* $${amountUsd.toFixed(2)} USD\n` +
+                        `🏦 *Destino:* ${destinationStr}\n` +
+                        `❌ *Motivo del Fallo:* ${failReason}\n` +
+                        `⚠️ *Acción:* Ningún fondo fue transferido ni debitado.`
+                    );
+
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: failReason
+                    }));
+                    return;
+                }
+
                 const txHash = onChainSettlement.txHash;
                 const basescanUrl = onChainSettlement.basescanUrl || ('https://basescan.org/tx/' + txHash);
 

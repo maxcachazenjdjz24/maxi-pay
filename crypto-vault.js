@@ -6,23 +6,34 @@
  * - Scrypt Key Derivation Function (KDF)
  * - Strict Viem EVM Address Derivation (secp256k1)
  * - PBKDF2 / Scrypt Password Hashing with cryptographic salts
+ * - Zero Hardcoded Passphrase Defaults (Strict Environment Enforcement)
  */
 
 const crypto = require('crypto');
 const { generatePrivateKey, privateKeyToAccount } = require('viem/accounts');
 
-const MASTER_PASSPHRASE = process.env.AUTOMATON_WALLET_PASSPHRASE || process.env.MAXI_VAULT_PASSPHRASE || 'MaxiSuiteVaultSecurePassphrase2026!';
+/**
+ * Resolve master passphrase securely from environment variables
+ */
+function getMasterPassphrase(providedPassphrase = null) {
+  const pass = providedPassphrase || process.env.AUTOMATON_WALLET_PASSPHRASE || process.env.MAXI_VAULT_PASSPHRASE;
+  if (!pass) {
+    throw new Error('CONFIGURACIÓN DE SEGURIDAD REQUERIDA: Define AUTOMATON_WALLET_PASSPHRASE o MAXI_VAULT_PASSPHRASE en las variables de entorno.');
+  }
+  return pass;
+}
 
 /**
  * Encrypt a private key using AES-256-GCM and Scrypt KDF
  */
-function encryptPrivateKey(privateKey, passphrase = MASTER_PASSPHRASE) {
+function encryptPrivateKey(privateKey, passphrase = null) {
   if (!privateKey) return null;
+  const effectivePass = getMasterPassphrase(passphrase);
   const cleanPk = privateKey.startsWith('0x') ? privateKey : ('0x' + privateKey);
   
   const salt = crypto.randomBytes(16);
   const iv = crypto.randomBytes(12);
-  const key = crypto.scryptSync(passphrase, salt, 32, { N: 16384, r: 8, p: 1 });
+  const key = crypto.scryptSync(effectivePass, salt, 32, { N: 16384, r: 8, p: 1 });
   
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const ciphertext = Buffer.concat([
@@ -46,19 +57,20 @@ function encryptPrivateKey(privateKey, passphrase = MASTER_PASSPHRASE) {
 /**
  * Decrypt a private key from an encrypted vault object
  */
-function decryptPrivateKey(vault, passphrase = MASTER_PASSPHRASE) {
+function decryptPrivateKey(vault, passphrase = null) {
   if (!vault) return null;
-  if (typeof vault === 'string' && (vault.startsWith('0x') || vault.length === 64)) {
-    return vault.startsWith('0x') ? vault : ('0x' + vault);
+  if (typeof vault === 'string') {
+    throw new Error('Bóveda inválida: Se detectó una clave en texto plano en lugar de un objeto de bóveda cifrada.');
   }
   if (!vault.encrypted || !vault.ciphertext || !vault.iv || !vault.salt || !vault.authTag) {
     throw new Error('Formato de bóveda cifrada inválido.');
   }
 
+  const effectivePass = getMasterPassphrase(passphrase);
   const salt = Buffer.from(vault.salt, 'hex');
   const iv = Buffer.from(vault.iv, 'hex');
   const authTag = Buffer.from(vault.authTag, 'hex');
-  const key = crypto.scryptSync(passphrase, salt, 32, { N: 16384, r: 8, p: 1 });
+  const key = crypto.scryptSync(effectivePass, salt, 32, { N: 16384, r: 8, p: 1 });
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);
@@ -74,7 +86,7 @@ function decryptPrivateKey(vault, passphrase = MASTER_PASSPHRASE) {
 /**
  * Generate a new personal wallet with encrypted vault
  */
-function generateNewEncryptedWallet(passphrase = MASTER_PASSPHRASE) {
+function generateNewEncryptedWallet(passphrase = null) {
   const pk = generatePrivateKey();
   const acc = privateKeyToAccount(pk);
   const vault = encryptPrivateKey(pk, passphrase);
@@ -109,6 +121,9 @@ function hashPassword(password, salt = null) {
   return { hash, salt: cleanSalt };
 }
 
+/**
+ * Verify password against stored hash and salt (supports PBKDF2 with constant time check)
+ */
 function verifyPassword(password, storedHash, salt) {
   if (!password || !storedHash || !salt) return false;
   try {
@@ -133,5 +148,5 @@ module.exports = {
   verifyKeyParity,
   hashPassword,
   verifyPassword,
-  MASTER_PASSPHRASE
+  getMasterPassphrase
 };

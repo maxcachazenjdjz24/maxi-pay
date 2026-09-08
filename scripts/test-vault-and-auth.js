@@ -1,3 +1,4 @@
+process.env.AUTOMATON_WALLET_PASSPHRASE = process.env.AUTOMATON_WALLET_PASSPHRASE || 'TestMasterPassphrase2026!';
 const assert = require('assert');
 const cryptoVault = require('../crypto-vault');
 

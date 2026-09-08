@@ -237,19 +237,24 @@ async function executeWithdrawalToWenia(user, amountUsdc) {
 }
 
 // WOMPI PRODUCTION INTEGRATION CONFIGURATION
-const WOMPI_PUBLIC_KEY = 'pub_prod_ASs7SGOmMRYshifZJUkDUNxmNCGPCxmf';
-const WOMPI_INTEGRITY_SECRET = 'prod_integrity_o0wSVxiGaEnWU0KR5Gb2YQh1ddEer7sx';
+const WOMPI_PUBLIC_KEY = process.env.WOMPI_PUBLIC_KEY || '';
+const WOMPI_INTEGRITY_SECRET = process.env.WOMPI_INTEGRITY_SECRET || '';
+const WOMPI_EVENTS_SECRET = process.env.WOMPI_EVENTS_SECRET || '';
 
 function generateWompiSignature(reference, amountInCents, currency = 'COP') {
+  if (!WOMPI_INTEGRITY_SECRET) return '';
   const concat = `${reference}${amountInCents}${currency}${WOMPI_INTEGRITY_SECRET}`;
   return crypto.createHash('sha256').update(concat).digest('hex');
 }
 
 // COINBASE DEVELOPER PLATFORM (CDP) ONRAMP INTEGRATION
-const CDP_KEY_ID = process.env.CDP_KEY_ID || '99bc15fe-1f8d-4734-a3c6-d5beb2fb03c2';
-const CDP_KEY_SECRET = process.env.CDP_KEY_SECRET || 'j7KiKeJlcz1VaKURGAO+S6Hp+kYjYVH2iO8B1B5sv8laH+f2TH1kGKbialj9shvygcKbTmROTHKAJPNoK6UdBg==';
+const CDP_KEY_ID = process.env.CDP_KEY_ID || '';
+const CDP_KEY_SECRET = process.env.CDP_KEY_SECRET || '';
 
 async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
+  if (!CDP_KEY_ID || !CDP_KEY_SECRET) {
+    throw new Error('Coinbase CDP credenciales no configuradas en el entorno.');
+  }
   const rawSecret = Buffer.from(CDP_KEY_SECRET, 'base64');
   const seed = rawSecret.subarray(0, 32);
   const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
@@ -326,8 +331,8 @@ async function generateCoinbaseOnrampSessionToken(targetWallet, amountUsd) {
 
 
 // TELEGRAM ALERT NOTIFICATIONS INTEGRATION
-const TELEGRAM_BOT_TOKEN = '8006933644:AAHF-kBCjrSIL5hOh5TksCvL6Cq7gGnOvcg';
-const TELEGRAM_ADMIN_CHAT_ID = '7959552395';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
 
 // Robust Telegram Message Dispatcher with Markdown and Plain Text Fallback
 async function dispatchTelegramMessage(chatId, rawText) {
@@ -538,7 +543,7 @@ let lastTelegramUpdateId = 0;
 let isPollingTelegram = false;
 
 async function pollTelegramUpdates() {
-  if (isPollingTelegram) return;
+  if (!TELEGRAM_BOT_TOKEN || isPollingTelegram) return;
   isPollingTelegram = true;
   try {
     const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=${lastTelegramUpdateId + 1}&limit=30&timeout=2`);
@@ -595,7 +600,7 @@ async function pollTelegramUpdates() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
-                  text: `⚠️ *Enlace Expirado:* No se encontró la cuenta asociada al token. Por favor genera un nuevo enlace desde https://maxi-pay.onrender.com/cuenta.`,
+                  text: `⚠️ *Enlace Expirado:* No se encontró la cuenta asociada al token. Por favor genera un nuevo enlace desde tu panel en https://maxi-pay.onrender.com/cuenta.`,
                   parse_mode: 'Markdown'
                 })
               });
@@ -612,90 +617,24 @@ async function pollTelegramUpdates() {
             });
           } else {
             // General /start without token
-            if (chatId === TELEGRAM_ADMIN_CHAT_ID) {
-              if (usersDb.users && usersDb.users['jdavidjaramillo@hotmail.com']) {
-                usersDb.users['jdavidjaramillo@hotmail.com'].telegramChatId = chatId;
-                usersDb.users['jdavidjaramillo@hotmail.com'].telegramUsername = username;
-                saveUsersDb();
-              }
+            const linkedUser = Object.values(usersDb.users || {}).find(u => String(u.telegramChatId) === chatId);
+            if (linkedUser) {
               await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
-                  text: `👑 *¡Hola Juan David!* Tu cuenta de Administrador y Usuario (\`jdavidjaramillo@hotmail.com\`) está 100% vinculada y activa.\n\nRecibirás aquí todas las alertas del sistema y los avisos privados de tus cobros y ventas en tiempo real 🚀`,
+                  text: `👋 *¡Hola ${linkedUser.name}!* Tu cuenta (\`${linkedUser.email}\`) está vinculada y activa para recibir alertas privadas de pagos ⚡`,
                   parse_mode: 'Markdown'
                 })
               });
             } else {
-              const linkedUser = Object.values(usersDb.users || {}).find(u => String(u.telegramChatId) === chatId);
-              if (linkedUser) {
-                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: chatId,
-                    text: `👋 *¡Hola ${linkedUser.name}!* Tu cuenta (\`${linkedUser.email}\`) ya está vinculada y lista para recibir tus alertas privadas de pago ⚡`,
-                    parse_mode: 'Markdown'
-                  })
-                });
-              } else {
-                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: chatId,
-                    text: `🤖 *¡Hola! Soy Maxi Bot, tu asistente oficial de Maxi Suite.*\n\nPara recibir alertas instantáneas y privadas cada vez que tus clientes te paguen, vincula tu cuenta desde tu panel:\n🔗 https://maxi-pay.onrender.com/cuenta\n\n_O responde a este mensaje escribiendo el correo de tu cuenta de Maxi Suite para vincularla al instante._`,
-                    parse_mode: 'Markdown'
-                  })
-                });
-              }
-            }
-          }
-        } else {
-          // Check if message is an email address to link directly
-          const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-          const digitsMatch = text.replace(/\D/g, '');
-          let matchedUser = null;
-
-          if (emailMatch) {
-            const emailInput = emailMatch[0].toLowerCase();
-            if (usersDb.users && usersDb.users[emailInput]) {
-              matchedUser = usersDb.users[emailInput];
-            }
-          } else if (digitsMatch && digitsMatch.length >= 7) {
-            // Check if matches phone number
-            matchedUser = Object.values(usersDb.users || {}).find(u => {
-              const uDigits = (u.phone || '').replace(/\D/g, '');
-              return uDigits && (uDigits.endsWith(digitsMatch) || digitsMatch.endsWith(uDigits));
-            });
-          }
-
-          if (matchedUser) {
-            matchedUser.telegramChatId = chatId;
-            matchedUser.telegramUsername = username;
-            saveUsersDb();
-
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: chatId,
-                text: `🎉 *¡CUENTA VINCULADA CON ÉXITO!* 🚀\n\nHola *${matchedUser.name}*, tu cuenta (\`${matchedUser.email}\`) ha quedado vinculada con este chat de Telegram.\n\nRecibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`,
-                parse_mode: 'Markdown'
-              })
-            });
-            console.log(`📲 [TELEGRAM DIRECT MSG LINK SUCCESS]: ${matchedUser.email} linked with chat ID ${chatId}`);
-          } else {
-            // Unrecognized text from unlinked chat
-            const existingLinked = Object.values(usersDb.users || {}).find(u => String(u.telegramChatId) === chatId);
-            if (!existingLinked) {
               await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   chat_id: chatId,
-                  text: `🤖 *Maxi Bot • Asistente de Maxi Suite*\n\nPara vincular tu cuenta y recibir alertas privadas de pagos en tiempo real, escribe tu *correo electrónico* registrado en Maxi Suite (ej: \`tu-correo@gmail.com\`) o tu número de celular.`,
+                  text: `🤖 *¡Hola! Soy Maxi Bot, tu asistente oficial de Maxi Suite.*\n\nPara recibir alertas instantáneas y privadas cada vez que tus clientes te paguen, vincula tu cuenta de forma segura desde tu panel de usuario:\n🔗 https://maxi-pay.onrender.com/cuenta`,
                   parse_mode: 'Markdown'
                 })
               });
@@ -2718,7 +2657,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     </div>
                 </div>
 
-                <!-- RIEL 3: TARJETA DÉBITO/CRÉDITO INTERNACIONAL & APPLE PAY -->
+                <!-- RIEL 3: TARJETA DÉBITO/CRÉDITO INTERNACIONAL & APPLE PAY (100% COMPLIANT) -->
                 <div id="cardPaySection" style="display:none; text-align:left;">
                     <div style="background:var(--bg-card-hover); border:1.5px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px;">
                         
@@ -2726,79 +2665,40 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="font-size:22px;">💳</span>
                                 <div>
-                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Pago con Tarjeta Débito / Crédito</h3>
-                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Mastercard • Visa • Apple Pay • 3D-Secure v2</p>
+                                    <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin:0;">Pasarela de Tarjetas y Métodos Digitales</h3>
+                                    <p style="font-size:11.5px; color:var(--text-muted); margin:0; font-weight:600;">Visa • Mastercard • PSE • Nequi • Bancolombia • Apple Pay</p>
                                 </div>
                             </div>
                             <span style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">
-                                🔒 Checkout Directo
+                                🔒 Tokenización Segura
                             </span>
                         </div>
 
-                        <!-- Embedded Card Form -->
-                        <form id="nativeCardForm" onsubmit="submitNativeCardPay(event)" style="display:flex; flex-direction:column; gap:12px;">
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Nombre del Titular</label>
-                                <input type="text" id="cardHolder" name="cardHolder" required placeholder="Ej: John Doe / Nombre del Titular" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+                        <!-- Option 1: Wompi Gateway -->
+                        <div style="background:var(--input-bg); border:1.5px solid var(--cyan); border-radius:14px; padding:16px; margin-bottom:12px; text-align:center;">
+                            <div style="font-size:13.5px; font-weight:800; color:var(--cyan); margin-bottom:6px;">
+                                🇨🇴 Tarjetas Débito/Crédito, Nequi y PSE (Wompi)
                             </div>
-
-                            <div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                                    <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Número de Tarjeta (Débito o Crédito)</label>
-                                    <span id="cardBrandBadge" style="font-size:11px; font-weight:bold; color:var(--cyan); background:rgba(0,242,254,0.1); padding:2px 6px; border-radius:4px;">💳 Débito / Crédito</span>
-                                </div>
-                                <div style="position:relative;">
-                                    <input type="text" id="cardNumber" name="cardNumber" required placeholder="5300 0000 0000 0000" maxlength="19" oninput="handleCardNumberInput(this)" style="width:100%; box-sizing:border-box; padding:12px 14px; padding-right:45px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:15px; font-family:monospace; letter-spacing:1px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
-                                    <span id="cardIconRight" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:18px; pointer-events:none;">💳</span>
-                                </div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                                <div>
-                                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Vencimiento (MM/AA)</label>
-                                    <input type="text" id="cardExpiry" name="cardExpiry" required placeholder="MM/AA" maxlength="5" oninput="handleCardExpiryInput(this)" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; font-family:monospace; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
-                                </div>
-                                <div>
-                                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Código CVC / CVV</label>
-                                    <input type="password" id="cardCvc" name="cardCvc" required placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; font-family:monospace; letter-spacing:2px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:5px;">Correo para Envío de Recibo Digital</label>
-                                <input type="email" id="buyerEmail" name="buyerEmail" required placeholder="tu-correo@ejemplo.com" style="width:100%; box-sizing:border-box; padding:12px 14px; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; color:var(--text-main); font-size:14px; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
-                            </div>
-
-                            <!-- Transparent Fee Breakdown Box -->
-                            <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; line-height:1.7;">
-                                <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
-                                    <span>Subtotal Producto / Servicio:</span>
-                                    <span style="font-weight:700; color:var(--text-main);">$${numAmount.toFixed(2)} USD</span>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
-                                    <span>Tarifa Procesamiento Tarjeta (1.5%):</span>
-                                    <span style="font-weight:700; color:var(--cyan);">+$${cardFeeAmount.toFixed(2)} USD</span>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; color:var(--text-muted); font-size:11.5px;">
-                                    <span>Liquidación al Comerciante (Red Base L2):</span>
-                                    <span style="font-weight:700; color:var(--emerald);">$${numAmount.toFixed(2)} USDC (100% Neto)</span>
-                                </div>
-                                <div style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-weight:800; color:var(--text-main); font-size:14px;">Total a Pagar con Tarjeta:</span>
-                                    <span style="font-size:18px; font-weight:900; color:var(--emerald);">$${cardTotalToPay.toFixed(2)} USD</span>
-                                </div>
-                            </div>
-
-                            <!-- Submit Button -->
-                            <button type="submit" id="btnNativeCardPay" class="btn-primary" style="width:100%; justify-content:center; padding:15px; font-size:15px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer; border-radius:12px; margin-top:4px;">
-                                🔒 Pagar $${cardTotalToPay.toFixed(2)} USD con Tarjeta
+                            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">
+                                Paga de forma 100% segura mediante la pasarela certificada PCI-DSS de Bancolombia / Wompi.
+                            </p>
+                            <button type="button" onclick="openWompiCheckout()" class="btn-primary" style="width:100%; justify-content:center; padding:14px; font-size:14.5px; font-weight:800; border:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; box-shadow:0 6px 20px rgba(0,242,254,0.35); cursor:pointer; border-radius:12px;">
+                                🔒 Pagar con Tarjeta / Nequi / PSE vía Wompi
                             </button>
+                        </div>
 
-                            <!-- 1-Click Apple Pay / Google Pay option -->
-                            <button type="button" onclick="payWithApplePay()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; background:#000; color:#fff; font-weight:800; font-size:13.5px; border-radius:10px; border:1px solid #333; cursor:pointer;">
-                                <span> Pay / G Pay</span> Pagar $${cardTotalToPay.toFixed(2)} USD en 1 Clic
+                        <!-- Option 2: Coinbase Onramp / Web3 -->
+                        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center;">
+                            <div style="font-size:13px; font-weight:800; color:var(--text-main); margin-bottom:4px;">
+                                🌎 Tarjeta Internacional / Apple Pay (Coinbase Onramp)
+                            </div>
+                            <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">
+                                Para pagos internacionales con tarjeta en USD liquidando directamente en USDC en Base L2.
+                            </p>
+                            <button type="button" onclick="openCoinbaseOnramp()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#0052ff; color:#fff; font-weight:800; font-size:13.5px; border-radius:10px; border:none; cursor:pointer;">
+                                <span>🔵</span> Pagar con Tarjeta vía Coinbase Onramp
                             </button>
-                        </form>
+                        </div>
 
                         <div style="background:rgba(0, 223, 137, 0.08); border:1.5px solid rgba(0, 223, 137, 0.3); padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px;">
                             <div class="radar-pulse"></div>
@@ -2808,21 +2708,8 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                         </div>
                     </div>
 
-                    <!-- Local Colombian fallback option -->
-                    <div style="background:var(--bg-card); border:1px dashed var(--border); border-radius:12px; padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span>🇨🇴</span>
-                            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                                ¿Comprador en Colombia? Puedes pagar en COP:
-                            </div>
-                        </div>
-                        <button type="button" onclick="openWompiCheckout()" style="background:rgba(0, 223, 137, 0.12); color:var(--emerald); border:1px solid rgba(0,223,137,0.3); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer;">
-                            Nequi / PSE / Wompi
-                        </button>
-                    </div>
-
                     <div style="display:flex; align-items:center; justify-content:center; gap:10px; font-size:11.5px; color:var(--text-muted); font-weight:600;">
-                        <span>🔒 Certificación PCI-DSS Nivel 1</span> • <span>🛡️ 0% Retenciones</span> • <span>Base L2 Settlement</span>
+                        <span>🔒 Pasarela Tokenizada Certificada PCI-DSS Nivel 1 vía Wompi</span> • <span>Base L2 Settlement</span>
                     </div>
                 </div>
 
@@ -2834,7 +2721,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 <div style="font-size:55px; margin-bottom:8px;">🎉</div>
                 <h2 style="font-size:24px; font-weight:800; color:var(--emerald); margin-bottom:6px;">¡PAGO APROBADO CON ÉXITO!</h2>
                 <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-bottom:18px;">
-                    Los fondos han sido acreditados directamente en Dólares Digitales (USDC) en la billetera de ${recipientName}.
+                    Los fondos han sido acreditados directamente en Dólares Digitales (USDC) en la billetera del comercio.
                 </p>
 
                 <div style="background:var(--calc-saved-bg); border:1.5px solid var(--emerald); padding:18px; border-radius:14px; text-align:left; font-size:13px; line-height:1.8; margin-bottom:20px;">
@@ -2867,6 +2754,16 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
     </div>
 
     <script>
+        const CHECKOUT_PAYLOAD = ${JSON.stringify({
+          orderId,
+          amount: numAmount,
+          concept,
+          wallet,
+          recipientName,
+          referenceCode,
+          wompiPublicKey: WOMPI_PUBLIC_KEY
+        })};
+
         let pollTimer = null;
         let isConfirmed = false;
 
@@ -3009,19 +2906,19 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        orderId: '${orderId}',
-                        amount: '${numAmount}',
-                        concept: '${concept}',
-                        targetWallet: '${wallet}',
-                        recipientName: '${recipientName}',
+                        orderId: CHECKOUT_PAYLOAD.orderId,
+                        amount: CHECKOUT_PAYLOAD.amount,
+                        concept: CHECKOUT_PAYLOAD.concept,
+                        targetWallet: CHECKOUT_PAYLOAD.wallet,
+                        recipientName: CHECKOUT_PAYLOAD.recipientName,
                         senderName: senderName,
                         senderEmail: senderEmail,
-                        reference: '${referenceCode}'
+                        reference: CHECKOUT_PAYLOAD.referenceCode
                     })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showSuccess('🏛️ Transferencia Bancaria ACH en EE.UU. (Registrada)', '${referenceCode}', '${numAmount}', '${numAmount}');
+                    showSuccess('🏛️ Transferencia Bancaria ACH en EE.UU. (Registrada)', CHECKOUT_PAYLOAD.referenceCode, CHECKOUT_PAYLOAD.amount, CHECKOUT_PAYLOAD.amount);
                 } else {
                     alert('Error al notificar: ' + (data.error || 'Inténtalo de nuevo.'));
                     btn.disabled = false;
@@ -3032,126 +2929,6 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 alert('Error al conectar con el servidor: ' + e.message);
                 btn.disabled = false;
                 btn.innerHTML = origText;
-            }
-        }
-
-        function handleCardNumberInput(el) {
-            let v = el.value.replace(/\D/g, '').substring(0, 16);
-            let formatted = v.replace(/(\d{4})/g, '$1 ').trim();
-            el.value = formatted;
-            
-            const badge = document.getElementById('cardBrandBadge');
-            if (v.startsWith('4')) {
-                badge.innerText = '💳 Visa Débito / Crédito';
-                badge.style.color = '#3b82f6';
-            } else if (v.startsWith('51') || v.startsWith('52') || v.startsWith('53') || v.startsWith('54') || v.startsWith('55') || v.startsWith('22') || v.startsWith('27')) {
-                badge.innerText = '💳 Mastercard / Maxi Gateway';
-                badge.style.color = '#f97316';
-            } else if (v.startsWith('34') || v.startsWith('37')) {
-                badge.innerText = '💳 American Express';
-                badge.style.color = '#06b6d4';
-            } else {
-                badge.innerText = '💳 Débito / Crédito';
-                badge.style.color = 'var(--cyan)';
-            }
-        }
-
-        function handleCardExpiryInput(el) {
-            let v = el.value.replace(/\D/g, '').substring(0, 4);
-            if (v.length >= 3) {
-                el.value = v.substring(0, 2) + '/' + v.substring(2, 4);
-            } else {
-                el.value = v;
-            }
-        }
-
-        async function submitNativeCardPay(event) {
-            event.preventDefault();
-            const btn = document.getElementById('btnNativeCardPay');
-            const origHtml = btn.innerHTML;
-            
-            const cardHolder = document.getElementById('cardHolder').value.trim();
-            const cardNumber = document.getElementById('cardNumber').value.trim();
-            const cardExpiry = document.getElementById('cardExpiry').value.trim();
-            const cardCvc = document.getElementById('cardCvc').value.trim();
-            const buyerEmail = document.getElementById('buyerEmail').value.trim();
-
-            if (!cardHolder || cardNumber.replace(/\s/g, '').length < 13 || cardExpiry.length < 5 || cardCvc.length < 3) {
-                alert('Por favor completa todos los datos de la tarjeta correctamente.');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Procesando pago seguro con tarjeta...';
-
-            try {
-                const payload = {
-                    orderId: '${orderId}',
-                    amount: '${numAmount}',
-                    concept: '${concept}',
-                    targetWallet: '${wallet}',
-                    recipientName: '${recipientName}',
-                    cardHolder: cardHolder,
-                    cardNumber: cardNumber,
-                    cardExpiry: cardExpiry,
-                    cardCvc: cardCvc,
-                    buyerEmail: buyerEmail
-                };
-
-                const res = await fetch('/api/v1/checkout/native-card-pay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    showSuccess('💳 Tarjeta Débito / Crédito (Liquidación 100% USDC en Base L2)', data.txHash || data.orderId, data.amountPaid, data.netUsdc);
-                } else {
-                    alert('Error al procesar el pago: ' + (data.error || 'Por favor verifica los datos de tu tarjeta.'));
-                    btn.disabled = false;
-                    btn.innerHTML = origHtml;
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Error de conexión al procesar el pago: ' + e.message);
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
-            }
-        }
-
-        async function payWithApplePay() {
-            const cardHolder = prompt('Confirma el nombre del titular para Apple Pay / Google Pay:', 'Nombre del Titular');
-            if (!cardHolder) return;
-            const buyerEmail = prompt('Ingresa tu correo para recibir el comprobante digital:', '');
-            if (!buyerEmail) return;
-
-            try {
-                const payload = {
-                    orderId: '${orderId}',
-                    amount: '${numAmount}',
-                    concept: '${concept}',
-                    targetWallet: '${wallet}',
-                    recipientName: '${recipientName}',
-                    cardHolder: cardHolder,
-                    buyerEmail: buyerEmail,
-                    isApplePay: true
-                };
-
-                const res = await fetch('/api/v1/checkout/native-card-pay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    showSuccess(' Apple Pay / Google Pay (Liquidación 100% USDC en Base L2)', data.txHash || data.orderId, data.amountPaid, data.netUsdc);
-                } else {
-                    alert('Error al procesar Apple Pay: ' + (data.error || 'Error'));
-                }
-            } catch (e) {
-                alert('Error de conexión: ' + e.message);
             }
         }
 
@@ -3189,11 +2966,11 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     }
                 }
 
-                btn.innerText = '💸 Enviando $' + parseFloat('${amount}').toFixed(2) + ' USDC...';
+                btn.innerText = '💸 Enviando $' + parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2) + ' USDC...';
 
                 const usdcContract = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-                const recipientClean = '${wallet}'.replace('0x', '').toLowerCase().padStart(64, '0');
-                const rawAmount = Math.round(parseFloat('${amount}') * 1000000).toString(16).padStart(64, '0');
+                const recipientClean = CHECKOUT_PAYLOAD.wallet.replace('0x', '').toLowerCase().padStart(64, '0');
+                const rawAmount = Math.round(parseFloat(CHECKOUT_PAYLOAD.amount) * 1000000).toString(16).padStart(64, '0');
                 const data = '0xa9059cbb' + recipientClean + rawAmount;
 
                 const txHash = await window.ethereum.request({
@@ -3206,20 +2983,48 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     }]
                 });
 
-                showSuccess('🦊 Web3 Wallet (Base L2 USDC)', txHash, parseFloat('${amount}').toFixed(2), parseFloat('${amount}').toFixed(2));
+                showSuccess('🦊 Web3 Wallet (Base L2 USDC)', txHash, parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2), parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2));
             } catch (err) {
                 console.error(err);
                 alert('Transacción cancelada o error: ' + (err.message || err));
                 const btn = document.getElementById('btnWeb3Pay');
-                btn.disabled = false;
-                btn.innerText = '🦊 Pagar $' + parseFloat('${amount}').toFixed(2) + ' USDC con Web3 Wallet (MetaMask / Coinbase)';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '🦊 Pagar $' + parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2) + ' USDC con Web3 Wallet (MetaMask / Coinbase)';
+                }
+            }
+        }
+
+        async function openCoinbaseOnramp() {
+            try {
+                const res = await fetch('/api/v1/coinbase/onramp-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        targetWallet: CHECKOUT_PAYLOAD.wallet,
+                        amount: CHECKOUT_PAYLOAD.amount
+                    })
+                });
+                const data = await res.json();
+                if (data.success && data.onrampUrl) {
+                    window.open(data.onrampUrl, '_blank');
+                } else {
+                    alert('Coinbase Onramp no disponible actualmente. Por favor usa la opción Wompi o Transferencia ACH.');
+                }
+            } catch (e) {
+                alert('Error al iniciar Coinbase Onramp: ' + e.message);
             }
         }
 
         async function openWompiCheckout() {
-            let amountCop = Math.round(parseFloat('${amount}') * 4000);
+            const pubKey = CHECKOUT_PAYLOAD.wompiPublicKey;
+            if (!pubKey) {
+                alert('La pasarela Wompi requiere la clave pública configurada en las variables de entorno del servidor.');
+                return;
+            }
+            let amountCop = Math.round(parseFloat(CHECKOUT_PAYLOAD.amount) * 4000);
             const amountInCents = amountCop * 100;
-            const ref = '${orderId}' + '-' + Math.floor(1000 + Math.random() * 9000);
+            const ref = CHECKOUT_PAYLOAD.orderId + '-' + Math.floor(1000 + Math.random() * 9000);
 
             if (typeof WidgetCheckout === 'undefined') {
                 alert('Conectando con la pasarela segura de Wompi... por favor intenta nuevamente en 2 segundos.');
@@ -3234,7 +3039,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                     currency: 'COP',
                     amountInCents: amountInCents,
                     reference: ref,
-                    publicKey: 'pub_prod_ASs7SGOmMRYshifZJUkDUNxmNCGPCxmf',
+                    publicKey: pubKey,
                     redirectUrl: window.location.origin + '/cuenta'
                 };
 
@@ -3249,7 +3054,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 checkout.open(function (result) {
                     var transaction = result.transaction;
                     if (transaction && (transaction.status === 'APPROVED' || transaction.status === 'PENDING')) {
-                        showSuccess('🇨🇴 Wompi Bancolombia / Nequi (Aprobación Exitosa)', transaction.id || ref, parseFloat('${amount}').toFixed(2), parseFloat('${amount}').toFixed(2));
+                        showSuccess('🇨🇴 Wompi Bancolombia / Nequi (Aprobación Exitosa)', transaction.id || ref, parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2), parseFloat(CHECKOUT_PAYLOAD.amount).toFixed(2));
                     }
                 });
             } catch (err) {
@@ -4119,7 +3924,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
     ${getFooter()}
 
     <script>
-        let currentUserState = ${JSON.stringify(user || null)};
+        let currentUserState = ${JSON.stringify(sanitizeUser(user))};
 
         function getCookie(name) {
             const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -4143,20 +3948,20 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
         function switchAuthTab(tab) {
             const regSection = document.getElementById('formRegisterSection');
-            const loginSection = document.getElementById('formLoginSection');
-            const tabReg = document.getElementById('tabBtnRegister');
-            const tabLog = document.getElementById('tabBtnLogin');
+            const logSection = document.getElementById('formLoginSection');
+            const tabReg = document.getElementById('tabRegister');
+            const tabLog = document.getElementById('tabLogin');
 
-            if (tab === 'register') {
-                if (regSection) regSection.style.display = 'block';
-                if (loginSection) loginSection.style.display = 'none';
-                if (tabReg) { tabReg.style.borderBottomColor = 'var(--cyan)'; tabReg.style.color = 'var(--cyan)'; }
-                if (tabLog) { tabLog.style.borderBottomColor = 'transparent'; tabLog.style.color = 'var(--text-muted)'; }
-            } else {
+            if (tab === 'login') {
                 if (regSection) regSection.style.display = 'none';
-                if (loginSection) loginSection.style.display = 'block';
-                if (tabReg) { tabReg.style.borderBottomColor = 'transparent'; tabReg.style.color = 'var(--text-muted)'; }
-                if (tabLog) { tabLog.style.borderBottomColor = 'var(--cyan)'; tabLog.style.color = 'var(--cyan)'; }
+                if (logSection) logSection.style.display = 'block';
+                if (tabReg) { tabReg.classList.remove('active'); tabReg.classList.add('inactive'); }
+                if (tabLog) { tabLog.classList.remove('inactive'); tabLog.classList.add('active'); }
+            } else {
+                if (regSection) regSection.style.display = 'block';
+                if (logSection) logSection.style.display = 'none';
+                if (tabReg) { tabReg.classList.remove('inactive'); tabReg.classList.add('active'); }
+                if (tabLog) { tabLog.classList.remove('active'); tabLog.classList.add('inactive'); }
             }
         }
 
@@ -4173,19 +3978,19 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
-        async function submitRegister() {
-            const name = document.getElementById('regName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirmPassword = document.getElementById('regConfirmPassword').value;
+        async function submitRegisterFromInput() {
+            const name = document.getElementById('regNameInput').value.trim();
+            const email = document.getElementById('regEmailInput').value.trim();
+            const phone = document.getElementById('regPhoneInput').value.trim();
+            const password = document.getElementById('regPasswordInput').value;
+            const confirmPassword = document.getElementById('regConfirmPasswordInput').value;
             const errBox = document.getElementById('regError');
             if (errBox) errBox.style.display = 'none';
 
             if (!name || !email || !phone || !password) {
                 if (errBox) {
                     errBox.style.display = 'block';
-                    errBox.innerText = 'Por favor completa todos los campos: Nombre, Correo, Celular y Contraseña.';
+                    errBox.innerText = 'Por favor completa todos los campos requeridos.';
                 }
                 return;
             }
@@ -4216,7 +4021,6 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
                     document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
-                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
                     showToast('🎉 ¡Cuenta creada con éxito! Bienvenido a Maxi Suite.');
                     showProfile(data.user, data.invoices || []);
                 } else {
@@ -4257,7 +4061,6 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
                     document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
-                    document.cookie = 'maxi_user_email=' + encodeURIComponent(data.user.email) + '; Path=/; Max-Age=2592000; SameSite=Lax';
                     showToast('⚡ ¡Bienvenido de nuevo, ' + (data.user.name.split(' ')[0]) + '!');
                     showProfile(data.user, data.invoices || []);
                 } else {
@@ -9406,7 +9209,7 @@ function renderDemoStoreHtml() {
 }
 
 // ALIBABA CLOUD MODELSTUDIO (QWEN) INFERENCE CLIENT & KNOWLEDGE BASE
-const MODELSTUDIO_API_KEY = process.env.MODELSTUDIO_API_KEY || 'sk-ws-H.DMPIYMM.RzFX.MEUCIDpyi1Wg4_IGknOtU0kzAhnJKBa7Y_RngdKMmBG8z3DBAiEAr2t7d1TVi8k32uluqJQx_g1xDexiG8iHVyuO4pN4vlA';
+const MODELSTUDIO_API_KEY = process.env.MODELSTUDIO_API_KEY || '';
 const qwenHttpsAgent = new https.Agent({ keepAlive: true, maxSockets: 10, timeout: 30000 });
 
 // DATA LOSS PREVENTION (DLP) SCRUBBER & PROMPT INJECTION GUARDRAILS
@@ -9634,14 +9437,50 @@ async function callMaxiQwenAdvisor(userMessage) {
     console.error('Error calling Qwen API:', err.message);
   }
 
-  return null;
+    return null;
 }
+
+// LIVE MARKET TICKER ENGINE (REAL-TIME CACHED PRICE FEEDS)
+let liveMarketPrices = {
+  BTC: { price: '64,820.00', change: '+3.18%' },
+  ETH: { price: '2,515.72', change: '+5.04%' },
+  SOL: { price: '148.50', change: '+4.20%' },
+  lastUpdated: 0
+};
+
+async function updateLiveMarketPrices() {
+  const now = Date.now();
+  if (now - liveMarketPrices.lastUpdated < 30000) return;
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","ETHUSDT","SOLUSDT"]');
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      data.forEach(item => {
+        const symbol = item.symbol.replace('USDT', '');
+        const p = parseFloat(item.lastPrice);
+        const c = parseFloat(item.priceChangePercent);
+        liveMarketPrices[symbol] = {
+          price: p >= 1000 ? p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : p.toFixed(2),
+          change: (c >= 0 ? '+' : '') + c.toFixed(2) + '%'
+        };
+      });
+      liveMarketPrices.lastUpdated = now;
+    }
+  } catch (e) {
+    // Fail gracefully with fallback cache
+  }
+}
+setInterval(updateLiveMarketPrices, 45000);
 
 // MAIN HTTP SERVER
 const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -9653,6 +9492,13 @@ const server = http.createServer(async (req, res) => {
     const pathname = parsedUrl.pathname;
 
     if (req.method === 'GET') {
+        if (pathname === '/api/market-ticker') {
+            updateLiveMarketPrices().catch(() => {});
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, prices: liveMarketPrices }));
+            return;
+        }
+
         const payMatch = pathname.match(/^\/pay\/([^\/]+)(?:\/([0-9.]+))?$/);
         if (payMatch) {
             const rawUser = decodeURIComponent(payMatch[1]);
@@ -9679,7 +9525,6 @@ const server = http.createServer(async (req, res) => {
         } else if (pathname === '/cuenta') {
             loadUsersDb();
             const query = parsedUrl.query || {};
-            const cookies = parseCookies(req);
 
             // 1. Explicit Logout
             if (query.logout === 'true') {
@@ -9695,21 +9540,9 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
-            const token = cookies.maxi_user_session || cookies.maxi_user_token || req.headers['authorization']?.replace('Bearer ', '').trim();
-            let email = null;
-            if (token && usersDb.sessions && usersDb.sessions[token]) {
-                email = usersDb.sessions[token];
-            } else if (cookies.maxi_user_email && usersDb.users && usersDb.users[cookies.maxi_user_email.toLowerCase()]) {
-                email = cookies.maxi_user_email.toLowerCase();
-            }
-
-            let authenticatedUser = email ? usersDb.users[email] : null;
-
-            // If user explicitly requested Crear Cuenta (?tab=register) or Iniciar Sesión (?tab=login)
+            // Strict zero-trust authentication
+            let authenticatedUser = (query.tab === 'register' || query.tab === 'login') ? null : getAuthenticatedUser(req);
             const initialTab = query.tab === 'login' ? 'login' : 'register';
-            if (query.tab === 'register' || query.tab === 'login') {
-                authenticatedUser = null;
-            }
 
             const userInvoices = authenticatedUser ? Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === authenticatedUser.email.toLowerCase()) : [];
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -10060,137 +9893,33 @@ const server = http.createServer(async (req, res) => {
             }
         });
         return;
-    } else if (req.method === 'POST' && (pathname === '/api/v1/checkout/native-card-pay' || pathname === '/api/v1/checkout/card-onramp-pay' || pathname === '/api/v1/checkout/card-pay')) {
+    } else if (req.method === 'POST' && pathname === '/api/v1/coinbase/onramp-session') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                console.log('💳 [NATIVE CARD PAYMENT INITIATED]:', JSON.stringify(payload));
-
-                const orderId = payload.orderId || ('PAY-' + Math.floor(100000 + Math.random() * 900000));
-                const netUsdc = parseFloat(payload.amount) || 20.00;
-                const feeAmount = parseFloat((netUsdc / (1 - 0.015) - netUsdc).toFixed(2));
-                const amountPaid = parseFloat((netUsdc + feeAmount).toFixed(2));
-                const amountCop = Math.round(netUsdc * 4000);
-                const concept = payload.concept || 'Servicio Digital / Curso Online';
-                const targetWallet = (payload.targetWallet || MAXI_WALLET).trim().toLowerCase();
-                const recipientName = payload.recipientName || 'Comercio Maxi Pay';
-                const cardHolder = payload.cardHolder || 'Cliente Internacional';
-                const isApplePay = !!payload.isApplePay;
-
-                // Execute on-chain Auto-Settlement on Base L2 via viem treasury engine
-                const settlement = await executeAutoSettlementOnBase(orderId, targetWallet, netUsdc);
-                const txHash = settlement.txHash;
-                const invoiceId = 'CARD-ONRAMP-' + Date.now();
-
-                // Find merchant in usersDb
-                try { loadUsersDb(); } catch (e) {}
-                let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
-                    (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
-                ) || null;
-
-                const merchant = merchantEmail ? usersDb.users[merchantEmail] : null;
-                if (merchant) {
-                    if (!merchant.sales) merchant.sales = [];
-                    merchant.sales.unshift({
-                        txHash,
-                        invoiceId,
-                        orderId,
-                        amountUsd: netUsdc,
-                        amountPaid: amountPaid,
-                        fee: feeAmount,
-                        amountCop,
-                        concept,
-                        paymentMethod: isApplePay ? 'Apple Pay / Google Pay (USDC Base L2)' : 'Tarjeta Débito/Crédito Internacional (USDC Base L2)',
-                        cardHolder,
-                        from: isApplePay ? 'Apple Pay (USD)' : ('Tarjeta •••• ' + (payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242')),
-                        to: targetWallet,
-                        date: new Date().toISOString(),
-                        status: settlement.simulated ? 'CONFIRMADO_ONRAMP_USDC' : 'CONFIRMADO_ON_CHAIN_BASE'
-                    });
-                }
-
-                // Register Invoice
-                if (!usersDb.invoices) usersDb.invoices = {};
-                usersDb.invoices[invoiceId] = {
-                    invoiceId,
-                    orderId,
-                    amountUsd: netUsdc.toFixed(2),
-                    amountPaid: amountPaid.toFixed(2),
-                    fee: feeAmount.toFixed(2),
-                    amountCop,
-                    concept,
-                    method: isApplePay ? 'Apple Pay (Liquidación USDC en Base L2)' : 'Tarjeta Internacional (Liquidación USDC en Base L2)',
-                    status: 'Aprobado 100% (Liquidado en USDC)',
-                    timestamp: new Date().toISOString(),
-                    buyerName: cardHolder,
-                    buyerEmail: payload.buyerEmail || 'cliente@internacional.com',
-                    txHash
-                };
-
-                saveUsersDb();
-                console.log(`✅ [NATIVE CARD APPROVED]: $${amountPaid} USD charged -> $${netUsdc} USDC settled to ${targetWallet} (${recipientName})`);
-
-                // Rich Telegram Push Notification to Admin (Juan David)
-                const savedFees = (netUsdc * 0.12).toFixed(2);
-                const last4 = payload.cardNumber ? payload.cardNumber.replace(/\s+/g, '').slice(-4) : '4242';
-                sendTelegramAlert(
-                    `🎉 *¡PAGO INTERNACIONAL CON TARJETA RECIBIDO EN MAXI PAY!* 🇺🇸💳\n\n` +
-                    `👤 *Comercio:* ${merchant ? merchant.name : recipientName} (${merchantEmail})\n` +
-                    `💰 *Liquidación Neta:* *$${netUsdc.toFixed(2)} USDC* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
-                    `💳 *Total Cobrado al Cliente:* *$${amountPaid.toFixed(2)} USD* (Tarifa 1.5% asumida por cliente)\n` +
-                    `🏷️ *Concepto:* ${concept}\n` +
-                    `💳 *Método:* ${isApplePay ? ' Apple Pay / Google Pay' : `💳 Tarjeta Débito/Crédito (•••• ${last4})`}\n` +
-                    `📥 *Billetera Acreditada:* \`${targetWallet}\`\n` +
-                    `⛓️ *Red de Liquidación:* Base L2 Blockchain (100% USDC)\n` +
-                    `🧾 *Tx ID:* \`${txHash}\`\n` +
-                    `💰 *Comisiones Bancarias Ahorradas:* ~$${savedFees} USD (0% retenciones bancarias)\n\n` +
-                    `✅ _Los dólares digitales (USDC) ya se encuentran acreditados en tu billetera._`
-                );
-
-                // 1-on-1 Private Telegram Notification to Merchant
-                sendUserTelegramNotification(
-                    merchantEmail,
-                    `🎉 *¡PAGO CON TARJETA RECIBIDO Y LIQUIDADO!* 💳💵\n\n` +
-                    `Hola *${merchant ? merchant.name : recipientName}*, has recibido un pago internacional acreditado al instante:\n\n` +
-                    `💰 *Monto Neto Recibido:* *$${netUsdc.toFixed(2)} USDC* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
-                    `💳 *Método:* ${isApplePay ? ' Apple Pay / Google Pay' : `💳 Tarjeta Débito/Crédito (•••• ${last4})`}\n` +
-                    `🏷️ *Concepto:* ${concept}\n` +
-                    `⛓️ *Red:* Base L2 Blockchain (100% USDC en tu billetera)\n` +
-                    `🧾 *ID Transacción:* \`${txHash}\`\n\n` +
-                    `✅ _El dinero ya está disponible en tu Billetera Digital para retirar a Nequi o Bancolombia._`
-                );
-
-                // Send Transactional Email Receipt to Buyer
-                sendTransactionalReceiptEmail({
-                    to: payload.buyerEmail || 'cliente@internacional.com',
-                    buyerName: cardHolder,
-                    merchantName: merchant ? merchant.name : recipientName,
-                    concept,
-                    amountUsd: netUsdc,
-                    amountCop,
-                    method: isApplePay ? 'Apple Pay / Google Pay' : `Tarjeta Internacional (•••• ${last4})`,
-                    reference: orderId,
-                    txHash
-                });
-
+                const targetWallet = payload.targetWallet || MAXI_WALLET;
+                const amount = parseFloat(payload.amount) || 20;
+                const session = await generateCoinbaseOnrampSessionToken(targetWallet, amount);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    txHash,
-                    invoiceId,
-                    orderId,
-                    netUsdc: netUsdc.toFixed(2),
-                    amountPaid: amountPaid.toFixed(2),
-                    feeAmount: feeAmount.toFixed(2),
-                    message: 'Pago con tarjeta aprobado satisfactoriamente y liquidado en USDC en Base L2.'
-                }));
+                res.end(JSON.stringify({ success: true, onrampUrl: session.onrampUrl, token: session.token }));
             } catch (err) {
-                console.error('Error procesando Native Card Pay:', err);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
+        });
+        return;
+    } else if (req.method === 'POST' && (pathname === '/api/v1/checkout/native-card-pay' || pathname === '/api/v1/checkout/card-onramp-pay' || pathname === '/api/v1/checkout/card-pay')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            // PCI-DSS SAQ-A Compliance: Direct un-tokenized card PAN/CVV collection is prohibited.
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: false,
+                error: 'Por motivos de seguridad y cumplimiento PCI-DSS, los pagos con tarjeta deben procesarse a través del widget certificado Wompi o Coinbase Onramp.'
+            }));
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/generate-wallet') {
@@ -10597,14 +10326,53 @@ const server = http.createServer(async (req, res) => {
                 const payload = JSON.parse(body || '{}');
                 console.log('🔔 [WOMPI WEBHOOK RECEIVED]:', JSON.stringify(payload));
 
+                // 1. Signature Checksum Verification
+                if (WOMPI_EVENTS_SECRET && payload.signature && payload.signature.properties && payload.signature.checksum) {
+                    try {
+                        let concatProps = '';
+                        for (const propPath of payload.signature.properties) {
+                            const keys = propPath.split('.');
+                            let val = payload.data;
+                            for (const k of keys) {
+                                val = val ? val[k] : undefined;
+                            }
+                            concatProps += (val !== undefined && val !== null) ? String(val) : '';
+                        }
+                        const expectedConcat = concatProps + (payload.timestamp || '') + WOMPI_EVENTS_SECRET;
+                        const expectedChecksum = crypto.createHash('sha256').update(expectedConcat).digest('hex').toLowerCase();
+                        const providedChecksum = (payload.signature.checksum || '').toLowerCase();
+
+                        if (expectedChecksum !== providedChecksum) {
+                            console.error('❌ [WOMPI WEBHOOK SIGNATURE MISMATCH]: Expected', expectedChecksum, 'got', providedChecksum);
+                            res.writeHead(401, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: false, error: 'Firma de evento Wompi no válida.' }));
+                            return;
+                        }
+                    } catch (sigErr) {
+                        console.error('❌ [WOMPI SIGNATURE VERIFY ERROR]:', sigErr.message);
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, error: 'Error verificando firma Wompi.' }));
+                        return;
+                    }
+                }
+
                 const tx = payload.data?.transaction;
 
                 if (tx && tx.status === 'APPROVED') {
                     const txId = tx.id;
+                    const invoiceId = 'WOMPI-' + txId;
                     const ref = tx.reference || 'REF-' + Date.now();
                     const amountCop = (tx.amount_in_cents || 0) / 100;
                     const customerEmail = (tx.customer_email || '').trim().toLowerCase();
                     const paymentMethod = tx.payment_method_type || 'NEQUI/BANCOLOMBIA';
+
+                    // 2. Idempotency Guard: Prevent double-processing
+                    if (usersDb.invoices && usersDb.invoices[invoiceId]) {
+                        console.log(`ℹ️ [WOMPI WEBHOOK IDEMPOTENT]: Event for tx ${txId} already processed.`);
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: 'Evento ya procesado (idempotente).' }));
+                        return;
+                    }
 
                     let targetPlan = 'Maxi Pay Pro';
                     let addCredits = 100;
@@ -10629,6 +10397,7 @@ const server = http.createServer(async (req, res) => {
                         user = usersDb.users[customerEmail];
                     } else if (customerEmail) {
                         user = {
+                            id: 'usr_' + Date.now(),
                             name: 'Cliente Wompi',
                             email: customerEmail,
                             phone: tx.payment_method?.extra?.phone_number || 'N/A',
@@ -10638,9 +10407,6 @@ const server = http.createServer(async (req, res) => {
                             createdAt: new Date().toISOString()
                         };
                         usersDb.users[customerEmail] = user;
-                    } else {
-                        const firstUser = Object.values(usersDb.users)[0];
-                        if (firstUser) user = firstUser;
                     }
 
                     if (user) {
@@ -10654,7 +10420,6 @@ const server = http.createServer(async (req, res) => {
                         };
                     }
 
-                    const invoiceId = 'WOMPI-' + txId;
                     if (!usersDb.invoices) usersDb.invoices = {};
                     usersDb.invoices[invoiceId] = {
                         invoiceId,
@@ -10666,7 +10431,7 @@ const server = http.createServer(async (req, res) => {
                         method: 'Wompi ' + paymentMethod,
                         status: 'Aprobado 100% (Producción)',
                         timestamp: tx.created_at || new Date().toISOString(),
-                        buyerEmail: customerEmail || user?.email || 'cliente@wompi'
+                        buyerEmail: customerEmail || 'cliente-anonimo@wompi'
                     };
 
                     saveUsersDb();
@@ -10719,79 +10484,14 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
+        return;
     } else if (req.method === 'POST' && pathname === '/api/v1/checkout/card-pay') {
-        let body = '';
-        req.on('data', chunk => { body += chunk; });
-        req.on('end', async () => {
-            try {
-                const payload = JSON.parse(body || '{}');
-                const { orderId, amount, concept, cardHolder } = payload;
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-
-                let buyerEmail = 'cliente_tarjeta@maxi.suite';
-                let buyerUser = null;
-
-                if (token && usersDb.sessions[token]) {
-                    buyerEmail = usersDb.sessions[token];
-                    buyerUser = usersDb.users[buyerEmail];
-                } else {
-                    const firstUser = Object.values(usersDb.users)[0];
-                    if (firstUser) {
-                        buyerUser = firstUser;
-                        buyerEmail = firstUser.email;
-                    }
-                }
-
-                let targetPlan = 'Maxi Pay Pro';
-                let addCredits = 100;
-                const conceptLower = (concept || '').toLowerCase();
-                if (conceptLower.includes('all-access') || conceptLower.includes('all_access') || conceptLower.includes('todo incluido')) {
-                    targetPlan = 'Maxi Suite All-Access';
-                    addCredits = 500;
-                } else if (conceptLower.includes('alpha')) {
-                    targetPlan = 'Maxi Alpha VIP';
-                    addCredits = 300;
-                } else if (conceptLower.includes('gig')) {
-                    targetPlan = 'Gig Finder VIP';
-                    addCredits = 200;
-                } else {
-                    targetPlan = 'Maxi Pay Pro';
-                    addCredits = 100;
-                }
-
-                if (buyerUser) {
-                    buyerUser.plan = targetPlan;
-                    buyerUser.credits = (buyerUser.credits || 0) + addCredits;
-                }
-
-                const invoiceId = 'CARD-TX-' + Date.now();
-                if (!usersDb.invoices) usersDb.invoices = {};
-                usersDb.invoices[invoiceId] = {
-                    invoiceId,
-                    orderId,
-                    amount: parseFloat(amount) || 9.99,
-                    concept,
-                    method: 'Tarjeta Débito/Crédito (Visa/Mastercard)',
-                    cardHolder: cardHolder || 'Cliente Registrado',
-                    status: 'Aprobado 100%',
-                    timestamp: new Date().toISOString(),
-                    buyerEmail
-                };
-
-                saveUsersDb();
-
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    invoiceId,
-                    plan: targetPlan,
-                    user: buyerUser
-                }));
-            } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-        });
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: false,
+            error: 'Por favor utiliza el widget oficial de Wompi para realizar pagos con tarjeta.'
+        }));
+        return;
     } else if (req.method === 'POST' && pathname === '/api/admin/login') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
@@ -10905,13 +10605,34 @@ const server = http.createServer(async (req, res) => {
                     res.end(JSON.stringify({ success: false, error: 'Nombre, Correo y Celular son requeridos.' }));
                     return;
                 }
+
+                const cleanEmail = email.trim().toLowerCase();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(cleanEmail)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Por favor ingresa un correo electrónico válido.' }));
+                    return;
+                }
+
+                const phoneRegex = /^\+?[0-9\s\-]{7,20}$/;
+                if (!phoneRegex.test(phone.trim())) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Por favor ingresa un número de celular válido (mínimo 7 dígitos).' }));
+                    return;
+                }
+
+                if (name.trim().length < 2) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'El nombre debe tener al menos 2 caracteres.' }));
+                    return;
+                }
+
                 if (!password || password.length < 6) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: 'La contraseña debe tener al menos 6 caracteres.' }));
                     return;
                 }
 
-                const cleanEmail = email.trim().toLowerCase();
                 let user = usersDb.users[cleanEmail];
 
                 if (user) {
@@ -10963,9 +10684,8 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(200, { 
                     'Content-Type': 'application/json',
                     'Set-Cookie': [
-                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
-                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
-                        `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
+                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax; HttpOnly`,
+                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`
                     ]
                 });
                 res.end(JSON.stringify({ success: true, token, user: sanitizeUser(user), invoices: [] }));
@@ -10974,7 +10694,7 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
-        } else if (req.method === 'POST' && pathname === '/api/auth/logout') {
+    } else if (req.method === 'POST' && pathname === '/api/auth/logout') {
         const token = req.headers['authorization']?.replace('Bearer ', '').trim();
         if (token && usersDb.sessions[token]) {
             delete usersDb.sessions[token];
@@ -10990,7 +10710,7 @@ const server = http.createServer(async (req, res) => {
         });
         res.end(JSON.stringify({ success: true }));
         return;
-} else if (req.method === 'POST' && pathname === '/api/auth/login') {
+    } else if (req.method === 'POST' && pathname === '/api/auth/login') {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
@@ -11011,13 +10731,17 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
 
-                if (user.passwordHash && user.passwordSalt) {
-                    const isValid = verifyPassword(password, user.passwordHash, user.passwordSalt);
-                    if (!isValid) {
-                        res.writeHead(401, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false, error: 'Contraseña incorrecta. Por favor verifica e inténtalo nuevamente.' }));
-                        return;
-                    }
+                if (!user.passwordHash || !user.passwordSalt) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Esta cuenta no tiene una contraseña configurada. Por favor regístrate para crear una nueva.' }));
+                    return;
+                }
+
+                const isValid = verifyPassword(password, user.passwordHash, user.passwordSalt);
+                if (!isValid) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Contraseña incorrecta. Por favor verifica e inténtalo nuevamente.' }));
+                    return;
                 }
 
                 const token = crypto.randomBytes(24).toString('hex');
@@ -11031,9 +10755,8 @@ const server = http.createServer(async (req, res) => {
                 res.writeHead(200, { 
                     'Content-Type': 'application/json',
                     'Set-Cookie': [
-                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
-                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`,
-                        `maxi_user_email=${cleanEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
+                        `maxi_user_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax; HttpOnly`,
+                        `maxi_user_token=${token}; Path=/; Max-Age=2592000; SameSite=Lax`
                     ]
                 });
                 res.end(JSON.stringify({ success: true, token, user: sanitizeUser(user), invoices: userInvoices }));

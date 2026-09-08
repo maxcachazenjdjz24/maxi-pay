@@ -2,14 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const BOT_TOKEN = '8006933644:AAHF-kBCjrSIL5hOh5TksCvL6Cq7gGnOvcg';
-const BASE_RPC_URL = 'https://mainnet.base.org';
-const MAXI_OFFICIAL_WALLET = '0xc94927fF92091A738406329E130E930E3bA788D6';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
+const MAXI_OFFICIAL_WALLET = (process.env.MAXI_WALLET || '0xc94927fF92091A738406329E130E930E3bA788D6').toLowerCase();
 const BASE_USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'.toLowerCase();
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-const PUBLIC_WEB_URL = 'https://rescue-decision-ribbon-highlighted.trycloudflare.com';
+const PUBLIC_WEB_URL = process.env.PUBLIC_WEB_URL || 'https://maxi-pay.onrender.com';
 
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const TELEGRAM_API = BOT_TOKEN ? `https://api.telegram.org/bot${BOT_TOKEN}` : '';
 const DB_FILE = path.join(os.homedir(), '.automaton', 'telegram_merchants.json');
 
 let merchants = {};
@@ -429,84 +429,18 @@ async function handleMessage(msg) {
     }
   }
 
-  // 2. LINKING DIRECTLY BY EMAIL
-  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  if (emailMatch) {
-    const emailInput = emailMatch[0].toLowerCase();
-    const db = getRegisteredUsersDb();
-    let matchedUser = db.users[emailInput];
-
-    if (!matchedUser) {
-      matchedUser = {
-        id: 'usr_' + Date.now(),
-        name: firstName || 'Usuario Maxi',
-        email: emailInput,
-        phone: '',
-        wallet: null,
-        credits: 5,
-        plan: 'Gratuito',
-        telegramChatId: String(chatId),
-        telegramUsername: username ? ('@' + username) : firstName,
-        createdAt: new Date().toISOString()
-      };
-      db.users[emailInput] = matchedUser;
-      saveRegisteredUsersDb(db);
-
-      const newAccountMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
-        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado registrada y vinculada con este chat de Telegram.\n\n` +
-        `🎁 <b>Beneficio Inicial:</b> ¡Tienes <b>+5 Fichas gratis de bienvenida</b>!\n` +
-        `🔔 <b>Alertas privadas activadas:</b> Recibirás aquí notificaciones instantáneas cada vez que un cliente te pague por ACH, Tarjeta o USDC ⚡\n\n` +
-        `🌐 Accede a tu panel en: <b>https://maxi-pay.onrender.com/cuenta</b>`;
-
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: newAccountMsg,
-        parse_mode: 'HTML'
-      });
-      return;
-    } else {
-      matchedUser.telegramChatId = String(chatId);
-      matchedUser.telegramUsername = username ? ('@' + username) : firstName;
-      saveRegisteredUsersDb(db);
-
-      const successMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
-        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado vinculada con este chat de Telegram.\n\n` +
-        `Recibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`;
-
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: successMsg,
-        parse_mode: 'HTML'
-      });
-      return;
-    }
-  }
-
-  // 3. LINKING DIRECTLY BY PHONE NUMBER
-  const digitsMatch = text.replace(/\D/g, '');
-  if (digitsMatch && digitsMatch.length >= 7 && !text.startsWith('/')) {
-    const db = getRegisteredUsersDb();
-    const matchedUser = Object.values(db.users || {}).find(u => {
-      const uDigits = (u.phone || '').replace(/\D/g, '');
-      return uDigits && (uDigits.endsWith(digitsMatch) || digitsMatch.endsWith(uDigits));
+  // Handle general messages or help
+  if (text.startsWith('/vincular') || text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)) {
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: `🔒 <b>Vinculación Segura:</b>\n\n` +
+        `Para vincular tu cuenta de Maxi Suite a este chat de forma 100% segura y privada:\n\n` +
+        `1. Inicia sesión en: <b>https://maxi-pay.onrender.com/cuenta</b>\n` +
+        `2. Haz clic en el botón <b>'📲 Vincular mi Telegram'</b>.\n` +
+        `3. El sistema generará tu enlace seguro y único de activación.`,
+      parse_mode: 'HTML'
     });
-
-    if (matchedUser) {
-      matchedUser.telegramChatId = String(chatId);
-      matchedUser.telegramUsername = username ? ('@' + username) : firstName;
-      saveRegisteredUsersDb(db);
-
-      const successMsg = `🎉 <b>¡CUENTA VINCULADA CON ÉXITO!</b> 🚀\n\n` +
-        `Hola <b>${matchedUser.name}</b>, tu cuenta (<code>${matchedUser.email}</code>) ha quedado vinculada con este chat de Telegram.\n\n` +
-        `Recibirás aquí tus alertas privadas cada vez que recibas un pago por ACH, Tarjeta o USDC ⚡`;
-
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: successMsg,
-        parse_mode: 'HTML'
-      });
-      return;
-    }
+    return;
   }
 
   if (text.startsWith('/start') || text.startsWith('/help') || text.toLowerCase() === 'hola') {
@@ -1051,6 +985,10 @@ async function processVerification(chatId, hash) {
 let lastUpdateId = 0;
 
 async function startPolling() {
+  if (!BOT_TOKEN) {
+    console.log('⚠️ [TELEGRAM BOT]: TELEGRAM_BOT_TOKEN no configurado en variables de entorno. Bot en reposo.');
+    return;
+  }
   console.log('🤖 [Maxi Suite Real Whale Links Bot] BaseScan links verificados...');
   
   await tg('setMyCommands', {

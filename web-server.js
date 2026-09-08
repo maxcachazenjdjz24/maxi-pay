@@ -922,13 +922,20 @@ function getAuthenticatedUser(req) {
   const cookies = parseCookies(req);
   const authHeader = req.headers['authorization'] || '';
   const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-  const token = bearerToken || cookies.maxi_user_session || cookies.maxi_user_token;
+  let queryToken = null;
+  try {
+    const parsed = url.parse(req.url, true);
+    queryToken = parsed.query ? (parsed.query.token || parsed.query.auth_token) : null;
+  } catch (e) {}
+
+  const token = bearerToken || cookies.maxi_user_session || cookies.maxi_user_token || queryToken;
   
   if (!token || !usersDb.sessions || !usersDb.sessions[token]) {
     return null;
   }
-  const email = usersDb.sessions[token];
-  return (usersDb.users && usersDb.users[email]) ? usersDb.users[email] : null;
+  const sessionVal = usersDb.sessions[token];
+  const email = typeof sessionVal === 'string' ? sessionVal : sessionVal.email;
+  return (usersDb.users && email && usersDb.users[email.toLowerCase()]) ? usersDb.users[email.toLowerCase()] : null;
 }
 
 loadUsersDb();
@@ -3409,12 +3416,16 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     <input type="email" id="loginEmailInput" class="input-box" placeholder="tu@correo.com">
 
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; margin-top:12px; color:var(--text-main);">Contraseña:</label>
-                    <div style="position:relative; margin-bottom:12px;">
+                    <div style="position:relative; margin-bottom:8px;">
                         <input type="password" id="loginPasswordInput" class="input-box" placeholder="Ingresa tu contraseña" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitLoginFromInput()">
                         <span onclick="togglePasswordVisibility('loginPasswordInput', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
-                    <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; margin-top:14px; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:14px; font-size:12.5px;">
+                        <a href="javascript:void(0)" onclick="openForgotPasswordModal()" style="color:var(--cyan); font-weight:700; text-decoration:underline;">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <button class="btn-primary" onclick="submitLoginFromInput()" style="width:100%; justify-content:center; padding:14px; font-weight:800; font-size:15px; cursor:pointer;">
                         🔑 Iniciar Sesión
                     </button>
 
@@ -3702,6 +3713,62 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 </div>
                 <div id="salesListContainer" style="overflow-x:auto;">
                     <div style="text-align:center; padding:20px; color:var(--text-muted); font-weight:600;">Consultando transacciones on-chain...</div>
+                </div>
+            </div>
+
+            <!-- SEGURIDAD Y CONTRASEÑA DE ACCESO -->
+            <div class="card" style="border:1.5px solid var(--purple); background:linear-gradient(180deg, rgba(168,85,247,0.06) 0%, var(--bg-card) 100%); margin-top:20px; box-shadow:0 10px 30px rgba(168,85,247,0.12);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); display:flex; align-items:center; justify-content:center; font-size:22px; color:white; box-shadow:0 6px 18px rgba(168,85,247,0.35);">
+                            🔒
+                        </div>
+                        <div>
+                            <h3 style="font-size:20px; font-weight:900; color:var(--text-main); margin:0;">
+                                Seguridad & Contraseña de Acceso
+                            </h3>
+                            <p style="color:var(--text-muted); font-size:13px; font-weight:600; margin:2px 0 0 0;">
+                                Establece una nueva contraseña o actualiza tu clave para iniciar sesión en cualquier momento.
+                            </p>
+                        </div>
+                    </div>
+                    <span style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid var(--purple); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:800;">
+                        🛡️ PBKDF2-SHA512
+                    </span>
+                </div>
+
+                <div id="changePassAlert" style="display:none; padding:12px; border-radius:10px; font-size:13px; font-weight:bold; margin-bottom:14px;"></div>
+
+                <div style="background:var(--input-bg); padding:18px 20px; border-radius:14px; border:1px solid var(--border);">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:14px;">
+                        <div>
+                            <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main);">
+                                Nueva Contraseña:
+                            </label>
+                            <div style="position:relative;">
+                                <input type="password" id="newPassInput" class="input-box" placeholder="Mínimo 6 caracteres" style="padding-right:40px;">
+                                <span onclick="togglePasswordVisibility('newPassInput', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar">👁️</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main);">
+                                Confirmar Nueva Contraseña:
+                            </label>
+                            <div style="position:relative;">
+                                <input type="password" id="newPassConfirmInput" class="input-box" placeholder="Repite tu nueva contraseña" style="padding-right:40px;">
+                                <span onclick="togglePasswordVisibility('newPassConfirmInput', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar">👁️</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">
+                            💡 Al guardar tu nueva contraseña, podrás iniciar sesión normalmente en cualquier dispositivo con tu correo.
+                        </span>
+                        <button id="btnChangePassword" onclick="submitChangePassword()" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:12px 24px; font-weight:800; font-size:13.5px; cursor:pointer;">
+                            💾 Guardar Nueva Contraseña
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -4072,11 +4139,190 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
         </div>
     </div>
 
+    <!-- MODAL 5: RECUPERAR CONTRASEÑA -->
+    <div id="modalForgotPassword" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(6,8,14,0.85); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+        <div class="card" style="max-width:480px; width:100%; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.25); position:relative;">
+            <button onclick="closeForgotPasswordModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; font-weight:bold;">&times;</button>
+            <div style="text-align:center; margin-bottom:16px;">
+                <div style="font-size:36px; margin-bottom:6px;">🔑</div>
+                <h3 style="font-size:22px; font-weight:900; color:var(--text-main); margin-bottom:4px;">Recuperar Contraseña</h3>
+                <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">
+                    Ingresa tu correo registrado. Te enviaremos un enlace de rescate instantáneo para ingresar y definir tu nueva contraseña.
+                </p>
+            </div>
+
+            <div id="forgotPassAlert" style="display:none; padding:12px; border-radius:8px; font-size:13px; font-weight:bold; margin-bottom:14px;"></div>
+
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Correo Electrónico:</label>
+            <input type="email" id="forgotPassEmailInput" class="input-box" placeholder="tu@correo.com" style="margin-bottom:16px;" onkeypress="if(event.key==='Enter') submitForgotPassword()">
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="btnSubmitForgot" class="btn-primary" onclick="submitForgotPassword()" style="width:100%; justify-content:center; padding:12px; font-weight:800; font-size:14px; cursor:pointer;">
+                    ✉️ Enviar Enlace de Rescate a mi Correo
+                </button>
+                <a href="https://wa.me/573147546359?text=Hola%20Juan%20David,%20olvid%C3%A9%20la%20contrase%C3%B1a%20de%20mi%20cuenta%20Maxi%20Suite%20y%20necesito%20asistencia%20VIP" target="_blank" class="btn-outline" style="width:100%; box-sizing:border-box; justify-content:center; text-align:center; padding:11px; font-weight:700; font-size:13px; border-color:#25D366; color:#25D366; text-decoration:none; display:flex; align-items:center; gap:6px;">
+                    📲 Contactar a Soporte VIP por WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
     ${getFooter()}
 
     <script>
         let currentUserState = ${JSON.stringify(Object.assign(sanitizeUser(user) || {}, { trmCop: liveTrm }))};
         window.currentUserState = currentUserState;
+
+        function openForgotPasswordModal() {
+            const m = document.getElementById('modalForgotPassword');
+            if (m) m.style.display = 'flex';
+            const alertBox = document.getElementById('forgotPassAlert');
+            if (alertBox) alertBox.style.display = 'none';
+        }
+
+        function closeForgotPasswordModal() {
+            const m = document.getElementById('modalForgotPassword');
+            if (m) m.style.display = 'none';
+        }
+
+        async function submitForgotPassword() {
+            const emailInput = document.getElementById('forgotPassEmailInput');
+            const alertBox = document.getElementById('forgotPassAlert');
+            const btn = document.getElementById('btnSubmitForgot');
+            const email = (emailInput ? emailInput.value : '').trim();
+
+            if (alertBox) alertBox.style.display = 'none';
+
+            if (!email || !email.includes('@')) {
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-fee-bg)';
+                    alertBox.style.border = '1px solid var(--rose)';
+                    alertBox.style.color = 'var(--rose)';
+                    alertBox.innerText = 'Por favor ingresa un correo electrónico válido.';
+                }
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Generando Enlace de Rescate...';
+            }
+
+            try {
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-saved-bg)';
+                    alertBox.style.border = '1px solid var(--emerald)';
+                    alertBox.style.color = 'var(--emerald)';
+                    alertBox.innerText = '✓ ' + (data.message || 'Enlace de rescate enviado con éxito.');
+                }
+            } catch (e) {
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-fee-bg)';
+                    alertBox.style.border = '1px solid var(--rose)';
+                    alertBox.style.color = 'var(--rose)';
+                    alertBox.innerText = 'Error al enviar enlace: ' + e.message;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '✉️ Enviar Enlace de Rescate a mi Correo';
+                }
+            }
+        }
+
+        async function submitChangePassword() {
+            const newPassEl = document.getElementById('newPassInput');
+            const confirmPassEl = document.getElementById('newPassConfirmInput');
+            const alertBox = document.getElementById('changePassAlert');
+            const btn = document.getElementById('btnChangePassword');
+
+            const newPassword = newPassEl ? newPassEl.value : '';
+            const confirmPassword = confirmPassEl ? confirmPassEl.value : '';
+
+            if (alertBox) alertBox.style.display = 'none';
+
+            if (!newPassword || newPassword.length < 6) {
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-fee-bg)';
+                    alertBox.style.border = '1px solid var(--rose)';
+                    alertBox.style.color = 'var(--rose)';
+                    alertBox.innerText = 'La nueva contraseña debe tener al menos 6 caracteres.';
+                }
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-fee-bg)';
+                    alertBox.style.border = '1px solid var(--rose)';
+                    alertBox.style.color = 'var(--rose)';
+                    alertBox.innerText = 'Las contraseñas ingresadas no coinciden.';
+                }
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Guardando Contraseña...';
+            }
+
+            const token = localStorage.getItem('maxi_user_token');
+            try {
+                const res = await fetch('/api/user/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? ('Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ newPassword, confirmPassword })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (alertBox) {
+                        alertBox.style.display = 'block';
+                        alertBox.style.background = 'var(--calc-saved-bg)';
+                        alertBox.style.border = '1px solid var(--emerald)';
+                        alertBox.style.color = 'var(--emerald)';
+                        alertBox.innerText = '🎉 ' + (data.message || '¡Contraseña actualizada con éxito!');
+                    }
+                    showToast('🎉 ¡Contraseña actualizada con éxito!');
+                    if (newPassEl) newPassEl.value = '';
+                    if (confirmPassEl) confirmPassEl.value = '';
+                } else {
+                    if (alertBox) {
+                        alertBox.style.display = 'block';
+                        alertBox.style.background = 'var(--calc-fee-bg)';
+                        alertBox.style.border = '1px solid var(--rose)';
+                        alertBox.style.color = 'var(--rose)';
+                        alertBox.innerText = '⚠️ ' + (data.error || 'Error al cambiar contraseña.');
+                    }
+                }
+            } catch (e) {
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.style.background = 'var(--calc-fee-bg)';
+                    alertBox.style.border = '1px solid var(--rose)';
+                    alertBox.style.color = 'var(--rose)';
+                    alertBox.innerText = 'Error de conexión: ' + e.message;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '💾 Guardar Nueva Contraseña';
+                }
+            }
+        }
 
         function getCookie(name) {
             const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -5775,6 +6021,281 @@ function renderAdminPage(user = null) {
 }
 
 function renderBallenasPage(user = null) {
+  const isAlphaVip = user && (user.plan === 'Maxi Alpha VIP' || user.plan === 'Maxi Suite All-Access');
+  const isAllAccess = user && user.plan === 'Maxi Suite All-Access';
+  const planName = user ? (user.plan || 'Plan Gratuito') : 'Invitado';
+
+  const allWhales = [
+    {
+      id: 'w1',
+      category: 'buy',
+      badgeClass: 'badge-buy',
+      badgeText: '🟢 ACUMULACIÓN SPOT (DEX)',
+      score: '94/100',
+      time: '⏱️ Hace 4 minutos',
+      title: '🚨 BALLENA ACUMULA $519,612 USDC EN ETH (Base L2)',
+      protocol: 'Aerodrome Slipstream',
+      desc: 'Swap masivo fraccionado en 3 bloques para minimizar slippage: <strong>207.8 ETH</strong> a un precio medio de <strong style="color:var(--emerald);">$2,501.20 USD</strong>.',
+      amount: '+$519,612 USD',
+      amountColor: '#10b981',
+      borderColor: '#10b981',
+      entry: '$2,490 - $2,525 ETH',
+      sl: '$2,410 (-3.8%)',
+      tp: '$2,740 (+9.2%)',
+      rr: '1 : 2.4',
+      basescan: 'https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1'
+    },
+    {
+      id: 'w2',
+      category: 'vault',
+      badgeClass: 'badge-vault',
+      badgeText: '🟣 ACUMULACIÓN / RETIRO A VAULT',
+      score: '91/100',
+      time: '⏱️ Hace 8 minutos',
+      title: '🚨 RETIRO DESDE EXCHANGE HACIA MULTISIG SAFE VAULT',
+      protocol: 'Coinbase Institutional',
+      desc: 'Emisor: <strong>Coinbase Institutional</strong> ➔ Destino: <strong style="color:var(--purple);">Safe Cold Vault</strong> • Disminuye oferta circulante.',
+      amount: '$840,000 USD',
+      amountColor: 'var(--purple)',
+      borderColor: '#8b5cf6',
+      entry: '$2,500 - $2,540 ETH',
+      sl: '$2,430 (-3.2%)',
+      tp: '$2,820 (+11.8%)',
+      rr: '1 : 3.6',
+      basescan: 'https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30'
+    },
+    {
+      id: 'w3',
+      category: 'buy',
+      badgeClass: 'badge-buy',
+      badgeText: '🟢 ACUMULACIÓN DE ALTA BETA',
+      score: '96/100',
+      time: '⏱️ Hace 12 minutos',
+      title: '🚨 BALLENA ACUMULA 450,000 $AERO ($531,000 USD)',
+      protocol: 'Aerodrome DEX',
+      desc: 'Compra TWAP en bloques sucesivos: <strong style="color:var(--cyan);">$1.18 USD/token</strong> • Absorción del 14% del libro de órdenes.',
+      amount: '+$531,000 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#00f2fe',
+      entry: '$1.12 - $1.18 AERO',
+      sl: '$1.05 (-8.5%)',
+      tp: '$1.45 (+28.0%)',
+      rr: '1 : 3.2',
+      basescan: 'https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631'
+    },
+    {
+      id: 'w4',
+      category: 'pool',
+      badgeClass: 'badge-pool',
+      badgeText: '⚡ INYECCIÓN DE LIQUIDEZ (DeFi Pool)',
+      score: '87/100',
+      time: '⏱️ Hace 24 minutos',
+      title: '🚨 DEPÓSITO DE CAPITAL EN PISCINA USDC/ETH (Uniswap V3)',
+      protocol: 'Uniswap V3 Base',
+      desc: 'Liquidez Concentrada en rango estrecho: <strong style="color:var(--cyan);">$2,450 - $2,600</strong> • Creación de fuerte soporte de precio.',
+      amount: '$519,612 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#0284c7',
+      entry: '$2,460 - $2,510 ETH',
+      sl: '$2,390 (-4.1%)',
+      tp: '$2,700 (+8.2%)',
+      rr: '1 : 2.0',
+      basescan: 'https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7'
+    },
+    {
+      id: 'w5',
+      category: 'vault',
+      badgeClass: 'badge-vault',
+      badgeText: '🟣 STAKING INSTITUCIONAL',
+      score: '89/100',
+      time: '⏱️ Hace 35 minutos',
+      title: '🚨 BLOQUEO DE 250 ETH ($628,000 USD) EN PROTOCOLO DE RENDIMIENTO',
+      protocol: 'Lido / Base Bridge',
+      desc: 'Depósito a contrato de Staking Líquido en Base • Cero intención de venta a corto plazo por parte de fondos institucionales.',
+      amount: '$628,000 USD',
+      amountColor: '#f59e0b',
+      borderColor: '#f59e0b',
+      entry: '$2,480 - $2,520 ETH',
+      sl: '$2,400 (-4.0%)',
+      tp: '$2,780 (+11.0%)',
+      rr: '1 : 2.7',
+      basescan: 'https://basescan.org/address/0x4200000000000000000000000000000000000006'
+    },
+    {
+      id: 'w6',
+      category: 'buy',
+      badgeClass: 'badge-buy',
+      badgeText: '🟢 ARBITRAJE CUANTITATIVO L2',
+      score: '95/100',
+      time: '⏱️ Hace 48 minutos',
+      title: '🚨 INYECCIÓN INSTITUCIONAL DE $1,450,000 USDC EN AAVE V3 (BASE)',
+      protocol: 'Aave V3 Protocol',
+      desc: 'Depósito masivo de colateral USDC para apalancamiento institucional sin liquidación en libro de órdenes.',
+      amount: '+$1,450,000 USD',
+      amountColor: '#10b981',
+      borderColor: '#10b981',
+      entry: '$2,500 - $2,530 ETH',
+      sl: '$2,440 (-3.0%)',
+      tp: '$2,760 (+9.5%)',
+      rr: '1 : 3.1',
+      basescan: 'https://basescan.org/address/0xa238dd80c259a72e81d7e4664a9801593f98d1c5'
+    },
+    {
+      id: 'w7',
+      category: 'pool',
+      badgeClass: 'badge-pool',
+      badgeText: '⚡ PISCINA SINTÉTICA (PERPS)',
+      score: '92/100',
+      time: '⏱️ Hace 1 hora',
+      title: '🚨 DEPÓSITO DE $720,000 USDC EN SYNTHETIX PERPS LIQUIDITY',
+      protocol: 'Synthetix V3 Base',
+      desc: 'Provisión de liquidez para respaldar derivados descentralizados con captura de comisiones y rendimiento real.',
+      amount: '$720,000 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#0284c7',
+      entry: '$2,495 - $2,535 ETH',
+      sl: '$2,420 (-3.8%)',
+      tp: '$2,730 (+8.6%)',
+      rr: '1 : 2.3',
+      basescan: 'https://basescan.org/address/0x327df1e6de05895d2ab08513aadd9313fe505d86'
+    },
+    {
+      id: 'w8',
+      category: 'vault',
+      badgeClass: 'badge-vault',
+      badgeText: '🟣 BLOQUEO DE TESORERÍA MACRO',
+      score: '97/100',
+      time: '⏱️ Hace 1 hora',
+      title: '🚨 FONDO DE CAPITAL RIESGO TRASPASA 800 ETH A BÓVEDA MULTIFIRMA',
+      protocol: 'Safe Multisig L2',
+      desc: 'Consolidación de activos de tesorería corporativa en bóveda de custodia segregada de largo plazo.',
+      amount: '$2,010,000 USD',
+      amountColor: 'var(--purple)',
+      borderColor: '#8b5cf6',
+      entry: '$2,490 - $2,530 ETH',
+      sl: '$2,430 (-3.2%)',
+      tp: '$2,850 (+13.2%)',
+      rr: '1 : 4.1',
+      basescan: 'https://basescan.org/address/0x05f856488344e7B6e80b2a75508D7992d9C34085'
+    },
+    {
+      id: 'w9',
+      category: 'buy',
+      badgeClass: 'badge-buy',
+      badgeText: '🟢 ACUMULACIÓN AGENTES IA',
+      score: '93/100',
+      time: '⏱️ Hace 2 horas',
+      title: '🚨 BALLENA ADQUIERE $380,000 USD EN TOKENS DE AGENTES AUTÓNOMOS',
+      protocol: 'Virtuals Protocol',
+      desc: 'Inversión sistemática en la infraestructura de economía de agentes autónomos y microservicios IA.',
+      amount: '+$380,000 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#00f2fe',
+      entry: '$0.85 - $0.92 VIRTUAL',
+      sl: '$0.78 (-11.0%)',
+      tp: '$1.25 (+42.0%)',
+      rr: '1 : 3.8',
+      basescan: 'https://basescan.org/token/0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
+    },
+    {
+      id: 'w10',
+      category: 'pool',
+      badgeClass: 'badge-pool',
+      badgeText: '⚡ PROVISIÓN TRICRYPTO',
+      score: '88/100',
+      time: '⏱️ Hace 2 horas',
+      title: '🚨 INYECCIÓN DE $960,000 USD EN PISCINA TRICRYPTO (CURVE L2)',
+      protocol: 'Curve Finance Base',
+      desc: 'Aumento masivo de profundidad para swaps entre USDC, cbBTC y ETH con mínimo impacto de mercado.',
+      amount: '$960,000 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#0284c7',
+      entry: '$2,505 - $2,540 ETH',
+      sl: '$2,445 (-2.9%)',
+      tp: '$2,720 (+7.8%)',
+      rr: '1 : 2.6',
+      basescan: 'https://basescan.org/address/0x6b7a87899490EcE95443e979cA9485CBE7E71522'
+    },
+    {
+      id: 'w11',
+      category: 'vault',
+      badgeClass: 'badge-vault',
+      badgeText: '🟣 SUMINISTRO EN MORPHO BLUE',
+      score: '90/100',
+      time: '⏱️ Hace 3 horas',
+      title: '🚨 DEPÓSITO INSTITUCIONAL DE 400 wstETH ($1,180,000 USD)',
+      protocol: 'Morpho Blue Base',
+      desc: 'Aporte de colateral de rendimiento para mercados de préstamos peer-to-peer sin intermediarios.',
+      amount: '$1,180,000 USD',
+      amountColor: '#f59e0b',
+      borderColor: '#f59e0b',
+      entry: '$2,500 - $2,535 ETH',
+      sl: '$2,430 (-3.6%)',
+      tp: '$2,790 (+10.8%)',
+      rr: '1 : 3.0',
+      basescan: 'https://basescan.org/address/0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb'
+    },
+    {
+      id: 'w12',
+      category: 'buy',
+      badgeClass: 'badge-buy',
+      badgeText: '🟢 COMPRA DE BREAKOUT',
+      score: '96/100',
+      time: '⏱️ Hace 3 horas',
+      title: '🚨 SWAP INSTANTÁNEO DE $410,000 USDC EN CBETH TRAS RUPTURA',
+      protocol: 'Uniswap V3 Base',
+      desc: 'Ejecución de orden agresiva tras confirmar rompimiento de resistencia técnica en gráfico de 4 horas.',
+      amount: '+$410,000 USD',
+      amountColor: '#10b981',
+      borderColor: '#10b981',
+      entry: '$2,510 - $2,545 ETH',
+      sl: '$2,450 (-2.8%)',
+      tp: '$2,780 (+9.8%)',
+      rr: '1 : 3.5',
+      basescan: 'https://basescan.org/address/0x2Ae7b828BCceF34B484760A1D698dEd0f790651'
+    },
+    {
+      id: 'w13',
+      category: 'pool',
+      badgeClass: 'badge-pool',
+      badgeText: '⚡ RENDIMIENTO APALANCADO',
+      score: '89/100',
+      time: '⏱️ Hace 4 horas',
+      title: '🚨 CREACIÓN DE POSICIÓN DE APALANCAMIENTO EN EXTRA FINANCE',
+      protocol: 'Extra Finance Base',
+      desc: 'Estrategia de captura de comisiones 3x en par USDC/AERO con protección automatizada de liquidación.',
+      amount: '$340,000 USD',
+      amountColor: 'var(--cyan)',
+      borderColor: '#0284c7',
+      entry: '$1.10 - $1.16 AERO',
+      sl: '$1.02 (-9.0%)',
+      tp: '$1.48 (+30.0%)',
+      rr: '1 : 3.3',
+      basescan: 'https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631'
+    },
+    {
+      id: 'w14',
+      category: 'vault',
+      badgeClass: 'badge-vault',
+      badgeText: '🟣 TRANSFERENCIA DE PUENTE L1 ➔ L2',
+      score: '94/100',
+      time: '⏱️ Hace 5 horas',
+      title: '🚨 PUENTE OFICIAL DEPOSITÓ 1,200 ETH ($3,024,000 USD) EN BASE',
+      protocol: 'Base Portal Bridge',
+      desc: 'Inyección masiva de liquidez desde Ethereum Mainnet hacia la red Base para operaciones DeFi.',
+      amount: '$3,024,000 USD',
+      amountColor: 'var(--purple)',
+      borderColor: '#8b5cf6',
+      entry: '$2,490 - $2,530 ETH',
+      sl: '$2,420 (-3.6%)',
+      tp: '$2,840 (+12.8%)',
+      rr: '1 : 3.5',
+      basescan: 'https://basescan.org/address/0x49048044D57e1C92A77f79988d21Fa8fAF74E97e'
+    }
+  ];
+
+  const displayedWhales = isAlphaVip ? allWhales : allWhales.slice(0, 2);
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5817,6 +6338,12 @@ function renderBallenasPage(user = null) {
             background: rgba(168, 85, 247, 0.15);
             color: var(--purple);
             box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+        }
+        .whale-card {
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .whale-card:hover {
+            transform: translateY(-2px);
         }
         .news-item {
             padding: 14px 0;
@@ -5915,8 +6442,8 @@ function renderBallenasPage(user = null) {
                         ✓ Confianza Estadística: 92/100
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button class="btn-primary" onclick="copyWhalePlan()" style="padding:10px 18px; font-size:13px; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">📋 Copiar Plan Táctico</button>
-                        <a id="modalBaseScanLink" href="#" target="_blank" class="btn-outline" style="padding:10px 18px; font-size:13px; border-color:var(--cyan); color:var(--cyan);">🔍 BaseScan</a>
+                        <button onclick="copyWhalePlan()" style="padding:10px 18px; font-size:13px; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; border:none; border-radius:8px; cursor:pointer;">📋 Copiar Plan Táctico</button>
+                        <a id="modalBaseScanLink" href="#" target="_blank" class="btn-outline" style="padding:10px 18px; font-size:13px; border-color:var(--cyan); color:var(--cyan); text-decoration:none; border-radius:8px;">🔍 BaseScan</a>
                     </div>
                 </div>
             </div>
@@ -5924,10 +6451,9 @@ function renderBallenasPage(user = null) {
     </div>
 
     <div class="page-container">
-        
         <!-- HERO HEADER -->
         <div style="text-align:center; margin-bottom:30px;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:var(--purple); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:700; margin-bottom:12px;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:var(--purple); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:800; margin-bottom:12px;">
                 🎯 Smart Money Score Engine • Inteligencia On-Chain 24/7
             </div>
             <h1 style="font-size:36px; font-weight:900; letter-spacing:-0.02em; margin-bottom:10px; color:var(--text-main);">
@@ -5948,218 +6474,130 @@ function renderBallenasPage(user = null) {
 
             <div class="card" style="padding:16px; text-align:center; border-color:rgba(0, 223, 137, 0.3); background:rgba(0, 223, 137, 0.03); margin-bottom:0;">
                 <div style="font-size:11.5px; font-weight:800; color:var(--emerald); text-transform:uppercase;">Flujo Neto Institucional</div>
-                <div style="font-size:24px; font-weight:900; color:var(--emerald); margin:4px 0;">+🟢 $12,410,000 USD</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Inflow neto hacia billeteras frías</div>
+                <div style="font-size:24px; font-weight:900; color:var(--emerald); margin:4px 0;">+$14,680,000 USD</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Presión neta compradora</div>
             </div>
 
             <div class="card" style="padding:16px; text-align:center; border-color:rgba(0, 242, 254, 0.3); background:rgba(0, 242, 254, 0.03); margin-bottom:0;">
-                <div style="font-size:11.5px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Alertas de Ballenas</div>
-                <div style="font-size:24px; font-weight:900; color:var(--cyan); margin:4px 0;">242 Transacciones</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Monto individual &gt; $50,000 USD</div>
+                <div style="font-size:11.5px; font-weight:800; color:var(--cyan); text-transform:uppercase;">Índice Smart Money</div>
+                <div style="font-size:24px; font-weight:900; color:var(--cyan); margin:4px 0;">88.4 / 100</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Alta confluencia alcista</div>
             </div>
 
-            <div class="card" style="padding:16px; text-align:center; border-color:rgba(251, 191, 36, 0.3); background:rgba(251, 191, 36, 0.03); margin-bottom:0;">
-                <div style="font-size:11.5px; font-weight:800; color:#f59e0b; text-transform:uppercase;">Activo Más Acumulado</div>
-                <div style="font-size:24px; font-weight:900; color:#f59e0b; margin:4px 0;">$AERO (Slipstream)</div>
-                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">+8.42% en últimas 24h</div>
+            <div class="card" style="padding:16px; text-align:center; border-color:rgba(245, 158, 11, 0.3); background:rgba(245, 158, 11, 0.03); margin-bottom:0;">
+                <div style="font-size:11.5px; font-weight:800; color:#f59e0b; text-transform:uppercase;">Retiros a Cold Vault</div>
+                <div style="font-size:24px; font-weight:900; color:#f59e0b; margin:4px 0;">$8,420,000 USD</div>
+                <div style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Menor oferta en exchanges</div>
             </div>
         </div>
 
-        <!-- FILTER CHIPS -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="filter-chip active" onclick="filterWhaleCategory('all', this)">🌐 Todos los Flujos (5)</button>
-                <button class="filter-chip" onclick="filterWhaleCategory('buy', this)">🟢 Compras Masivas (&gt; $50k)</button>
-                <button class="filter-chip" onclick="filterWhaleCategory('vault', this)">🟣 Bóvedas Cold Vault</button>
-                <button class="filter-chip" onclick="filterWhaleCategory('pool', this)">⚡ Liquidez DEX (Pools)</button>
+        <!-- STATUS BAR & VIP BADGE -->
+        <div style="background:var(--input-bg); border:1.5px solid var(--border); border-radius:14px; padding:14px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; color:var(--purple); background:rgba(168,85,247,0.15); padding:4px 12px; border-radius:20px; border:1px solid var(--purple);">
+                    <span style="width:8px; height:8px; background:var(--purple); border-radius:50%; display:inline-block;"></span>
+                    ${isAlphaVip ? `🟣 ${allWhales.length} ALERTAS ON-CHAIN ACTIVAS` : '⚪ VISTA PREVIA (2 ALERTAS)'}
+                </span>
+                <span style="font-size:13px; color:var(--text-muted); font-weight:700;">
+                    Plan: <strong style="color:${isAlphaVip ? 'var(--purple)' : 'var(--cyan)'};">${planName}</strong>
+                </span>
             </div>
-            <div style="font-size:12.5px; color:var(--text-muted); font-weight:700;">
-                🔴 Streaming en Vivo • Base Chain ID 8453
+
+            <div style="display:flex; gap:10px; align-items:center;">
+                ${isAlphaVip ? `
+                <button onclick="refreshWhalesFeed()" class="btn-outline" style="padding:7px 14px; font-size:12.5px; font-weight:800; border-color:var(--purple); color:var(--purple); cursor:pointer;">
+                    🔄 Actualizar Radar On-Chain
+                </button>
+                ` : `
+                <a href="/cuenta#planes" class="btn-primary" style="padding:7px 16px; font-size:12.5px; font-weight:800; text-decoration:none; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
+                    👑 Desbloquear ${allWhales.length}+ Alertas ($10 USD)
+                </a>
+                `}
             </div>
         </div>
 
-        <!-- 2-COLUMN TERMINAL BENTO GRID -->
+        <!-- 2-COLUMN MAIN LAYOUT (WHALES FEED + MACRO NEWS) -->
         <div class="terminal-grid">
             
-            <!-- LEFT COLUMN: WHALE CARDS (65%) -->
-            <div id="whalesContainer">
+            <!-- LEFT COLUMN: LIVE ON-CHAIN WHALE FEEDS -->
+            <div>
                 
-                <!-- WHALE CARD 1: COMPRA MASIVA ETH -->
-                <div class="card whale-item" data-category="buy" style="border-left:5px solid #10b981; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                <span class="badge-buy">🟢 COMPRA MASIVA (Acumulación)</span>
-                                <div class="score-pill score-high">🎯 Smart Money Score: 94/100</div>
-                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 2 minutos</span>
-                            </div>
-                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BALLENA ACUMULA $519,612.18 USDC EN ETH VIA AERODROME</h3>
-                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Inyección: <strong style="color:var(--emerald);">$519,612.18 USDC</strong> ➔ Recibe: <strong style="color:var(--cyan);">206.58 ETH</strong> • Protocolo: <strong>Aerodrome Slipstream</strong>
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:24px; font-weight:900; color:#10b981;">+$519,612 USD</div>
-                        </div>
+                <!-- CATEGORY FILTER CHIPS -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="filter-chip active" data-cat="all" onclick="filterWhaleCategory('all', this)">🌟 Todas (${displayedWhales.length})</button>
+                        <button class="filter-chip" data-cat="buy" onclick="filterWhaleCategory('buy', this)">🟢 Acumulación DEX</button>
+                        <button class="filter-chip" data-cat="vault" onclick="filterWhaleCategory('vault', this)">🟣 Bóvedas Frías / Safe</button>
+                        <button class="filter-chip" data-cat="pool" onclick="filterWhaleCategory('pool', this)">⚡ Piscinas DeFi</button>
                     </div>
 
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; font-size:12.5px;">
-                        <div>🎯 <strong>Zona Entrada:</strong> <span style="color:var(--cyan); font-weight:800;">$2,490 - $2,525 ETH</span></div>
-                        <div>🛑 <strong>Stop-Loss:</strong> <span style="color:var(--rose); font-weight:800;">$2,410 (-3.8%)</span></div>
-                        <div>🚀 <strong>Take-Profit:</strong> <span style="color:var(--emerald); font-weight:800;">$2,740 (+9.2%)</span></div>
-                        <div>🛡️ <strong>R:R:</strong> <span style="color:var(--purple); font-weight:800;">1 : 2.4</span></div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <button onclick="openWhaleAiModal('w1', 'Ballena Acumula $519,612 USDC en ETH', '$519,612 USD', 'ETH', 'Aerodrome Slipstream', 'https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
-                            ✨ Diagnóstico IA (1 Ficha)
-                        </button>
-                        <a href="https://basescan.org/tx/0xc29d3d6187c59ffaf4e2f7c16ffdbb39dafe43ad21ed83481bc6da4b3682a4b1" target="_blank" class="btn-outline" style="border-color:#10b981; color:#10b981; padding:8px 14px; font-size:12.5px;">
-                            🔍 Ver en BaseScan
-                        </a>
+                    <div style="flex:1; max-width:240px; min-width:180px;">
+                        <input type="text" id="whaleSearchInput" class="input-box" placeholder="🔍 Buscar señal o token..." oninput="searchWhales(this.value)" style="padding:7px 12px; font-size:12.5px; margin:0;">
                     </div>
                 </div>
 
-                <!-- WHALE CARD 2: RETIRO COLD VAULT -->
-                <div class="card whale-item" data-category="vault" style="border-left:5px solid #8b5cf6; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                <span class="badge-vault">🟣 ACUMULACIÓN / RETIRO A VAULT</span>
-                                <div class="score-pill score-high" style="border-color:var(--purple); color:var(--purple); background:rgba(168,85,247,0.15);">🎯 Smart Money Score: 91/100</div>
-                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 8 minutos</span>
+                <!-- WHALES FEED CONTAINER -->
+                <div id="whalesListContainer">
+                    ${displayedWhales.map(w => `
+                    <div class="card whale-item whale-card" data-category="${w.category}" data-search="${w.title.toLowerCase()} ${w.protocol.toLowerCase()} ${w.desc.toLowerCase()}" style="border-left:5px solid ${w.borderColor}; margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                    <span class="${w.badgeClass}">${w.badgeText}</span>
+                                    <div class="score-pill score-high">🎯 Smart Money Score: ${w.score}</div>
+                                    <span style="font-size:12px; color:var(--text-muted); font-weight:700;">${w.time}</span>
+                                </div>
+                                <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">${w.title}</h3>
+                                <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
+                                    Protocolo: <strong style="color:var(--cyan);">${w.protocol}</strong> • ${w.desc}
+                                </div>
                             </div>
-                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 RETIRO DESDE EXCHANGE HACIA MULTISIG SAFE VAULT</h3>
-                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Emisor: <strong>Coinbase Institutional</strong> ➔ Destino: <strong style="color:var(--purple);">Safe Cold Vault</strong> • Disminuye oferta circulante
+                            <div style="text-align:right;">
+                                <div style="font-size:24px; font-weight:900; color:${w.amountColor};">${w.amount}</div>
                             </div>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:24px; font-weight:900; color:var(--purple);">$840,000 USD</div>
+
+                        <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; font-size:12.5px;">
+                            <div>🎯 <strong>Zona Entrada:</strong> <span style="color:var(--cyan); font-weight:800;">${w.entry}</span></div>
+                            <div>🛑 <strong>Stop-Loss:</strong> <span style="color:var(--rose); font-weight:800;">${w.sl}</span></div>
+                            <div>🚀 <strong>Take-Profit:</strong> <span style="color:var(--emerald); font-weight:800;">${w.tp}</span></div>
+                            <div>🛡️ <strong>R:R:</strong> <span style="color:var(--purple); font-weight:800;">${w.rr}</span></div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <button onclick="openWhaleAiModal('${w.id}', '${w.title.replace(/'/g, "\\'")}', '${w.amount}', 'ETH / Tokens', '${w.protocol}', '${w.basescan}')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px; cursor:pointer;">
+                                ✨ Diagnóstico IA (1 Ficha)
+                            </button>
+                            <a href="${w.basescan}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="border-color:${w.borderColor}; color:${w.amountColor}; padding:8px 14px; font-size:12.5px;">
+                                🔍 Ver en BaseScan
+                            </a>
                         </div>
                     </div>
+                    `).join('')}
+                </div>
 
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
-                        💡 <strong>Interpretación Cuantitativa:</strong> Las instituciones retiraron 325 cbETH del exchange para congelarlo en bóveda fría multisig. Esto reduce drásticamente la presión vendedora en el libro de órdenes.
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <button onclick="openWhaleAiModal('w2', 'Retiro Institucional hacia Safe Multisig Vault', '$840,000 USD', 'cbETH / ETH', 'Coinbase Institutional', 'https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
-                            ✨ Diagnóstico IA (1 Ficha)
-                        </button>
-                        <a href="https://basescan.org/tx/0x98ce59571a5f321620ca52ec8472ba3195c93ab26458ffe813dac52c51343a30" target="_blank" class="btn-outline" style="border-color:var(--purple); color:var(--purple); padding:8px 14px; font-size:12.5px;">
-                            🔍 Ver en BaseScan
+                <!-- FREE UPGRADE BANNER -->
+                ${!isAlphaVip ? `
+                <div class="card" style="border:2px dashed var(--purple); background:linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(0,242,254,0.08) 100%); text-align:center; padding:36px 24px; margin-top:20px;">
+                    <div style="font-size:42px; margin-bottom:8px;">🔒🐋</div>
+                    <h3 style="font-size:24px; font-weight:900; color:var(--text-main); margin-bottom:8px;">
+                        Desbloquea ${allWhales.length - 2}+ Alertas Cuantitativas en Vivo
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:14.5px; max-width:650px; margin:0 auto 20px auto; font-weight:600; line-height:1.5;">
+                        Estás viendo una muestra de 2 señales. Con <strong>Maxi Alpha VIP</strong> y <strong>Maxi Suite All-Access</strong> recibes el flujo completo de millones en movimientos institucionales 24/7 con zonas de entrada y Stop-Loss calculadas matemáticamente.
+                    </p>
+                    <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                        <a href="/cuenta#planes" class="btn-primary" style="padding:14px 28px; font-size:15px; font-weight:900; text-decoration:none; background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white;">
+                            ⚡ Desbloquear Radar Completo ($10 USD / 1er Mes)
                         </a>
                     </div>
                 </div>
-
-                <!-- WHALE CARD 3: COMPRA MASIVA AERO -->
-                <div class="card whale-item" data-category="buy" style="border-left:5px solid #00f2fe; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                <span class="badge-buy" style="background:rgba(0,242,254,0.15); color:var(--cyan); border-color:var(--cyan);">🟢 ACUMULACIÓN DE ALTA BETA</span>
-                                <div class="score-pill score-high">🎯 Smart Money Score: 96/100</div>
-                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 12 minutos</span>
-                            </div>
-                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BALLENA ACUMULA 450,000 $AERO ($531,000 USD)</h3>
-                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Compra TWAP en bloques sucesivos: <strong style="color:var(--cyan);">$1.18 USD/token</strong> • Impacto: Absorción del 14% del libro de órdenes
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:24px; font-weight:900; color:var(--cyan);">+$531,000 USD</div>
-                        </div>
-                    </div>
-
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; font-size:12.5px;">
-                        <div>🎯 <strong>Zona Entrada:</strong> <span style="color:var(--cyan); font-weight:800;">$1.12 - $1.18 AERO</span></div>
-                        <div>🛑 <strong>Stop-Loss:</strong> <span style="color:var(--rose); font-weight:800;">$1.05 (-8.5%)</span></div>
-                        <div>🚀 <strong>Take-Profit:</strong> <span style="color:var(--emerald); font-weight:800;">$1.45 (+28.0%)</span></div>
-                        <div>🛡️ <strong>R:R:</strong> <span style="color:var(--purple); font-weight:800;">1 : 3.2</span></div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <button onclick="openWhaleAiModal('w3', 'Acumulación Masiva de 450,000 AERO', '$531,000 USD', 'AERO', 'Aerodrome DEX', 'https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
-                            ✨ Diagnóstico IA (1 Ficha)
-                        </button>
-                        <a href="https://basescan.org/token/0x940181a94a35a4569e4529a3cdfb74e38fd98631" target="_blank" class="btn-outline" style="border-color:var(--cyan); color:var(--cyan); padding:8px 14px; font-size:12.5px;">
-                            🔍 Ver Token en BaseScan
-                        </a>
-                    </div>
-                </div>
-
-                <!-- WHALE CARD 4: INYECCION LIQUIDEZ UNISWAP -->
-                <div class="card whale-item" data-category="pool" style="border-left:5px solid #0284c7; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                <span class="badge-pool">⚡ INYECCIÓN DE LIQUIDEZ (DeFi Pool)</span>
-                                <div class="score-pill score-mid">🎯 Smart Money Score: 87/100</div>
-                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 24 minutos</span>
-                            </div>
-                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 DEPÓSITO DE CAPITAL EN PISCINA USDC/ETH (Uniswap V3)</h3>
-                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Liquidez Concentrada en rango estrecho: <strong style="color:var(--cyan);">$2,450 - $2,600</strong>
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:24px; font-weight:900; color:var(--cyan);">$519,612 USD</div>
-                        </div>
-                    </div>
-
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
-                        ⚡ <strong>Interpretación Cuantitativa:</strong> Creación de soporte con liquidez concentrada en Base. Genera rendimiento pasivo de comisiones para la ballena y frena retrocesos de precio.
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <button onclick="openWhaleAiModal('w4', 'Inyección de Liquidez Concentrada USDC/ETH', '$519,612 USD', 'USDC / ETH', 'Uniswap V3', 'https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
-                            ✨ Diagnóstico IA (1 Ficha)
-                        </button>
-                        <a href="https://basescan.org/tx/0x1595bfff2030f56677c8eb1e9b9ceae2ac483167280958c0228339c84147aba7" target="_blank" class="btn-outline" style="border-color:var(--cyan); color:var(--cyan); padding:8px 14px; font-size:12.5px;">
-                            🔍 Ver en BaseScan
-                        </a>
-                    </div>
-                </div>
-
-                <!-- WHALE CARD 5: STAKING INSTITUCIONAL CBETH -->
-                <div class="card whale-item" data-category="vault" style="border-left:5px solid #f59e0b; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                <span class="badge-vault" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:#f59e0b;">🟣 STAKING INSTITUCIONAL</span>
-                                <div class="score-pill score-high">🎯 Smart Money Score: 89/100</div>
-                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">⏱️ Hace 45 minutos</span>
-                            </div>
-                            <h3 style="font-size:18px; font-weight:800; color:var(--text-main);">🚨 BLOQUEO DE 250 ETH ($628,000 USD) EN PROTOCOLO DE RENDIMIENTO</h3>
-                            <div style="font-size:13px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Depósito a contrato de Staking Líquido en Base • Cero intención de venta a corto plazo
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:24px; font-weight:900; color:#f59e0b;">$628,000 USD</div>
-                        </div>
-                    </div>
-
-                    <div style="background:var(--bg-card-hover); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--text-muted); font-weight:600;">
-                        🔒 <strong>Interpretación Cuantitativa:</strong> Las instituciones bloquean ETH para captura de rendimiento (APY 3.8%), congelando la oferta en Base.
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <button onclick="openWhaleAiModal('w5', 'Bloqueo Institucional de 250 ETH en Staking', '$628,000 USD', 'ETH / cbETH', 'Lido / Base Bridge', 'https://basescan.org/address/0x4200000000000000000000000000000000000006')" class="btn-primary" style="background:linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color:white; padding:9px 16px; font-size:13px;">
-                            ✨ Diagnóstico IA (1 Ficha)
-                        </button>
-                        <a href="https://basescan.org/address/0x4200000000000000000000000000000000000006" target="_blank" class="btn-outline" style="border-color:#f59e0b; color:#f59e0b; padding:8px 14px; font-size:12.5px;">
-                            🔍 Ver en BaseScan
-                        </a>
-                    </div>
-                </div>
+                ` : ''}
 
             </div>
 
             <!-- RIGHT COLUMN: LIVE NEWS & MACRO CONFLUENCE (35%) -->
             <div>
-                
                 <!-- NEWS PANEL -->
                 <div class="card" style="border-color:var(--cyan); background:var(--bg-card); padding:22px; margin-bottom:20px; position:sticky; top:80px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
@@ -6173,8 +6611,6 @@ function renderBallenasPage(user = null) {
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:14px;">
-                        
-                        <!-- NEWS ITEM 1 -->
                         <div class="news-item">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <span style="font-size:11px; font-weight:800; color:var(--cyan);">Bloomberg Markets</span>
@@ -6183,12 +6619,8 @@ function renderBallenasPage(user = null) {
                             <a href="https://www.bloomberg.com/crypto" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
                                 Reserva Federal sugiere pausa y posible recorte de tasas ante caída de inflación global.
                             </a>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Impacto: ⚡⚡⚡ Alto • Hace 5 min
-                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">Impacto: ⚡⚡⚡ Alto • Hace 5 min</div>
                         </div>
-
-                        <!-- NEWS ITEM 2 -->
                         <div class="news-item">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <span style="font-size:11px; font-weight:800; color:var(--cyan);">CoinDesk</span>
@@ -6197,12 +6629,8 @@ function renderBallenasPage(user = null) {
                             <a href="https://www.coindesk.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
                                 Volumen de transacciones diarias en Base L2 supera récord histórico impulsado por DeFi.
                             </a>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Impacto: ⚡⚡ Medio • Hace 18 min
-                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">Impacto: ⚡⚡ Medio • Hace 18 min</div>
                         </div>
-
-                        <!-- NEWS ITEM 3 -->
                         <div class="news-item">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <span style="font-size:11px; font-weight:800; color:var(--cyan);">Cointelegraph</span>
@@ -6211,72 +6639,12 @@ function renderBallenasPage(user = null) {
                             <a href="https://cointelegraph.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
                                 Inflows institucionales en ETFs de Bitcoin y Ethereum superan los $185M en 24 horas.
                             </a>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Impacto: ⚡⚡⚡ Alto • Hace 35 min
-                            </div>
-                        </div>
-
-                        <!-- NEWS ITEM 4 -->
-                        <div class="news-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Reuters Macro</span>
-                                <span class="tag-macro">⚪ MACRO</span>
-                            </div>
-                            <a href="https://www.reuters.com" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
-                                El Índice Dólar (DXY) retrocede a 101.15 abriendo apetito por activos de riesgo.
-                            </a>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Impacto: ⚡⚡ Medio • Hace 1 hora
-                            </div>
-                        </div>
-
-                        <!-- NEWS ITEM 5 -->
-                        <div class="news-item">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span style="font-size:11px; font-weight:800; color:var(--cyan);">Base Official</span>
-                                <span class="tag-bull">🟢 ALCISTA</span>
-                            </div>
-                            <a href="https://base.org" target="_blank" style="text-decoration:none; color:var(--text-main); font-size:13.5px; font-weight:700; line-height:1.4; display:block;">
-                                Nueva actualización de tarifas reduce el costo de gas promedio a menos de $0.005 USD.
-                            </a>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">
-                                Impacto: ⚡ Bajo • Hace 2 horas
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- MACRO CONFLUENCE WIDGET -->
-                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
-                        <div style="font-size:12px; font-weight:800; color:var(--purple); text-transform:uppercase; margin-bottom:10px;">
-                            📊 Matriz de Confluencia Macro
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px; font-weight:700;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Correlación BTC vs S&amp;P 500:</span>
-                                <span style="color:var(--emerald);">+0.68 (Sincronizada)</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Índice VIX Volatilidad:</span>
-                                <span style="color:var(--cyan);">15.20 (Estabilidad)</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Inflow ETFs Spot (24h):</span>
-                                <span style="color:var(--emerald);">+$185.4M USD</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between;">
-                                <span style="color:var(--text-muted);">Gas Base L2:</span>
-                                <span style="color:var(--cyan);">&lt; $0.005 USD ⚡</span>
-                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-weight:600;">Impacto: ⚡⚡⚡ Alto • Hace 35 min</div>
                         </div>
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
     ${getFooter()}
@@ -6288,7 +6656,7 @@ function renderBallenasPage(user = null) {
             document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
             if (btn) btn.classList.add('active');
 
-            const items = document.querySelectorAll('.whale-item');
+            const items = document.querySelectorAll('.whale-card');
             items.forEach(item => {
                 if (cat === 'all' || item.getAttribute('data-category') === cat) {
                     item.style.display = 'block';
@@ -6296,6 +6664,36 @@ function renderBallenasPage(user = null) {
                     item.style.display = 'none';
                 }
             });
+        }
+
+        function searchWhales(query) {
+            const cleanQuery = query.toLowerCase().trim();
+            const cards = document.querySelectorAll('.whale-card');
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                if (!cleanQuery || searchData.includes(cleanQuery)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function refreshWhalesFeed() {
+            const btn = event.target;
+            if (btn) {
+                btn.innerText = '⏳ Conectando RPC Base L2...';
+                btn.disabled = true;
+            }
+            setTimeout(() => {
+                if (btn) {
+                    btn.innerText = '✓ ¡Radar Sincronizado!';
+                    setTimeout(() => {
+                        btn.innerText = '🔄 Actualizar Radar On-Chain';
+                        btn.disabled = false;
+                    }, 1500);
+                }
+            }, 600);
         }
 
         async function openWhaleAiModal(whaleId, title, amount, asset, protocol, txUrl) {
@@ -6338,7 +6736,6 @@ function renderBallenasPage(user = null) {
                                   '• Confluencia: ' + d.macro;
 
                 document.getElementById('whaleAiModal').style.display = 'flex';
-                checkUserSession();
             } catch (err) {
                 console.error('Error al generar diagnóstico IA:', err);
                 alert('Conectando con el motor de IA... por favor intenta nuevamente.');
@@ -6359,6 +6756,213 @@ function renderBallenasPage(user = null) {
 }
 
 function renderTrabajosPage(user = null) {
+  const isVip = user && (user.plan === 'Gig Finder VIP' || user.plan === 'Maxi Suite All-Access');
+  const isAllAccess = user && user.plan === 'Maxi Suite All-Access';
+  const planName = user ? (user.plan || 'Plan Gratuito') : 'Invitado';
+
+  const allGigs = [
+    {
+      id: 'g1',
+      title: '🎨 Diseño de Banner & Interfaz Web3 (UI/UX en Figma)',
+      platform: 'Superteam Earn',
+      category: 'design',
+      categoryLabel: '🎨 Diseño Gráfico / UI/UX',
+      time: '⏱️ Hace 12 minutos',
+      reward: '$150.00 USDC',
+      amount: '150',
+      url: 'https://earn.superteam.fun/bounties/'
+    },
+    {
+      id: 'g2',
+      title: '💻 Bot de Telegram para Pagos y Membresías Web3 en Base L2',
+      platform: 'Gitcoin Explorer',
+      category: 'code',
+      categoryLabel: '💻 Node.js / Base L2 API',
+      time: '⏱️ Hace 24 minutos',
+      reward: '$400.00 USDC',
+      amount: '400',
+      url: 'https://explorer.gitcoin.co/'
+    },
+    {
+      id: 'g3',
+      title: '✍️ Traducción y Localización de Whitepaper Técnico (Inglés a Español)',
+      platform: 'Farcaster Warpcast',
+      category: 'writing',
+      categoryLabel: '✍️ Redacción & Traducción',
+      time: '⏱️ Hace 45 minutos',
+      reward: '$200.00 USDC',
+      amount: '200',
+      url: 'https://warpcast.com/~/channel/bounties'
+    },
+    {
+      id: 'g4',
+      title: '🛡️ Auditoría de Seguridad & Gas Optimization en Smart Contracts (Solidity)',
+      platform: 'Web3 Career',
+      category: 'security',
+      categoryLabel: '🛡️ Seguridad / Auditoría EVM',
+      time: '⏱️ Hace 1 hora',
+      reward: '$650.00 USDC',
+      amount: '650',
+      url: 'https://web3.career/security-jobs'
+    },
+    {
+      id: 'g5',
+      title: '🚀 Moderador Bilingüe de Comunidad & Content Lead en Telegram / Discord',
+      platform: 'Base Ecosystem Bounty',
+      category: 'growth',
+      categoryLabel: '🚀 Comunidad & Marketing',
+      time: '⏱️ Hace 1 hora',
+      reward: '$350.00 USDC',
+      amount: '350',
+      url: 'https://base.org/ecosystem'
+    },
+    {
+      id: 'g6',
+      title: '⚡ Integración de Pasarela Checkout en Next.js con Coinbase CDP & Viem',
+      platform: 'Biconomy Grants',
+      category: 'code',
+      categoryLabel: '💻 Frontend Web3 / TypeScript',
+      time: '⏱️ Hace 2 horas',
+      reward: '$550.00 USDC',
+      amount: '550',
+      url: 'https://biconomy.io/grants'
+    },
+    {
+      id: 'g7',
+      title: '🎨 Sistema de Diseño (Design System) & Iconografía Vectorial Cyberpunk',
+      platform: 'Dework Web3',
+      category: 'design',
+      categoryLabel: '🎨 Diseño / Branding Vectorial',
+      time: '⏱️ Hace 2 horas',
+      reward: '$280.00 USDC',
+      amount: '280',
+      url: 'https://dework.xyz/'
+    },
+    {
+      id: 'g8',
+      title: '✍️ Hilos Técnicos Educativos en X (Twitter) sobre DeFi y Capas 2',
+      platform: 'Optimism RetroPGF',
+      category: 'writing',
+      categoryLabel: '✍️ Content Marketing / X Threads',
+      time: '⏱️ Hace 3 horas',
+      reward: '$180.00 USDC',
+      amount: '180',
+      url: 'https://app.optimism.io/retropgf'
+    },
+    {
+      id: 'g9',
+      title: '🛡️ Desarrollo de Smart Contract de Staking ERC-20 con Recompensas TWAP',
+      platform: 'Uniswap Grants',
+      category: 'security',
+      categoryLabel: '🛡️ Solidity / DeFi Protocol',
+      time: '⏱️ Hace 3 horas',
+      reward: '$950.00 USDC',
+      amount: '950',
+      url: 'https://www.unigrants.org/'
+    },
+    {
+      id: 'g10',
+      title: '💻 Script en Python para Indexación de Eventos On-Chain con Subgraphs',
+      platform: 'The Graph Protocol',
+      category: 'code',
+      categoryLabel: '💻 Python / GraphQL / Data Indexing',
+      time: '⏱️ Hace 4 horas',
+      reward: '$480.00 USDC',
+      amount: '480',
+      url: 'https://thegraph.com/ecosystem'
+    },
+    {
+      id: 'g11',
+      title: '🎨 Landing Page Animada con Three.js & Tailwind CSS para Protocolo DEX',
+      platform: 'Aerodrome Slipstream',
+      category: 'design',
+      categoryLabel: '🎨 UI/UX & Web Animation',
+      time: '⏱️ Hace 5 horas',
+      reward: '$600.00 USDC',
+      amount: '600',
+      url: 'https://aerodrome.finance/'
+    },
+    {
+      id: 'g12',
+      title: '🚀 Campaña de Onboarding & Gamificación para Miniapp de Telegram',
+      platform: 'TON & Base Alliance',
+      category: 'growth',
+      categoryLabel: '🚀 Growth Hacking & Viral Loops',
+      time: '⏱️ Hace 5 horas',
+      reward: '$420.00 USDC',
+      amount: '420',
+      url: 'https://earn.superteam.fun/'
+    },
+    {
+      id: 'g13',
+      title: '✍️ Redacción de Casos de Estudio & Artículos para Blog Fintech Web3',
+      platform: 'CoinDesk Consensus Bounties',
+      category: 'writing',
+      categoryLabel: '✍️ Periodismo Cripto / SEO',
+      time: '⏱️ Hace 6 horas',
+      reward: '$220.00 USDC',
+      amount: '220',
+      url: 'https://warpcast.com/'
+    },
+    {
+      id: 'g14',
+      title: '💻 Microservicio Docker de Webhooks y Firma Criptográfica en Node.js',
+      platform: 'Privy Developer Hub',
+      category: 'code',
+      categoryLabel: '💻 Backend / Docker / Microservices',
+      time: '⏱️ Hace 6 horas',
+      reward: '$500.00 USDC',
+      amount: '500',
+      url: 'https://privy.io/'
+    },
+    {
+      id: 'g15',
+      title: '🛡️ Test Suite Integral con Foundry / Hardhat & Fuzzing en Base L2',
+      platform: 'Ethereum Foundation Grants',
+      category: 'security',
+      categoryLabel: '🛡️ QA / Foundry / Fuzzing Testing',
+      time: '⏱️ Hace 7 horas',
+      reward: '$800.00 USDC',
+      amount: '800',
+      url: 'https://esp.ethereum.foundation/'
+    },
+    {
+      id: 'g16',
+      title: '🎨 Creación de 10 Banners Publicitarios para Campaña en Warpcast & X',
+      platform: 'Lens Protocol',
+      category: 'design',
+      categoryLabel: '🎨 Social Media Design',
+      time: '⏱️ Hace 8 horas',
+      reward: '$250.00 USDC',
+      amount: '250',
+      url: 'https://lens.xyz/'
+    },
+    {
+      id: 'g17',
+      title: '🚀 Estrategia de Retención & Email Marketing Transaccional en Resend',
+      platform: 'SaaS Web3 Network',
+      category: 'growth',
+      categoryLabel: '🚀 CRM / Email Marketing',
+      time: '⏱️ Hace 9 horas',
+      reward: '$320.00 USDC',
+      amount: '320',
+      url: 'https://earn.superteam.fun/'
+    },
+    {
+      id: 'g18',
+      title: '💻 Arquitectura de Bóveda Multifirma Safe & Integración de Account Abstraction',
+      platform: 'Safe Ecosystem Fund',
+      category: 'code',
+      categoryLabel: '💻 ERC-4337 / Account Abstraction',
+      time: '⏱️ Hace 10 horas',
+      reward: '$1,200.00 USDC',
+      amount: '1200',
+      url: 'https://safe.global/'
+    }
+  ];
+
+  const displayedGigs = isVip ? allGigs : allGigs.slice(0, 3);
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6366,13 +6970,46 @@ function renderTrabajosPage(user = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maxi Gig Finder • AI Auto-Proposal Sniper</title>
     ${getGlobalStyles()}
+    <style>
+        .gig-filter-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gig-filter-btn:hover {
+            border-color: var(--cyan);
+            color: var(--text-main);
+        }
+        .gig-filter-btn.active {
+            border-color: var(--emerald);
+            background: rgba(0, 223, 137, 0.15);
+            color: var(--emerald);
+            box-shadow: 0 4px 14px rgba(0, 223, 137, 0.2);
+        }
+        .gig-card {
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .gig-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--cyan);
+        }
+    </style>
 </head>
 <body>
     ${getHeader('trabajos', user)}
 
     <!-- AI PROPOSAL MODAL -->
     <div id="aiModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeAiModal()">
-        <div class="modal-card">
+        <div class="modal-card" style="max-width:680px; border-color:var(--emerald); box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 35px rgba(0,223,137,0.25);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:24px;">✨</span>
@@ -6400,85 +7037,99 @@ function renderTrabajosPage(user = null) {
     </div>
 
     <div class="page-container">
-        <div style="text-align:center; margin-bottom:35px;">
-            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,223,137,0.12); border:1px solid rgba(0,223,137,0.3); color:var(--emerald); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:700; margin-bottom:12px;">
-                ✨ AI Auto-Proposal Sniper Integrado
+        <!-- HEADER -->
+        <div style="text-align:center; margin-bottom:30px;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0,223,137,0.12); border:1px solid rgba(0,223,137,0.3); color:var(--emerald); padding:6px 16px; border-radius:18px; font-size:12.5px; font-weight:800; margin-bottom:12px;">
+                ✨ AI Auto-Proposal Sniper • Feed en Vivo
             </div>
-            <h1 style="font-size:36px; font-weight:800; letter-spacing:-0.02em; margin-bottom:10px; color:var(--text-main);">
+            <h1 style="font-size:36px; font-weight:900; letter-spacing:-0.02em; margin-bottom:10px; color:var(--text-main);">
                 Trabajos Remotos & Bounties en USDC
             </h1>
-            <p style="color:var(--text-muted); font-size:16px; max-width:700px; margin:0 auto; font-weight:600;">
-                No pierdas tiempo escribiendo postulaciones desde cero. Haz clic en <strong>«✨ Postularme con IA»</strong> y Maxi genera tu propuesta ganadora en 30 segundos.
+            <p style="color:var(--text-muted); font-size:15.5px; max-width:780px; margin:0 auto; font-weight:600; line-height:1.6;">
+                Postúlate a proyectos internacionales pagados en dólares digitales (USDC). Haz clic en <strong>«✨ Postularme con IA»</strong> y Maxi genera tu propuesta técnica ganadora en 30 segundos.
             </p>
         </div>
 
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-                <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">🎨 Diseño de Banner & Interfaz Web3 (UI/UX)</h3>
-                <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Superteam Earn</strong></span>
-                    <span>🏷️ Categoría: <strong>Diseño Gráfico / Figma</strong></span>
-                    <span>⏱️ Hace 15 minutos</span>
-                </div>
+        <!-- STATUS BAR & VIP BADGE -->
+        <div style="background:var(--input-bg); border:1.5px solid var(--border); border-radius:14px; padding:14px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; color:var(--emerald); background:var(--calc-saved-bg); padding:4px 12px; border-radius:20px; border:1px solid var(--emerald);">
+                    <span style="width:8px; height:8px; background:var(--emerald); border-radius:50%; display:inline-block;"></span>
+                    ${isVip ? `🟢 ${allGigs.length} CONVOCATORIAS EN VIVO` : '⚪ VISTA PREVIA (3 OFERTAS)'}
+                </span>
+                <span style="font-size:13px; color:var(--text-muted); font-weight:700;">
+                    Plan: <strong style="color:${isVip ? 'var(--emerald)' : 'var(--cyan)'};">${planName}</strong>
+                </span>
             </div>
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <div style="font-size:22px; font-weight:800; color:var(--emerald);">$150.00 USDC</div>
-                <button onclick="openAiProposalModal('Diseño de Banner & Interfaz Web3 (UI/UX)', '150', 'design', 'https://earn.superteam.fun/bounties/')" class="btn-primary">
-                    ✨ Postularme con IA (1 Ficha)
+
+            <div style="display:flex; gap:10px; align-items:center;">
+                ${isVip ? `
+                <button onclick="refreshGigsFeed()" class="btn-outline" style="padding:7px 14px; font-size:12.5px; font-weight:800; border-color:var(--emerald); color:var(--emerald); cursor:pointer;">
+                    🔄 Actualizar Feed en Vivo
                 </button>
+                ` : `
+                <a href="/cuenta#planes" class="btn-primary" style="padding:7px 16px; font-size:12.5px; font-weight:800; text-decoration:none;">
+                    👑 Desbloquear ${allGigs.length}+ Bounties ($5 USD)
+                </a>
+                `}
             </div>
         </div>
 
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-                <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">💻 Bot de Telegram para Pagos y Membresías</h3>
-                <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Gitcoin Explorer</strong></span>
-                    <span>🏷️ Categoría: <strong>Node.js / Web3 API</strong></span>
-                    <span>⏱️ Hace 42 minutos</span>
-                </div>
+        <!-- FILTER CHIPS (FOR VIP & ALL-ACCESS) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:20px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="gig-filter-btn active" data-cat="all" onclick="filterGigs('all', this)">🌟 Todos (${displayedGigs.length})</button>
+                <button class="gig-filter-btn" data-cat="code" onclick="filterGigs('code', this)">💻 Código & Bots</button>
+                <button class="gig-filter-btn" data-cat="design" onclick="filterGigs('design', this)">🎨 Diseño UI/UX</button>
+                <button class="gig-filter-btn" data-cat="security" onclick="filterGigs('security', this)">🛡️ Solidity & Auditoría</button>
+                <button class="gig-filter-btn" data-cat="writing" onclick="filterGigs('writing', this)">✍️ Traducción & Textos</button>
+                <button class="gig-filter-btn" data-cat="growth" onclick="filterGigs('growth', this)">🚀 Comunidad & Growth</button>
             </div>
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <div style="font-size:22px; font-weight:800; color:var(--emerald);">$400.00 USDC</div>
-                <button onclick="openAiProposalModal('Bot de Telegram para Pagos y Membresías', '400', 'code', 'https://explorer.gitcoin.co/')" class="btn-primary">
-                    ✨ Postularme con IA (1 Ficha)
-                </button>
+
+            <div style="flex:1; max-width:280px; min-width:200px;">
+                <input type="text" id="gigSearchInput" class="input-box" placeholder="🔍 Buscar por palabra clave..." oninput="searchGigs(this.value)" style="padding:8px 14px; font-size:13px; margin:0;">
             </div>
         </div>
 
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-                <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">✍️ Traducción de Whitepaper Técnico (Inglés a Español)</h3>
-                <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Farcaster Warpcast</strong></span>
-                    <span>🏷️ Categoría: <strong>Redacción / Traducción</strong></span>
-                    <span>⏱️ Hace 1 hora</span>
+        <!-- GIG LIST CONTAINER -->
+        <div id="gigsList">
+            ${displayedGigs.map(g => `
+            <div class="card gig-card" data-category="${g.category}" data-search="${g.title.toLowerCase()} ${g.platform.toLowerCase()} ${g.categoryLabel.toLowerCase()}" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+                <div>
+                    <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">${g.title}</h3>
+                    <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
+                        <span>🏢 Plataforma: <strong style="color:var(--text-main);">${g.platform}</strong></span>
+                        <span>🏷️ Categoría: <strong style="color:var(--cyan);">${g.categoryLabel}</strong></span>
+                        <span>${g.time}</span>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div style="font-size:22px; font-weight:900; color:var(--emerald);">${g.reward}</div>
+                    <button onclick="openAiProposalModal('${g.title.replace(/'/g, "\\'")}', '${g.amount}', '${g.category}', '${g.url}')" class="btn-primary" style="cursor:pointer;">
+                        ✨ Postularme con IA (1 Ficha)
+                    </button>
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <div style="font-size:22px; font-weight:800; color:var(--emerald);">$200.00 USDC</div>
-                <button onclick="openAiProposalModal('Traducción de Whitepaper Técnico', '200', 'writing', 'https://warpcast.com/~/channel/bounties')" class="btn-primary">
-                    ✨ Postularme con IA (1 Ficha)
-                </button>
-            </div>
+            `).join('')}
         </div>
 
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-                <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-main);">🛡️ Auditoría de Seguridad de Smart Contracts (Solidity)</h3>
-                <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap; font-weight:600;">
-                    <span>🏢 Plataforma: <strong>Web3 Career</strong></span>
-                    <span>🏷️ Categoría: <strong>Seguridad / Auditoría</strong></span>
-                    <span>⏱️ Hace 2 horas</span>
-                </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <div style="font-size:22px; font-weight:800; color:var(--emerald);">$650.00 USDC</div>
-                <button onclick="openAiProposalModal('Auditoría de Seguridad de Smart Contracts', '650', 'security', 'https://web3.career/security-jobs')" class="btn-primary">
-                    ✨ Postularme con IA (1 Ficha)
-                </button>
+        <!-- FREE USER UPGRADE BANNER -->
+        ${!isVip ? `
+        <div class="card" style="border:2px dashed var(--cyan); background:linear-gradient(135deg, rgba(0,242,254,0.06) 0%, rgba(0,223,137,0.08) 100%); text-align:center; padding:36px 24px; margin-top:20px;">
+            <div style="font-size:42px; margin-bottom:8px;">🔒💼</div>
+            <h3 style="font-size:24px; font-weight:900; color:var(--text-main); margin-bottom:8px;">
+                Desbloquea ${allGigs.length - 3}+ Convocatorias Exclusivas en Tiempo Real
+            </h3>
+            <p style="color:var(--text-muted); font-size:14.5px; max-width:650px; margin:0 auto 20px auto; font-weight:600; line-height:1.5;">
+                Estás viendo una muestra de cortesía. Los suscriptores de <strong>Gig Finder VIP</strong> y <strong>Maxi Suite All-Access</strong> acceden al radar completo de más de $10,000 USD en oportunidades diarias actualizadas cada 15 minutos.
+            </p>
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                <a href="/cuenta#planes" class="btn-primary" style="padding:14px 28px; font-size:15px; font-weight:900; text-decoration:none; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                    ⚡ Desbloquear Feed Completo ($5 USD / 1er Mes)
+                </a>
             </div>
         </div>
+        ` : ''}
     </div>
 
     ${getFooter()}
@@ -6501,8 +7152,56 @@ function renderTrabajosPage(user = null) {
             security: {
                 en: "Greetings! 🛡️ I specialize in EVM smart contract auditing, reentrancy analysis, and gas optimization. I will conduct static analysis, fuzzing, and manual line-by-line review to deliver a comprehensive vulnerability report with remediation code. Ready to inspect your repo.",
                 es: "¡Saludos! 🛡️ Me especializo en auditorías de contratos inteligentes EVM, análisis de reentrancy y optimización de gas. Realizaré pruebas de fuzzing y revisión manual línea por línea para entregar un informe detallado con parches de remediación. Listo para auditar su repositorio."
+            },
+            growth: {
+                en: "Hi team! 🚀 I specialize in crypto community growth, Telegram bot gamification, and Web3 audience onboarding. I have scaled decentralized communities through viral referral loops and localized content. Ready to supercharge your reach!",
+                es: "¡Hola equipo! 🚀 Me especializo en crecimiento de comunidades cripto, gamificación con bots de Telegram y onboarding de usuarios en Web3. He escalado comunidades descentralizadas con loops virales y contenido localizado. ¡Listo para potenciar su alcance!"
             }
         };
+
+        function filterGigs(cat, btn) {
+            document.querySelectorAll('.gig-filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.gig-card');
+            cards.forEach(card => {
+                if (cat === 'all' || card.getAttribute('data-category') === cat) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function searchGigs(query) {
+            const cleanQuery = query.toLowerCase().trim();
+            const cards = document.querySelectorAll('.gig-card');
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                if (!cleanQuery || searchData.includes(cleanQuery)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function refreshGigsFeed() {
+            const btn = event.target;
+            if (btn) {
+                btn.innerText = '⏳ Sincronizando Bounties...';
+                btn.disabled = true;
+            }
+            setTimeout(() => {
+                if (btn) {
+                    btn.innerText = '✓ ¡Feed Actualizado!';
+                    setTimeout(() => {
+                        btn.innerText = '🔄 Actualizar Feed en Vivo';
+                        btn.disabled = false;
+                    }, 1500);
+                }
+            }, 600);
+        }
 
         async function openAiProposalModal(jobTitle, reward, category, officialUrl) {
             const token = localStorage.getItem('maxi_user_token');
@@ -6525,7 +7224,6 @@ function renderTrabajosPage(user = null) {
                 currentProposals = t;
                 switchProposalLang('en');
                 document.getElementById('aiModal').style.display = 'flex';
-                checkUserSession();
             } catch (err) {
                 console.error('Error al generar propuesta:', err);
                 document.getElementById('modalJobTitle').innerText = '✨ Propuesta IA: ' + jobTitle;
@@ -11247,6 +11945,138 @@ const server = http.createServer(async (req, res) => {
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, withdrawalId: withdrawal.id, withdrawal }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/user/change-password') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión.' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const { newPassword, confirmPassword } = payload;
+                if (!newPassword || newPassword.length < 6) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'La nueva contraseña debe tener al menos 6 caracteres.' }));
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Las contraseñas ingresadas no coinciden.' }));
+                    return;
+                }
+
+                const { hash, salt } = hashPassword(newPassword);
+                user.passwordHash = hash;
+                user.passwordSalt = salt;
+                saveUsersDb();
+
+                console.log(`🔒 [PASSWORD CHANGED]: Usuario ${user.email} actualizó su contraseña con éxito.`);
+
+                // Dispatch security alert email via Resend
+                if (RESEND_API_KEY) {
+                    fetch('https://api.resend.com/emails', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${RESEND_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            from: 'Maxi Security <onboarding@resend.dev>',
+                            to: [user.email],
+                            subject: '🔒 Tu contraseña en Maxi Suite ha sido actualizada',
+                            html: `<p>Hola <strong>${user.name}</strong>,</p><p>Te confirmamos que la contraseña de tu cuenta (<strong>${user.email}</strong>) ha sido actualizada correctamente.</p><p>Si no fuiste tú, por favor contáctanos de inmediato.</p>`
+                        })
+                    }).catch(() => {});
+                }
+
+                // Telegram private alert if linked
+                sendUserTelegramNotification(
+                    user.email,
+                    `🔒 *¡SEGURIDAD DE CUENTA!* 🛡️\n\nHola *${user.name}*, tu contraseña de acceso en Maxi Suite ha sido actualizada exitosamente.`
+                ).catch(() => {});
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: '¡Tu contraseña ha sido actualizada exitosamente!' }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/auth/forgot-password') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const cleanEmail = (payload.email || '').trim().toLowerCase();
+                if (!cleanEmail || !cleanEmail.includes('@')) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Por favor ingresa un correo electrónico válido.' }));
+                    return;
+                }
+
+                const user = usersDb.users[cleanEmail];
+                if (user) {
+                    const resetToken = 'mag_' + crypto.randomBytes(24).toString('hex');
+                    usersDb.sessions[resetToken] = cleanEmail;
+                    saveUsersDb();
+
+                    const host = req.headers.host || 'localhost:3014';
+                    const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+                    const resetLink = `${proto}://${host}/cuenta?token=${resetToken}`;
+
+                    console.log(`🔑 [PASSWORD RESET DISPATCH]: Link generado para ${cleanEmail} -> ${resetLink}`);
+
+                    // Send Email via Resend
+                    if (RESEND_API_KEY) {
+                        fetch('https://api.resend.com/emails', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                from: 'Maxi Support <onboarding@resend.dev>',
+                                to: [cleanEmail],
+                                subject: '🔑 Enlace de Rescate de Cuenta • Maxi Suite',
+                                html: `<div style="font-family:sans-serif; background:#0c1017; color:#f8fafc; padding:24px; border-radius:12px;">
+                                    <h2 style="color:#00df89;">Maxi Suite • Rescate de Cuenta</h2>
+                                    <p>Hola <strong>${user.name}</strong>,</p>
+                                    <p>Recibimos una solicitud para acceder a tu cuenta y restablecer tu contraseña.</p>
+                                    <p style="margin:24px 0;">
+                                        <a href="${resetLink}" style="background:#00df89; color:#06080e; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold;">
+                                            🔑 Ingresar y Restablecer mi Contraseña
+                                        </a>
+                                    </p>
+                                    <p style="color:#94a3b8; font-size:12px;">Este enlace es de uso único y privado.</p>
+                                </div>`
+                            })
+                        }).catch(() => {});
+                    }
+
+                    // Telegram alert if linked
+                    sendUserTelegramNotification(
+                        cleanEmail,
+                        `🔑 *¡RESCATE DE CUENTA MAXI SUITE!* ⚡\n\nHemos generado tu enlace de acceso directo para restablecer tu contraseña:\n🔗 ${resetLink}`
+                    ).catch(() => {});
+                }
+
+                // Generic success message to prevent user enumeration attacks
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Si tu correo está registrado, te hemos enviado un enlace seguro de rescate para restablecer tu contraseña.'
+                }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));

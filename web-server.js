@@ -3925,6 +3925,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
     <script>
         let currentUserState = ${JSON.stringify(sanitizeUser(user))};
+        window.currentUserState = currentUserState;
 
         function getCookie(name) {
             const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));

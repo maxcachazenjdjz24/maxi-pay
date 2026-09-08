@@ -1236,7 +1236,44 @@ const ICONS = {
   tg: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-17.5 7.5a2.25 2.25 0 0 0 .126 4.148l4.43 1.477 1.77 5.31a1.5 1.5 0 0 0 2.46.59l2.76-2.454 4.54 3.355a2.25 2.25 0 0 0 3.51-1.474l3-16.5a2.25 2.25 0 0 0-4.074-2.167z"/></svg>`
 };
 
-function getHeader(activePage = 'home') {
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getHeader(activePage = 'home', user = null) {
+  const isAuth = !!(user && (user.email || user.name));
+  const userName = user ? (user.name || user.email.split('@')[0]) : '';
+  const userCredits = user && user.credits !== undefined ? user.credits : 5;
+  const userPlan = user && user.plan ? user.plan : 'Gratuito';
+
+  const authActionsHtml = isAuth ? `
+    <div id="navAuthContainer" style="display:inline-flex; align-items:center; gap:8px;">
+        <a href="/cuenta" class="btn-primary" style="padding:6px 12px; font-size:12.5px; border-radius:10px; font-weight:800; text-decoration:none; display:flex; align-items:center; gap:6px; background:linear-gradient(135deg, rgba(0,242,254,0.18), rgba(0,223,137,0.18)); border:1.5px solid var(--border-focus, #00f2fe); color:var(--text-main); box-shadow:0 0 15px rgba(0,242,254,0.15);" title="Mi Cuenta & Bóveda (${userPlan})">
+            <span style="color:var(--cyan); font-size:13px;">👤</span>
+            <span id="navUserName" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800;">${escapeHtml(userName)}</span>
+            <span id="navUserCredits" style="background:var(--emerald); color:#06080e; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:12px; margin-left:2px;" title="${userCredits} fichas disponibles">${userCredits} Fichas</span>
+        </a>
+        <a href="/cuenta?logout=true" onclick="try{localStorage.removeItem('maxi_user_token');localStorage.removeItem('maxi_user_email');}catch(e){}" class="btn-outline" style="padding:6px 10px; font-size:12px; border-radius:10px; font-weight:700; border-color:rgba(244,63,94,0.4); color:#f43f5e; text-decoration:none;" title="Cerrar Sesión Segura">
+            🚪 Salir
+        </a>
+    </div>
+  ` : `
+    <div id="navAuthContainer" style="display:inline-flex; align-items:center; gap:8px;">
+        <a href="/cuenta?tab=login" class="btn-outline" style="padding:7px 13px; font-size:12.5px; border-radius:10px; font-weight:800; border-color:rgba(0,242,254,0.35); color:var(--text-main); text-decoration:none;" title="Iniciar Sesión en tu Cuenta">
+            🔑 Iniciar Sesión
+        </a>
+        <a href="/cuenta?tab=register" class="btn-primary" style="padding:7px 14px; font-size:12.5px; border-radius:10px; font-weight:800; text-decoration:none;" id="accountNavBtn" title="Crear Cuenta y Recibir 5 Fichas Gratis">
+            👤 Crear Cuenta
+        </a>
+    </div>
+  `;
+
   return `
     <div class="ticker-wrapper">
         <div class="ticker-track">
@@ -1290,13 +1327,7 @@ function getHeader(activePage = 'home') {
                     <span id="langFlag" style="font-weight:800; font-size:11.5px;">ES</span>
                 </button>
 
-                <a href="/cuenta?tab=login" class="btn-outline" style="padding:7px 13px; font-size:12.5px; border-radius:10px; font-weight:800; border-color:rgba(0,242,254,0.35); color:var(--text-main); text-decoration:none;" title="Iniciar Sesión en tu Cuenta">
-                    🔑 Iniciar Sesión
-                </a>
-
-                <a href="/cuenta?tab=register" class="btn-primary" style="padding:7px 14px; font-size:12.5px; border-radius:10px; font-weight:800; text-decoration:none;" id="accountNavBtn" title="Crear Cuenta y Recibir 5 Fichas Gratis">
-                    👤 Crear Cuenta
-                </a>
+                ${authActionsHtml}
 
                 <a href="/admin" class="icon-btn" title="Panel Privado de Administrador (Juan David)" style="border-color:rgba(0,242,254,0.4); color:var(--cyan);">
                     ${ICONS.lock}
@@ -1594,11 +1625,63 @@ function getFooter() {
             }
         }
 
-        // Restore conversation on page load
+        function escapeHtmlNav(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        async function syncNavSession() {
+            try {
+                const navContainer = document.getElementById('navAuthContainer');
+                if (!navContainer) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('logout') === 'true') {
+                    try {
+                        localStorage.removeItem('maxi_user_token');
+                        localStorage.removeItem('maxi_user_email');
+                    } catch(e) {}
+                    return;
+                }
+
+                const token = localStorage.getItem('maxi_user_token');
+                const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+                const res = await fetch('/api/auth/me', { headers });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                if (data.authenticated && data.user) {
+                    const u = data.user;
+                    const uName = u.name || (u.email ? u.email.split('@')[0] : 'Mi Cuenta');
+                    const uCredits = u.credits !== undefined ? u.credits : 5;
+                    const uPlan = u.plan || 'Gratuito';
+
+                    navContainer.innerHTML = 
+                        '<a href="/cuenta" class="btn-primary" style="padding:6px 12px; font-size:12.5px; border-radius:10px; font-weight:800; text-decoration:none; display:flex; align-items:center; gap:6px; background:linear-gradient(135deg, rgba(0,242,254,0.18), rgba(0,223,137,0.18)); border:1.5px solid var(--border-focus, #00f2fe); color:var(--text-main); box-shadow:0 0 15px rgba(0,242,254,0.15);" title="Mi Cuenta & Bóveda (' + escapeHtmlNav(uPlan) + ')">' +
+                            '<span style="color:var(--cyan); font-size:13px;">👤</span>' +
+                            '<span id="navUserName" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800;">' + escapeHtmlNav(uName) + '</span>' +
+                            '<span id="navUserCredits" style="background:var(--emerald); color:#06080e; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:12px; margin-left:2px;" title="' + uCredits + ' fichas disponibles">' + uCredits + ' Fichas</span>' +
+                        '</a>' +
+                        '<a href="/cuenta?logout=true" onclick="try{localStorage.removeItem(\\'maxi_user_token\\');localStorage.removeItem(\\'maxi_user_email\\');}catch(e){}" class="btn-outline" style="padding:6px 10px; font-size:12px; border-radius:10px; font-weight:700; border-color:rgba(244,63,94,0.4); color:#f43f5e; text-decoration:none;" title="Cerrar Sesión Segura">' +
+                            '🚪 Salir' +
+                        '</a>';
+                }
+            } catch (e) {}
+        }
+
+        window.syncNavSession = syncNavSession;
+        window.checkUserSession = syncNavSession;
+
+        // Restore conversation & sync navbar session on page load
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', restoreChatFromSession);
+            document.addEventListener('DOMContentLoaded', () => {
+                restoreChatFromSession();
+                syncNavSession();
+            });
         } else {
             restoreChatFromSession();
+            syncNavSession();
         }
     </script>
   `;
@@ -3241,7 +3324,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 </head>
 <body>
     <div id="cuentaToast"></div>
-    ${getHeader('cuenta')}
+    ${getHeader('cuenta', user)}
 
     <div class="page-container">
         <!-- AUTH REGISTRATION / LOGIN (SHOWN IF USER IS NOT LOGGED IN) -->
@@ -5007,7 +5090,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 }
 
 // 4. ADMIN, TUTORIALES, BALLENAS, TRABAJOS, PAY, JUEGOS, MERCADOS, DEMO STORE
-function renderAdminPage() {
+function renderAdminPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5017,7 +5100,7 @@ function renderAdminPage() {
     ${getGlobalStyles()}
 </head>
 <body>
-    ${getHeader('admin')}
+    ${getHeader('admin', user)}
 
     <div class="page-container">
         <!-- ADMIN LOGIN BOX (SHOWN IF NOT AUTHENTICATED) -->
@@ -5367,7 +5450,7 @@ function renderAdminPage() {
 </html>`;
 }
 
-function renderBallenasPage() {
+function renderBallenasPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5453,7 +5536,7 @@ function renderBallenasPage() {
     </style>
 </head>
 <body>
-    ${getHeader('ballenas')}
+    ${getHeader('ballenas', user)}
 
     <!-- AI TACTICAL DIAGNOSIS MODAL -->
     <div id="whaleAiModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeWhaleModal()">
@@ -5951,7 +6034,7 @@ function renderBallenasPage() {
 </html>`;
 }
 
-function renderTrabajosPage() {
+function renderTrabajosPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5961,7 +6044,7 @@ function renderTrabajosPage() {
     ${getGlobalStyles()}
 </head>
 <body>
-    ${getHeader('trabajos')}
+    ${getHeader('trabajos', user)}
 
     <!-- AI PROPOSAL MODAL -->
     <div id="aiModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeAiModal()">
@@ -6156,7 +6239,7 @@ function renderTrabajosPage() {
 </html>`;
 }
 
-function renderHomePage() {
+function renderHomePage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6302,7 +6385,7 @@ function renderHomePage() {
     </style>
 </head>
 <body>
-    ${getHeader('home')}
+    ${getHeader('home', user)}
 
     <div class="hero-glow"></div>
 
@@ -7052,7 +7135,7 @@ function renderHomePage() {
 </html>`;
 }
 
-function renderPayPage() {
+function renderPayPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7062,7 +7145,7 @@ function renderPayPage() {
     ${getGlobalStyles()}
 </head>
 <body>
-    ${getHeader('pay')}
+    ${getHeader('pay', user)}
 
     <div class="page-container">
         <div style="text-align:center; margin-bottom:35px;">
@@ -7199,7 +7282,7 @@ function renderPayPage() {
 </html>`;
 }
 
-function renderJuegosPage() {
+function renderJuegosPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7245,7 +7328,7 @@ function renderJuegosPage() {
     </style>
 </head>
 <body>
-    ${getHeader('juegos')}
+    ${getHeader('juegos', user)}
 
     <div class="page-container">
         <div style="text-align:center; margin-bottom:30px;">
@@ -7368,7 +7451,7 @@ function renderJuegosPage() {
 </html>`;
 }
 
-function renderMercadosPage() {
+function renderMercadosPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7574,7 +7657,7 @@ function renderMercadosPage() {
     </style>
 </head>
 <body>
-    ${getHeader('mercados')}
+    ${getHeader('mercados', user)}
 
     <div class="page-container" style="max-width:1320px; width:100%; box-sizing:border-box;">
         <!-- HEADER HERO -->
@@ -8052,7 +8135,7 @@ function renderMercadosPage() {
 </html>`;
 }
 
-function renderTutorialesPage() {
+function renderTutorialesPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8298,7 +8381,7 @@ function renderTutorialesPage() {
     </style>
 </head>
 <body>
-    ${getHeader('tutoriales')}
+    ${getHeader('tutoriales', user)}
 
     <div class="page-container" style="max-width:1200px;">
         
@@ -9268,7 +9351,7 @@ function renderTutorialesPage() {
 </html>`;
 }
 
-function renderDemoStoreHtml() {
+function renderDemoStoreHtml(user = null) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9278,7 +9361,7 @@ function renderDemoStoreHtml() {
     ${getGlobalStyles()}
 </head>
 <body>
-    ${getHeader('demo')}
+    ${getHeader('demo', user)}
 
     <div class="page-container">
         <div style="text-align:center; margin-bottom:35px;">
@@ -9620,15 +9703,17 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
+        const authUser = getAuthenticatedUser(req);
+
         if (pathname === '/' || pathname === '/home' || pathname === '/inicio') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderHomePage());
+            res.end(renderHomePage(authUser));
         } else if (pathname === '/pay') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderPayPage());
+            res.end(renderPayPage(authUser));
         } else if (pathname === '/admin') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderAdminPage());
+            res.end(renderAdminPage(authUser));
         } else if (pathname === '/cuenta') {
             loadUsersDb();
             const query = parsedUrl.query || {};
@@ -9648,7 +9733,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             // Strict zero-trust authentication
-            let authenticatedUser = (query.tab === 'register' || query.tab === 'login') ? null : getAuthenticatedUser(req);
+            let authenticatedUser = (query.tab === 'register' || query.tab === 'login') ? null : authUser;
             const initialTab = query.tab === 'login' ? 'login' : 'register';
 
             const userInvoices = authenticatedUser ? Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === authenticatedUser.email.toLowerCase()) : [];
@@ -9656,22 +9741,22 @@ const server = http.createServer(async (req, res) => {
             res.end(renderCuentaPage(authenticatedUser, userInvoices, initialTab));
         } else if (pathname === '/trabajos' || pathname === '/gigs') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderTrabajosPage());
+            res.end(renderTrabajosPage(authUser));
         } else if (pathname === '/ballenas' || pathname === '/alpha') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderBallenasPage());
+            res.end(renderBallenasPage(authUser));
         } else if (pathname === '/mercados') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderMercadosPage());
+            res.end(renderMercadosPage(authUser));
         } else if (pathname === '/juegos') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderJuegosPage());
+            res.end(renderJuegosPage(authUser));
         } else if (pathname === '/tutoriales') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderTutorialesPage());
+            res.end(renderTutorialesPage(authUser));
         } else if (pathname === '/demo-store') {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(renderDemoStoreHtml());
+            res.end(renderDemoStoreHtml(authUser));
         } else if (pathname === '/checkout') {
             const orderId = parsedUrl.query.order_id || 'ORD-TEST';
             const amount = parsedUrl.query.amount || '50';
@@ -9832,18 +9917,15 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify(check));
             return;
         } else if (pathname === '/api/auth/me') {
-            const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-            if (token && usersDb.sessions[token]) {
-                const email = usersDb.sessions[token];
-                const user = usersDb.users[email];
-                if (user) {
-                    const userInvoices = Object.values(usersDb.invoices || {}).filter(inv => 
-                        (inv.buyerEmail || '').toLowerCase() === email.toLowerCase()
-                    );
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ authenticated: true, user: sanitizeUser(user), invoices: userInvoices }));
-                    return;
-                }
+            loadUsersDb();
+            const user = getAuthenticatedUser(req);
+            if (user) {
+                const userInvoices = Object.values(usersDb.invoices || {}).filter(inv => 
+                    (inv.buyerEmail || '').toLowerCase() === (user.email || '').toLowerCase()
+                );
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ authenticated: true, user: sanitizeUser(user), invoices: userInvoices }));
+                return;
             }
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ authenticated: false, user: null }));

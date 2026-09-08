@@ -899,6 +899,20 @@ function sanitizeUser(user) {
   safeUser.walletSyncStatus = syncStatus;
   safeUser.hasVault = !!user.encryptedVault;
   safeUser.hasPrivateKey = !!(user.encryptedVault || user.privateKey);
+  safeUser.plan = user.plan || 'Gratuito';
+  safeUser.credits = user.credits !== undefined ? user.credits : 5;
+  safeUser.registeredAt = user.registeredAt || user.createdAt || null;
+  safeUser.subscriptionExpiresAt = user.subscriptionExpiresAt || null;
+
+  if (user.subscriptionExpiresAt) {
+    const diffMs = new Date(user.subscriptionExpiresAt).getTime() - Date.now();
+    safeUser.daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    safeUser.isExpired = diffMs <= 0;
+  } else {
+    safeUser.daysRemaining = null;
+    safeUser.isExpired = false;
+  }
+
   return safeUser;
 }
 
@@ -5213,32 +5227,45 @@ function renderAdminPage(user = null) {
             </div>
 
             <!-- ROW 3: CRM USER MANAGEMENT TABLE -->
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+            <div class="card" style="box-shadow:0 15px 45px rgba(0, 242, 254, 0.08);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:14px;">
                     <div>
-                        <h3 style="font-size:20px; font-weight:800; color:var(--text-main);">👥 Directorio de Clientes & Usuarios Registrados</h3>
-                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600;">Gestión de cuentas, planes y contacto directo vía WhatsApp.</p>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:22px;">👥</span>
+                            <h3 style="font-size:20px; font-weight:800; color:var(--text-main); margin:0;">Directorio de Clientes & Superpoderes de Admin</h3>
+                        </div>
+                        <p style="color:var(--text-muted); font-size:13.5px; font-weight:600; margin-top:4px;">
+                            Inspecciona cuentas en vivo, modifica planes, gestiona tiempo de suscripción y elimina cuentas con 1 clic.
+                        </p>
                     </div>
-                    <span id="userCountBadge" style="background:rgba(0, 242, 254, 0.12); color:var(--cyan); padding:4px 12px; border-radius:12px; font-weight:800; font-size:13px;">0 Clientes</span>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="adminUserSearch" oninput="filterUsersTable()" placeholder="🔍 Buscar nombre, correo o wallet..." class="input-box" style="padding:8px 14px; font-size:13px; width:250px; max-width:100%;">
+                        <select id="adminPlanFilter" onchange="filterUsersTable()" class="input-box" style="padding:8px 12px; font-size:13px; width:160px; font-weight:700;">
+                            <option value="ALL">Todos los Planes</option>
+                            <option value="PRO">💎 Maxi Pay Pro</option>
+                            <option value="VIP">💼 / 🎯 VIPs</option>
+                            <option value="ALL_ACCESS">👑 All-Access</option>
+                            <option value="FREE">⚪ Plan Gratuito</option>
+                        </select>
+                        <span id="userCountBadge" style="background:rgba(0, 242, 254, 0.12); color:var(--cyan); padding:6px 14px; border-radius:12px; font-weight:800; font-size:13px; border:1px solid rgba(0,242,254,0.3);">0 Clientes</span>
+                    </div>
                 </div>
 
                 <div style="overflow-x:auto;">
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Cliente</th>
-                                <th>Correo</th>
-                                <th>WhatsApp</th>
-                                <th>Billetera Base</th>
-                                <th>Estado Bóveda</th>
-                                <th>Plan Activo</th>
-                                <th>Fichas</th>
-                                <th>Acciones</th>
+                                <th>Cliente / Registro</th>
+                                <th>Contacto</th>
+                                <th>Smart Wallet (Base L2)</th>
+                                <th>Plan & Tiempo Suscripción</th>
+                                <th>Fichas IA</th>
+                                <th style="text-align:center;">Superpoderes (Acciones)</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
                             <tr>
-                                <td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">Cargando usuarios...</td>
+                                <td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">Cargando usuarios...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -5247,9 +5274,76 @@ function renderAdminPage(user = null) {
         </div>
     </div>
 
+    <!-- MODAL DE GESTIÓN AVANZADA DE CLIENTE -->
+    <div id="modalManageUser" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeUserModal()">
+        <div class="modal-card" style="max-width:560px; border-color:var(--cyan); box-shadow:0 25px 70px rgba(0,242,254,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:24px;">⚙️</span>
+                    <h3 style="font-size:19px; font-weight:800; color:var(--text-main);" id="modalUserTitle">Gestión de Cliente</h3>
+                </div>
+                <button onclick="closeUserModal()" style="background:none; border:none; color:var(--text-muted); font-size:26px; cursor:pointer; font-weight:bold;">&times;</button>
+            </div>
+
+            <input type="hidden" id="modalUserEmail">
+
+            <div style="margin-bottom:16px; background:rgba(0,242,254,0.06); padding:14px 18px; border-radius:14px; border:1px solid var(--border);">
+                <div style="font-size:12px; color:var(--text-muted); font-weight:700;">CLIENTE SELECCIONADO:</div>
+                <div id="modalUserNameDisplay" style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:2px;"></div>
+                <div id="modalUserEmailDisplay" style="font-size:13px; color:var(--cyan); font-weight:600;"></div>
+                <div id="modalUserSubStatus" style="font-size:12.5px; color:var(--emerald); font-weight:700; margin-top:6px;"></div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:var(--text-main);">💎 Asignar Plan de Suscripción:</label>
+                <select id="modalPlanSelect" class="input-box" style="width:100%; padding:10px 14px; font-weight:700;">
+                    <option value="Gratuito">⚪ Plan Gratuito (Sin cobro recurrente)</option>
+                    <option value="Maxi Pay Pro">💎 Maxi Pay Pro ($10 USD / mes - 0% Comisión)</option>
+                    <option value="Gig Finder VIP">💼 Gig Finder VIP ($10 USD / mes - 200 Fichas)</option>
+                    <option value="Maxi Alpha VIP">🎯 Maxi Alpha VIP ($20 USD / mes - Ballenas)</option>
+                    <option value="Maxi Suite All-Access">👑 Maxi Suite All-Access ($25 USD / mes - Total)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:var(--text-main);">⏳ Extender / Gestionar Tiempo de Suscripción:</label>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); gap:8px;">
+                    <button type="button" class="btn-outline" onclick="selectSubDays(30)" id="subBtn30" style="padding:8px 4px; font-size:11.5px; font-weight:700;">+30 Días (1M)</button>
+                    <button type="button" class="btn-outline" onclick="selectSubDays(90)" id="subBtn90" style="padding:8px 4px; font-size:11.5px; font-weight:700;">+90 Días (3M)</button>
+                    <button type="button" class="btn-outline" onclick="selectSubDays(365)" id="subBtn365" style="padding:8px 4px; font-size:11.5px; font-weight:700;">+1 Año</button>
+                    <button type="button" class="btn-outline" onclick="selectSubDays('LIFETIME')" id="subBtnLife" style="padding:8px 4px; font-size:11.5px; font-weight:700; color:var(--emerald); border-color:var(--emerald);">🌟 Vitalicio</button>
+                    <button type="button" class="btn-outline" onclick="selectSubDays('RESET')" id="subBtnReset" style="padding:8px 4px; font-size:11.5px; font-weight:700; color:var(--rose); border-color:var(--rose);">Resetear</button>
+                </div>
+                <input type="hidden" id="modalSubAction" value="0">
+                <div id="modalSubActionDisplay" style="font-size:12px; color:var(--cyan); font-weight:700; margin-top:6px;">Sin cambios de fecha</div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="display:block; font-size:13px; font-weight:800; margin-bottom:6px; color:var(--text-main);">🪙 Balance de Fichas IA:</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" id="modalCreditsInput" class="input-box" style="width:120px; font-weight:800;" min="0" value="5">
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" class="btn-outline" onclick="quickAddCredits(5)" style="padding:6px 10px; font-size:11px; font-weight:700;">+5</button>
+                        <button type="button" class="btn-outline" onclick="quickAddCredits(20)" style="padding:6px 10px; font-size:11px; font-weight:700;">+20</button>
+                        <button type="button" class="btn-outline" onclick="quickAddCredits(100)" style="padding:6px 10px; font-size:11px; font-weight:700;">+100</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+                <button type="button" class="btn-outline" onclick="closeUserModal()" style="padding:10px 18px;">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="saveUserModalChanges()" id="btnSaveUserModal" style="padding:10px 24px; font-weight:800; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e;">
+                    💾 Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
     ${getFooter()}
 
     <script>
+        let loadedUsersList = [];
+
         function togglePasswordVisibility(inputId, el) {
             const input = document.getElementById(inputId);
             if (!input) return;
@@ -5323,68 +5417,298 @@ function renderAdminPage(user = null) {
                 document.getElementById('kpiMrr').innerHTML = '$' + (data.metrics?.mrr || 0).toFixed(2) + ' <span style="font-size:16px; color:var(--text-muted);">/ mes</span>';
                 document.getElementById('userCountBadge').innerText = (data.metrics?.totalUsers || 0) + ' Clientes';
 
-                renderUsersTable(data.users || []);
+                loadedUsersList = data.users || [];
+                renderUsersTable(loadedUsersList);
             } catch (err) {
                 console.error('Error loading admin data:', err);
             }
         }
 
+        function filterUsersTable() {
+            const searchVal = (document.getElementById('adminUserSearch')?.value || '').toLowerCase().trim();
+            const planVal = document.getElementById('adminPlanFilter')?.value || 'ALL';
+
+            const filtered = loadedUsersList.filter(u => {
+                const matchSearch = !searchVal || 
+                    (u.name || '').toLowerCase().includes(searchVal) || 
+                    (u.email || '').toLowerCase().includes(searchVal) || 
+                    (u.phone || '').toLowerCase().includes(searchVal) || 
+                    (u.wallet || '').toLowerCase().includes(searchVal);
+
+                let matchPlan = true;
+                const p = (u.plan || '').toLowerCase();
+                if (planVal === 'PRO') matchPlan = p.includes('pro');
+                else if (planVal === 'VIP') matchPlan = p.includes('vip');
+                else if (planVal === 'ALL_ACCESS') matchPlan = p.includes('all-access') || p.includes('access');
+                else if (planVal === 'FREE') matchPlan = !p || p === 'gratuito';
+
+                return matchSearch && matchPlan;
+            });
+
+            renderUsersTable(filtered);
+            const badge = document.getElementById('userCountBadge');
+            if (badge) badge.innerText = filtered.length + ' de ' + loadedUsersList.length + ' Clientes';
+        }
+
+        function escapeAdminHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
         function renderUsersTable(users) {
             const tbody = document.getElementById('usersTableBody');
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No hay clientes registrados aún.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:28px; font-weight:600;">No se encontraron usuarios con ese criterio de búsqueda.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = users.map(u => {
                 const cleanPhone = (u.phone || '').replace(/[^0-9]/g, '');
-                const waLink = cleanPhone ? 'https://wa.me/' + cleanPhone : '#';
-                const walletShort = u.wallet ? (u.wallet.slice(0, 6) + '...' + u.wallet.slice(-4)) : '<span style="color:var(--text-muted);">Sin vincular</span>';
+                const waMessage = encodeURIComponent('Hola ' + (u.name ? u.name.split(' ')[0] : '') + ', te escribe Juan David, fundador de Maxi Suite. ¿Cómo te ha ido con tu Bóveda en Base L2?');
+                const waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + waMessage : '#';
+                
+                const hasCustomWallet = !!u.wallet && u.wallet.trim().length === 42;
+                const walletShort = hasCustomWallet ? (u.wallet.slice(0, 6) + '...' + u.wallet.slice(-4)) : '<span style="color:var(--text-muted);">Sin Billetera</span>';
+                const basescanLink = hasCustomWallet ? ('https://basescan.org/address/' + u.wallet) : '#';
+                
                 const isPro = u.plan && u.plan !== 'Gratuito';
-                let statusBadge = '<span style="color:var(--text-muted); font-size:11px;">⚪ Sin Billetera</span>';
-                if (u.walletSyncStatus === 'SYNCED') {
-                    statusBadge = '<span style="color:var(--emerald); background:rgba(0,223,137,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">✅ Bóveda Activa</span>';
+                let statusBadge = '<span style="color:var(--text-muted); font-size:10.5px;">⚪ Sin Bóveda</span>';
+                if (u.walletSyncStatus === 'SYNCED_VAULT' || u.walletSyncStatus === 'SYNCED') {
+                    statusBadge = '<span style="color:var(--emerald); background:rgba(0,223,137,0.12); padding:2px 7px; border-radius:6px; font-weight:800; font-size:10.5px;">🔒 Bóveda AES-256</span>';
                 } else if (u.walletSyncStatus === 'NO_KEY_EXTERNAL') {
-                    statusBadge = '<span style="color:var(--amber); background:rgba(245,158,11,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">⚠️ No Custodial</span>';
+                    statusBadge = '<span style="color:var(--amber); background:rgba(245,158,11,0.12); padding:2px 7px; border-radius:6px; font-weight:800; font-size:10.5px;">⚠️ Externa</span>';
                 } else if (u.walletSyncStatus === 'MISMATCH') {
-                    statusBadge = '<span style="color:var(--rose); background:rgba(244,63,94,0.12); padding:3px 8px; border-radius:6px; font-weight:800; font-size:11px;">🚨 Desajuste</span>';
+                    statusBadge = '<span style="color:var(--rose); background:rgba(244,63,94,0.12); padding:2px 7px; border-radius:6px; font-weight:800; font-size:10.5px;">🚨 Desajuste</span>';
                 }
 
+                // Subscription Badge
+                let subBadge = '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">⚪ Plan Gratuito</div>';
+                if (isPro) {
+                    if (u.daysRemaining !== null) {
+                        if (u.isExpired) {
+                            subBadge = '<div style="font-size:11px; color:var(--rose); font-weight:800; margin-top:2px;">🔴 Suscripción Vencida</div>';
+                        } else if (u.daysRemaining <= 3) {
+                            subBadge = '<div style="font-size:11px; color:var(--amber); font-weight:800; margin-top:2px;">🟡 Vence en ' + u.daysRemaining + ' días</div>';
+                        } else {
+                            subBadge = '<div style="font-size:11px; color:var(--emerald); font-weight:800; margin-top:2px;">🟢 ' + u.daysRemaining + ' días restantes</div>';
+                        }
+                    } else {
+                        subBadge = '<div style="font-size:11px; color:var(--emerald); font-weight:800; margin-top:2px;">🟢 Suscripción Activa</div>';
+                    }
+                }
+
+                const regDate = u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : 'Reciente';
+
                 return '<tr>' +
-                    '<td><strong>' + (u.name || 'Sin Nombre') + '</strong></td>' +
-                    '<td>' + (u.email || '') + '</td>' +
-                    '<td><a href="' + waLink + '" target="_blank" style="color:var(--emerald); text-decoration:none; font-weight:bold;">📱 ' + (u.phone || 'N/A') + '</a></td>' +
-                    '<td><code>' + walletShort + '</code></td>' +
-                    '<td>' + statusBadge + '</td>' +
-                    '<td><span style="background:' + (isPro ? 'rgba(0,223,137,0.15)' : 'rgba(0, 242, 254, 0.1)') + '; color:' + (isPro ? 'var(--emerald)' : 'var(--cyan)') + '; padding:3px 8px; border-radius:8px; font-weight:800; font-size:11.5px;">' + (u.plan || 'Gratuito') + '</span></td>' +
-                    '<td><strong style="color:var(--emerald);">' + (u.credits || 0) + ' Fichas</strong></td>' +
                     '<td>' +
-                        '<button onclick="addCreditsPrompt(\\'' + u.email + '\\')" class="btn-outline" style="padding:4px 10px; font-size:11px;">+ Fichas</button>' +
+                        '<div style="font-weight:800; color:var(--text-main); font-size:14px;">' + escapeAdminHtml(u.name || 'Usuario Maxi') + '</div>' +
+                        '<div style="font-size:11px; color:var(--text-muted);">Registrado: ' + regDate + '</div>' +
+                    '</td>' +
+                    '<td>' +
+                        '<div style="font-size:12.5px; font-weight:600; color:var(--text-main);">' + escapeAdminHtml(u.email || '') + '</div>' +
+                        (cleanPhone ? '<a href="' + waLink + '" target="_blank" style="display:inline-flex; align-items:center; gap:4px; color:var(--emerald); text-decoration:none; font-size:11.5px; font-weight:700; margin-top:3px;">📱 ' + escapeAdminHtml(u.phone) + '</a>' : '<span style="color:var(--text-muted); font-size:11px;">Sin teléfono</span>') +
+                    '</td>' +
+                    '<td>' +
+                        '<div style="display:flex; align-items:center; gap:6px;">' +
+                            '<code>' + walletShort + '</code>' +
+                            (hasCustomWallet ? '<a href="' + basescanLink + '" target="_blank" title="Ver en BaseScan" style="color:var(--cyan); text-decoration:none; font-size:12px;">🔍</a>' : '') +
+                        '</div>' +
+                        '<div style="margin-top:3px;">' + statusBadge + '</div>' +
+                    '</td>' +
+                    '<td>' +
+                        '<span style="background:' + (isPro ? 'rgba(0,223,137,0.15)' : 'rgba(0, 242, 254, 0.1)') + '; color:' + (isPro ? 'var(--emerald)' : 'var(--cyan)') + '; padding:3px 8px; border-radius:8px; font-weight:800; font-size:11.5px; border:1px solid ' + (isPro ? 'rgba(0,223,137,0.3)' : 'rgba(0,242,254,0.2)') + ';">' + (u.plan || 'Gratuito') + '</span>' +
+                        subBadge +
+                    '</td>' +
+                    '<td><strong style="color:var(--cyan); font-size:13.5px;">' + (u.credits || 0) + ' Fichas</strong></td>' +
+                    '<td>' +
+                        '<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">' +
+                            '<button onclick="impersonateUser(\\'' + escapeAdminHtml(u.email) + '\\')" class="btn-primary" style="padding:5px 10px; font-size:11.5px; font-weight:800; background:linear-gradient(135deg, rgba(0,242,254,0.2), rgba(0,223,137,0.2)); border:1px solid var(--cyan); color:var(--cyan);" title="Entrar a su cuenta en vivo como Juan David">' +
+                                '👁️ Entrar' +
+                            '</button>' +
+                            '<button onclick="openUserModal(\\'' + escapeAdminHtml(u.email) + '\\')" class="btn-outline" style="padding:5px 10px; font-size:11.5px; font-weight:700;" title="Cambiar Plan, Días de Suscripción o Fichas">' +
+                                '⚙️ Gestionar' +
+                            '</button>' +
+                            '<button onclick="copyMagicLink(\\'' + escapeAdminHtml(u.email) + '\\')" class="btn-outline" style="padding:5px 8px; font-size:11.5px; font-weight:700; border-color:rgba(251,191,36,0.4); color:#fbbf24;" title="Generar Enlace Mágico de Acceso en 1 clic">' +
+                                '🔑 Link' +
+                            '</button>' +
+                            '<button onclick="deleteUserConfirm(\\'' + escapeAdminHtml(u.email) + '\\', \\'' + escapeAdminHtml(u.name || u.email) + '\\')" class="btn-outline" style="padding:5px 8px; font-size:11.5px; font-weight:700; border-color:rgba(244,63,94,0.4); color:#f43f5e;" title="Eliminar Cuenta Definitivamente">' +
+                                '🗑️' +
+                            '</button>' +
+                        '</div>' +
                     '</td>' +
                 '</tr>';
             }).join('');
         }
 
-        async function addCreditsPrompt(email) {
-            const amount = prompt('¿Cuántas fichas deseas añadir a ' + email + '?', '10');
-            if (!amount || isNaN(amount)) return;
+        async function impersonateUser(email) {
+            const token = localStorage.getItem('maxi_admin_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/impersonate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.success && data.redirectUrl) {
+                    window.open(data.redirectUrl, '_blank');
+                } else {
+                    alert('Error al acceder como usuario: ' + (data.error || 'Error desconocido'));
+                }
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+            }
+        }
+
+        async function copyMagicLink(email) {
+            const token = localStorage.getItem('maxi_admin_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/user/magic-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.success && data.magicUrl) {
+                    const fullUrl = window.location.origin + data.magicUrl;
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(fullUrl);
+                    }
+                    alert('🔑 ¡Enlace Mágico Generado y Copiado!\\n\\n' + fullUrl + '\\n\\nPuedes enviarlo al usuario por WhatsApp para que ingrese a su cuenta en 1 clic.');
+                } else {
+                    alert('Error al generar enlace: ' + (data.error || 'Error desconocido'));
+                }
+            } catch (e) {
+                alert('Error al conectar: ' + e.message);
+            }
+        }
+
+        async function deleteUserConfirm(email, name) {
+            if (!confirm('⚠️ ¿ESTÁS SEGURO DE ELIMINAR LA CUENTA DE:\\n\\n"' + name + '" (' + email + ')?\\n\\nEsta acción purgará al usuario de la base de datos y cerrará todas sus sesiones activas.')) {
+                return;
+            }
 
             const token = localStorage.getItem('maxi_admin_token');
             try {
-                const res = await fetch('/api/admin/update-user', {
+                const res = await fetch('/api/admin/user/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ email, addCredits: parseInt(amount, 10) })
+                    body: JSON.stringify({ email })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('¡Fichas añadidas con éxito!');
+                    alert('🗑️ ' + (data.message || 'Usuario eliminado correctamente.'));
                     loadAdminData();
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error: ' + (data.error || 'No se pudo eliminar el usuario.'));
                 }
-            } catch (err) {
-                alert('Error al conectar: ' + err.message);
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+            }
+        }
+
+        function openUserModal(email) {
+            const user = loadedUsersList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+            if (!user) return;
+
+            document.getElementById('modalUserEmail').value = user.email;
+            document.getElementById('modalUserNameDisplay').innerText = user.name || 'Usuario Maxi';
+            document.getElementById('modalUserEmailDisplay').innerText = user.email;
+            
+            const isPro = user.plan && user.plan !== 'Gratuito';
+            let subText = 'Plan Gratuito';
+            if (isPro) {
+                if (user.daysRemaining !== null) {
+                    subText = user.isExpired ? 'Suscripción Vencida' : ('Suscripción Activa (' + user.daysRemaining + ' días restantes)');
+                } else {
+                    subText = 'Suscripción Activa';
+                }
+            }
+            document.getElementById('modalUserSubStatus').innerText = 'Estado Actual: ' + (user.plan || 'Gratuito') + ' • ' + subText;
+            document.getElementById('modalPlanSelect').value = user.plan || 'Gratuito';
+            document.getElementById('modalCreditsInput').value = user.credits !== undefined ? user.credits : 5;
+            
+            selectSubDays(0);
+            document.getElementById('modalManageUser').style.display = 'flex';
+        }
+
+        function closeUserModal() {
+            document.getElementById('modalManageUser').style.display = 'none';
+        }
+
+        function selectSubDays(days) {
+            document.getElementById('modalSubAction').value = days;
+            const display = document.getElementById('modalSubActionDisplay');
+            
+            ['subBtn30', 'subBtn90', 'subBtn365', 'subBtnLife', 'subBtnReset'].forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.style.background = 'transparent';
+            });
+
+            if (days === 30) {
+                document.getElementById('subBtn30').style.background = 'rgba(0,242,254,0.15)';
+                display.innerText = '⚡ Se sumarán +30 días a su suscripción.';
+            } else if (days === 90) {
+                document.getElementById('subBtn90').style.background = 'rgba(0,242,254,0.15)';
+                display.innerText = '⚡ Se sumarán +90 días (3 meses) a su suscripción.';
+            } else if (days === 365) {
+                document.getElementById('subBtn365').style.background = 'rgba(0,242,254,0.15)';
+                display.innerText = '⚡ Se sumará +1 año a su suscripción.';
+            } else if (days === 'LIFETIME') {
+                document.getElementById('subBtnLife').style.background = 'rgba(0,223,137,0.2)';
+                display.innerText = '🌟 Se asignará Acceso Vitalicio (10 años).';
+            } else if (days === 'RESET') {
+                document.getElementById('subBtnReset').style.background = 'rgba(244,63,94,0.2)';
+                display.innerText = '🔴 Se reseteará la suscripción a Gratuito.';
+            } else {
+                display.innerText = 'Sin cambios en la duración de la suscripción.';
+            }
+        }
+
+        function quickAddCredits(amount) {
+            const el = document.getElementById('modalCreditsInput');
+            el.value = (parseInt(el.value, 10) || 0) + amount;
+        }
+
+        async function saveUserModalChanges() {
+            const email = document.getElementById('modalUserEmail').value;
+            const plan = document.getElementById('modalPlanSelect').value;
+            const credits = parseInt(document.getElementById('modalCreditsInput').value, 10) || 0;
+            const subAction = document.getElementById('modalSubAction').value;
+
+            const btn = document.getElementById('btnSaveUserModal');
+            btn.disabled = true;
+            btn.innerText = '⏳ Guardando...';
+
+            const payload = { email, plan, credits };
+            if (subAction === 'LIFETIME') payload.setLifetime = true;
+            else if (subAction === 'RESET') payload.resetPlanToFree = true;
+            else if (!isNaN(parseInt(subAction, 10)) && parseInt(subAction, 10) > 0) payload.addDays = parseInt(subAction, 10);
+
+            const token = localStorage.getItem('maxi_admin_token');
+            try {
+                const res = await fetch('/api/admin/user/update-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ¡Cambios guardados con éxito para ' + email + '!');
+                    closeUserModal();
+                    loadAdminData();
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudieron guardar los cambios.'));
+                }
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '💾 Guardar Cambios';
             }
         }
 
@@ -9732,6 +10056,26 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
+            // 2. Token / Magic Link / Impersonation Login
+            const magicToken = query.token || query.auth_token;
+            if (magicToken && usersDb.sessions && usersDb.sessions[magicToken]) {
+                const sessionEmail = usersDb.sessions[magicToken];
+                const sessionUser = usersDb.users ? usersDb.users[sessionEmail] : null;
+                if (sessionUser) {
+                    const userInvoices = Object.values(usersDb.invoices || {}).filter(inv => !inv.buyerEmail || inv.buyerEmail.toLowerCase() === sessionEmail.toLowerCase());
+                    res.writeHead(200, {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Set-Cookie': [
+                            `maxi_user_session=${magicToken}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                            `maxi_user_token=${magicToken}; Path=/; Max-Age=2592000; SameSite=Lax`,
+                            `maxi_user_email=${sessionEmail}; Path=/; Max-Age=2592000; SameSite=Lax`
+                        ]
+                    });
+                    res.end(renderCuentaPage(sessionUser, userInvoices, 'profile'));
+                    return;
+                }
+            }
+
             // Strict zero-trust authentication
             let authenticatedUser = (query.tab === 'register' || query.tab === 'login') ? null : authUser;
             const initialTab = query.tab === 'login' ? 'login' : 'register';
@@ -10711,7 +11055,82 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
-    } else if (req.method === 'POST' && pathname === '/api/admin/update-user') {
+    } else if (req.method === 'POST' && pathname === '/api/admin/impersonate') {
+        const auth = verifyAdminAuth(req);
+        if (!auth.authenticated) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No autorizado. Se requiere sesión de administrador.' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const email = (payload.email || '').trim().toLowerCase();
+                const user = usersDb.users[email];
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado.' }));
+                    return;
+                }
+
+                const token = 'imp_' + crypto.randomBytes(24).toString('hex');
+                usersDb.sessions[token] = email;
+                saveUsersDb();
+
+                console.log(`👁️ [ADMIN IMPERSONATION]: Juan David ingresó a la cuenta de ${email}`);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, token, email, redirectUrl: '/cuenta?token=' + token }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/admin/user/delete') {
+        const auth = verifyAdminAuth(req);
+        if (!auth.authenticated) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No autorizado. Se requiere sesión de administrador.' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const email = (payload.email || '').trim().toLowerCase();
+                if (!email || email === ADMIN_EMAIL.toLowerCase() || email === 'jdavidjaramillo@hotmail.com') {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'No es posible eliminar la cuenta principal de administrador.' }));
+                    return;
+                }
+
+                if (!usersDb.users[email]) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado en la base de datos.' }));
+                    return;
+                }
+
+                delete usersDb.users[email];
+                for (const [sToken, sEmail] of Object.entries(usersDb.sessions || {})) {
+                    if (sEmail.toLowerCase() === email) {
+                        delete usersDb.sessions[sToken];
+                    }
+                }
+                saveUsersDb();
+
+                console.log(`🗑️ [ADMIN DELETE USER]: Usuario ${email} eliminado correctamente.`);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: `Usuario ${email} eliminado correctamente.` }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && (pathname === '/api/admin/user/update-plan' || pathname === '/api/admin/update-user')) {
         const auth = verifyAdminAuth(req);
         if (!auth.authenticated) {
             res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -10733,11 +11152,60 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 if (payload.plan) user.plan = payload.plan;
-                if (typeof payload.addCredits === 'number') user.credits = Math.max(0, user.credits + payload.addCredits);
+                if (typeof payload.addDays === 'number' && payload.addDays > 0) {
+                    const now = Date.now();
+                    const currentExp = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).getTime() : now;
+                    const baseTime = currentExp > now ? currentExp : now;
+                    user.subscriptionExpiresAt = new Date(baseTime + (payload.addDays * 24 * 60 * 60 * 1000)).toISOString();
+                }
+                if (payload.setLifetime) {
+                    user.subscriptionExpiresAt = new Date(Date.now() + (3650 * 24 * 60 * 60 * 1000)).toISOString();
+                }
+                if (payload.resetPlanToFree) {
+                    user.plan = 'Gratuito';
+                    user.subscriptionExpiresAt = null;
+                }
+                if (typeof payload.credits === 'number') {
+                    user.credits = Math.max(0, payload.credits);
+                } else if (typeof payload.addCredits === 'number') {
+                    user.credits = Math.max(0, (user.credits || 0) + payload.addCredits);
+                }
 
                 saveUsersDb();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, user }));
+                res.end(JSON.stringify({ success: true, user: sanitizeUser(user) }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+    } else if (req.method === 'POST' && pathname === '/api/admin/user/magic-link') {
+        const auth = verifyAdminAuth(req);
+        if (!auth.authenticated) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No autorizado.' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+            try {
+                const payload = JSON.parse(body || '{}');
+                const email = (payload.email || '').trim().toLowerCase();
+                const user = usersDb.users[email];
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado.' }));
+                    return;
+                }
+
+                const token = 'mag_' + crypto.randomBytes(24).toString('hex');
+                usersDb.sessions[token] = email;
+                saveUsersDb();
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, token, email, magicUrl: '/cuenta?token=' + token }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));

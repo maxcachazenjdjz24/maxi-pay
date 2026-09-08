@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const cryptoVault = require('./crypto-vault');
 
 // COOKIE PARSER HELPER
 function parseCookies(req) {
@@ -21,19 +22,13 @@ function parseCookies(req) {
   return list;
 }
 
-// PASSWORD HASHING UTILITY (PBKDF2 SHA512)
+// PASSWORD HASHING UTILITY (PBKDF2 SHA512 VIA CRYPTO-VAULT)
 function hashPassword(password, salt = null) {
-  if (!salt) {
-    salt = crypto.randomBytes(16).toString('hex');
-  }
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return { hash, salt };
+  return cryptoVault.hashPassword(password, salt);
 }
 
 function verifyPassword(password, storedHash, storedSalt) {
-  if (!storedHash || !storedSalt) return false;
-  const { hash } = hashPassword(password, storedSalt);
-  return hash === storedHash;
+  return cryptoVault.verifyPassword(password, storedHash, storedSalt);
 }
 
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
@@ -133,7 +128,19 @@ const WENIA_TREASURY_ADDRESS = '0xf2Ae7b828BCceF34B484760A1D698dEd0f790651';
 async function executeWithdrawalToWenia(user, amountUsdc) {
   try {
     if (!user) return { success: false, error: 'Usuario no válido en la sesión.' };
-    const pk = user.privateKey;
+    
+    // Decrypt private key from vault or fallback
+    let pk = null;
+    if (user.encryptedVault) {
+      try {
+        pk = cryptoVault.decryptPrivateKey(user.encryptedVault);
+      } catch (vErr) {
+        return { success: false, error: 'Error al descifrar la Bóveda Cripto del usuario: ' + vErr.message };
+      }
+    } else if (user.privateKey) {
+      pk = user.privateKey;
+    }
+
     if (!pk) {
       return { 
         success: false, 
@@ -200,13 +207,26 @@ async function executeWithdrawalToWenia(user, amountUsdc) {
     });
 
     console.log(`✅ [WITHDRAW TO WENIA BROADCAST]: Hash ${txHash}. Confirmando en blockchain...`);
+    let isConfirmed = false;
     if (basePublicClient) {
-      const receipt = await basePublicClient.waitForTransactionReceipt({ hash: txHash, timeout: 45000 });
-      if (receipt.status !== 'success') {
-        return { success: false, error: 'La transacción fue revertida en la red Base L2.' };
+      try {
+        const receipt = await basePublicClient.waitForTransactionReceipt({ hash: txHash, timeout: 45000 });
+        if (receipt && receipt.status === 'success') {
+          isConfirmed = true;
+        } else if (receipt && receipt.status !== 'success') {
+          return { success: false, error: 'La transacción fue revertida en la red Base L2.' };
+        }
+      } catch (receiptErr) {
+        console.warn('⚠️ [CONFIRMATION TIMEOUT NOTICE]: Tx emitida pero la espera del recibo excedió el tiempo límite. Estado PENDIENTE_VERIFICACION:', receiptErr.message);
       }
     }
-    return { success: true, txHash, simulated: false, basescanUrl: 'https://basescan.org/tx/' + txHash };
+    return { 
+      success: true, 
+      txHash, 
+      simulated: false, 
+      confirmed: isConfirmed,
+      basescanUrl: 'https://basescan.org/tx/' + txHash 
+    };
   } catch (err) {
     console.error('❌ [WITHDRAW TO WENIA ERROR]:', err.message);
     return { 
@@ -777,8 +797,13 @@ setTimeout(() => {
 }, 10000);
 
 // ADMIN MASTER SECURITY CONFIGURATION
-const ADMIN_MASTER_PASSWORD_HASH = crypto.createHash('sha256').update('MaxiMaster2026!').digest('hex');
-const ADMIN_EMAIL = 'admin@maxi.suite';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@maxi.suite';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'MaxiMaster2026!';
+
+function verifyAdminPassword(candidate) {
+  if (!candidate) return false;
+  return candidate === ADMIN_PASSWORD;
+}
 
 // USER ACCOUNT DATABASE PERSISTENCE
 const DATA_DIR = path.join(__dirname, 'data');
@@ -811,22 +836,45 @@ function loadUsersDb() {
       }
     }
 
-    // Cryptographic Key Invariant & Auto-Sync for all registered users
-    if (usersDb.users && viemAccountsModule && viemAccountsModule.privateKeyToAccount) {
+    // Cryptographic Vault Invariant, Migration & Auto-Sync for all registered users
+    let dbDirty = false;
+    if (usersDb.users) {
       for (const [email, u] of Object.entries(usersDb.users)) {
-        if (u && u.privateKey) {
+        if (!u) continue;
+        
+        // Auto-migrate legacy plaintext privateKey into AES-256-GCM encryptedVault
+        if (u.privateKey && !u.encryptedVault) {
           try {
-            const cleanPk = u.privateKey.startsWith('0x') ? u.privateKey : ('0x' + u.privateKey);
-            const derived = viemAccountsModule.privateKeyToAccount(cleanPk).address;
-            if (!u.wallet || u.wallet.toLowerCase() !== derived.toLowerCase()) {
-              console.log(`🔒 [CRYPTOGRAPHIC WALLET SYNC]: Sincronizando wallet para ${email}: ${u.wallet} -> ${derived}`);
-              u.wallet = derived;
+            u.encryptedVault = cryptoVault.encryptPrivateKey(u.privateKey);
+            delete u.privateKey;
+            dbDirty = true;
+            console.log(`🔒 [VAULT MIGRATION]: Clave cifrada con AES-256-GCM para usuario: ${email}`);
+          } catch (mErr) {
+            console.error(`⚠️ Error al migrar bóveda para ${email}:`, mErr.message);
+          }
+        }
+
+        // Validate wallet address derivation from vault
+        if (u.encryptedVault) {
+          try {
+            const decPk = cryptoVault.decryptPrivateKey(u.encryptedVault);
+            if (decPk && viemAccountsModule && viemAccountsModule.privateKeyToAccount) {
+              const derived = viemAccountsModule.privateKeyToAccount(decPk).address;
+              if (!u.wallet || u.wallet.toLowerCase() !== derived.toLowerCase()) {
+                console.log(`🔒 [CRYPTOGRAPHIC WALLET SYNC]: Sincronizando wallet para ${email}: ${u.wallet} -> ${derived}`);
+                u.wallet = derived;
+                dbDirty = true;
+              }
             }
           } catch (syncErr) {
-            console.error(`⚠️ Error al derivar llave para ${email}:`, syncErr.message);
+            console.error(`⚠️ Error al derivar llave desde bóveda para ${email}:`, syncErr.message);
           }
         }
       }
+    }
+
+    if (dbDirty) {
+      saveUsersDb();
     }
   } catch (e) {
     console.error('Error loading users db:', e.message);
@@ -842,31 +890,46 @@ function saveUsersDb() {
   }
 }
 
-// SECURITY DTO SANITIZER (OWASP & HABEAS DATA COMPLIANT)
+// SECURITY DTO SANITIZER (OWASP & HABEAS DATA COMPLIANT - ZERO LEAKS)
 function sanitizeUser(user) {
   if (!user) return null;
-  const { passwordHash, passwordSalt, privateKey, ...safeUser } = user;
+  const { passwordHash, passwordSalt, privateKey, encryptedVault, ...safeUser } = user;
   
   // Attach wallet sync diagnostic flag
   let syncStatus = 'NO_WALLET';
   if (user.wallet) {
-    if (!user.privateKey) {
+    if (!user.encryptedVault && !user.privateKey) {
       syncStatus = 'NO_KEY_EXTERNAL';
-    } else if (viemAccountsModule && viemAccountsModule.privateKeyToAccount) {
+    } else if (user.encryptedVault) {
       try {
-        const cleanPk = user.privateKey.startsWith('0x') ? user.privateKey : ('0x' + user.privateKey);
-        const derived = viemAccountsModule.privateKeyToAccount(cleanPk).address;
-        syncStatus = (derived.toLowerCase() === user.wallet.toLowerCase()) ? 'SYNCED' : 'MISMATCH';
+        const pk = cryptoVault.decryptPrivateKey(user.encryptedVault);
+        syncStatus = cryptoVault.verifyKeyParity(user.wallet, pk) ? 'SYNCED_VAULT' : 'MISMATCH';
       } catch (e) {
-        syncStatus = 'INVALID_KEY';
+        syncStatus = 'VAULT_LOCKED';
       }
     } else {
       syncStatus = 'MANAGED';
     }
   }
   safeUser.walletSyncStatus = syncStatus;
-  safeUser.hasPrivateKey = !!user.privateKey;
+  safeUser.hasVault = !!user.encryptedVault;
+  safeUser.hasPrivateKey = !!(user.encryptedVault || user.privateKey);
   return safeUser;
+}
+
+// STRICT ZERO-TRUST USER AUTHENTICATION HELPER
+function getAuthenticatedUser(req) {
+  loadUsersDb();
+  const cookies = parseCookies(req);
+  const authHeader = req.headers['authorization'] || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  const token = bearerToken || cookies.maxi_user_session || cookies.maxi_user_token;
+  
+  if (!token || !usersDb.sessions || !usersDb.sessions[token]) {
+    return null;
+  }
+  const email = usersDb.sessions[token];
+  return (usersDb.users && usersDb.users[email]) ? usersDb.users[email] : null;
 }
 
 loadUsersDb();
@@ -1095,21 +1158,13 @@ async function checkRecentUsdcTransfers(targetWallet, expectedAmount = 0, lookba
 }
 
 // SMART WALLET EMBEDDED ENGINE & BALANCE QUERY
-let generatePrivateKey, privateKeyToAccount;
-try {
-  const viemAcc = require('viem/accounts');
-  generatePrivateKey = viemAcc.generatePrivateKey;
-  privateKeyToAccount = viemAcc.privateKeyToAccount;
-} catch (e) {}
-
 function generateNewPersonalWallet() {
-  if (generatePrivateKey && privateKeyToAccount) {
-    const pk = generatePrivateKey();
-    const acc = privateKeyToAccount(pk);
-    return { walletAddress: acc.address, privateKey: pk };
-  }
-  const pk = '0x' + crypto.randomBytes(32).toString('hex');
-  return { walletAddress: '0x' + crypto.createHash('sha256').update(pk).digest('hex').slice(24), privateKey: pk };
+  const vaultWallet = cryptoVault.generateNewEncryptedWallet();
+  return {
+    walletAddress: vaultWallet.address,
+    encryptedVault: vaultWallet.encryptedVault,
+    ephemeralPrivateKey: vaultWallet.ephemeralPrivateKey
+  };
 }
 
 function generateSmartWalletForUser(email) {
@@ -9718,20 +9773,10 @@ const server = http.createServer(async (req, res) => {
                 withdrawals: usersDb.withdrawals || []
             }));
         } else if (pathname === '/api/user/wallet-data') {
-            const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-            let email = null;
-            if (token && usersDb.sessions[token]) {
-                email = usersDb.sessions[token];
-            } else if (parsedUrl.query.email) {
-                email = parsedUrl.query.email;
-            } else {
-                email = 'jdavidjaramillo@hotmail.com';
-            }
-
-            const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
+            const user = getAuthenticatedUser(req);
             if (!user) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión.' }));
                 return;
             }
 
@@ -9795,9 +9840,9 @@ const server = http.createServer(async (req, res) => {
                 // Associate sale with merchant user
                 const merchantEmail = Object.keys(usersDb.users || {}).find(em => 
                     (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
-                ) || 'jdavidjaramillo@hotmail.com';
+                ) || null;
 
-                const merchant = usersDb.users[merchantEmail];
+                const merchant = merchantEmail ? usersDb.users[merchantEmail] : null;
                 if (merchant) {
                     if (!merchant.sales) merchant.sales = [];
                     const alreadyLogged = merchant.sales.some(s => s.txHash === check.txHash);
@@ -9914,9 +9959,9 @@ const server = http.createServer(async (req, res) => {
                 try { loadUsersDb(); } catch (e) {}
                 let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
                     (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
-                ) || 'jdavidjaramillo@hotmail.com';
+                ) || null;
 
-                const merchant = usersDb.users[merchantEmail];
+                const merchant = merchantEmail ? usersDb.users[merchantEmail] : null;
                 if (merchant) {
                     if (!merchant.sales) merchant.sales = [];
                     merchant.sales.unshift({
@@ -9960,7 +10005,7 @@ const server = http.createServer(async (req, res) => {
                 const savedFees = (amountUsd * 0.12).toFixed(2);
                 sendTelegramAlert(
                     `🏛️ *¡NOTIFICACIÓN DE TRANSFERENCIA ACH EN EE.UU.!* 🇺🇸💵\n\n` +
-                    `👤 *Comercio / Receptor:* ${merchant ? merchant.name : recipientName} (${merchantEmail})\n` +
+                    `👤 *Comercio / Receptor:* ${merchant ? merchant.name : recipientName} (${merchantEmail || 'No registrado'})\n` +
                     `💰 *Monto Notificado:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
                     `🏷️ *Concepto:* ${concept}\n` +
                     `🆔 *Referencia / Memo:* \`${reference}\`\n` +
@@ -9972,18 +10017,20 @@ const server = http.createServer(async (req, res) => {
                 );
 
                 // 1-on-1 Private Telegram Notification to Merchant
-                sendUserTelegramNotification(
-                    merchantEmail,
-                    `🏛️ *¡NUEVO PAGO ACH NOTIFICADO!* 🇺🇸💵\n\n` +
-                    `Hola *${merchant ? merchant.name : recipientName}*, un cliente en EE.UU. ha notificado una transferencia bancaria a tu favor:\n\n` +
-                    `💰 *Monto Notificado:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
-                    `🏷️ *Concepto:* ${concept}\n` +
-                    `🆔 *Referencia:* \`${reference}\`\n` +
-                    `👤 *Cliente:* ${senderName} (${senderEmail})\n` +
-                    `🏛️ *Método:* Transferencia ACH Bancaria EE.UU.\n` +
-                    `⏳ *Estado:* En proceso de conciliación bancaria para acreditar fondos en tu billetera.\n\n` +
-                    `🚀 _Maxi Pay protege tu negocio con 0% comisiones abusivas._`
-                );
+                if (merchantEmail) {
+                    sendUserTelegramNotification(
+                        merchantEmail,
+                        `🏛️ *¡NUEVO PAGO ACH NOTIFICADO!* 🇺🇸💵\n\n` +
+                        `Hola *${merchant ? merchant.name : recipientName}*, un cliente en EE.UU. ha notificado una transferencia bancaria a tu favor:\n\n` +
+                        `💰 *Monto Notificado:* *$${amountUsd.toFixed(2)} USD* (~$${amountCop.toLocaleString('es-CO')} COP)\n` +
+                        `🏷️ *Concepto:* ${concept}\n` +
+                        `🆔 *Referencia:* \`${reference}\`\n` +
+                        `👤 *Cliente:* ${senderName} (${senderEmail})\n` +
+                        `🏛️ *Método:* Transferencia ACH Bancaria EE.UU.\n` +
+                        `⏳ *Estado:* En proceso de conciliación bancaria para acreditar fondos en tu billetera.\n\n` +
+                        `🚀 _Maxi Pay protege tu negocio con 0% comisiones abusivas._`
+                    );
+                }
 
                 // Send Transactional Email Receipt to Buyer
                 sendTransactionalReceiptEmail({
@@ -10041,9 +10088,9 @@ const server = http.createServer(async (req, res) => {
                 try { loadUsersDb(); } catch (e) {}
                 let merchantEmail = Object.keys(usersDb.users || {}).find(em => 
                     (usersDb.users[em].wallet || '').toLowerCase() === targetWallet
-                ) || 'jdavidjaramillo@hotmail.com';
+                ) || null;
 
-                const merchant = usersDb.users[merchantEmail];
+                const merchant = merchantEmail ? usersDb.users[merchantEmail] : null;
                 if (merchant) {
                     if (!merchant.sales) merchant.sales = [];
                     merchant.sales.unshift({
@@ -10147,37 +10194,30 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/generate-wallet') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else {
-                    email = 'jdavidjaramillo@hotmail.com';
-                }
-
-                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
-                if (!user) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
-                    return;
-                }
-
                 const newWallet = generateNewPersonalWallet();
                 user.wallet = newWallet.walletAddress;
-                user.privateKey = newWallet.privateKey;
+                user.encryptedVault = newWallet.encryptedVault;
+                delete user.privateKey;
                 saveUsersDb();
 
-                console.log(`⚡ [NUEVA BILLETERA SEGREGADA GENERADA]: ${user.email} -> ${user.wallet}`);
+                console.log(`⚡ [NUEVA BILLETERA SEGREGADA CIFRADA GENERADA]: ${user.email} -> ${user.wallet}`);
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
                     wallet: user.wallet,
-                    message: '¡Tu nueva Billetera Digital en Dólares (Base L2) ha sido creada con éxito!'
+                    message: '¡Tu nueva Billetera Digital en Dólares (Base L2) ha sido creada y cifrada con éxito!'
                 }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -10186,28 +10226,18 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/set-wallet') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else if (payload.email) {
-                    email = payload.email;
-                } else {
-                    email = 'jdavidjaramillo@hotmail.com';
-                }
-
-                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
-                if (!user) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
-                    return;
-                }
-
                 const targetWallet = (payload.wallet || '').trim();
                 if (!targetWallet.startsWith('0x') || targetWallet.length !== 42) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -10216,6 +10246,8 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 user.wallet = targetWallet;
+                user.encryptedVault = null;
+                delete user.privateKey;
                 saveUsersDb();
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -10231,30 +10263,20 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/telegram-link-token') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Debes iniciar sesión para vincular tu Telegram.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else {
-                    const cookies = parseCookies(req);
-                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
-                        email = usersDb.sessions[cookies.maxi_user_token];
-                    }
-                }
-
-                if (!email || !usersDb.users[email]) {
-                    res.writeHead(401, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Debes iniciar sesión para vincular tu Telegram.' }));
-                    return;
-                }
-
                 const linkToken = 'link_' + crypto.randomBytes(8).toString('hex');
                 if (!usersDb.telegramTokens) usersDb.telegramTokens = {};
-                usersDb.telegramTokens[linkToken] = email;
+                usersDb.telegramTokens[linkToken] = user.email;
                 saveUsersDb();
 
                 const linkUrl = `https://t.me/Maxi_pay_official_bot?start=${linkToken}`;
@@ -10273,28 +10295,17 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/telegram-unlink') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else {
-                    const cookies = parseCookies(req);
-                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
-                        email = usersDb.sessions[cookies.maxi_user_token];
-                    }
-                }
-
-                if (!email || !usersDb.users[email]) {
-                    res.writeHead(401, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
-                    return;
-                }
-
-                const user = usersDb.users[email];
                 user.telegramChatId = null;
                 user.telegramUsername = null;
                 saveUsersDb();
@@ -10311,28 +10322,17 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/telegram-test-alert') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else {
-                    const cookies = parseCookies(req);
-                    if (cookies.maxi_user_token && usersDb.sessions[cookies.maxi_user_token]) {
-                        email = usersDb.sessions[cookies.maxi_user_token];
-                    }
-                }
-
-                if (!email || !usersDb.users[email]) {
-                    res.writeHead(401, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'No autenticado.' }));
-                    return;
-                }
-
-                const user = usersDb.users[email];
                 if (!user.telegramChatId) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: 'Aún no has vinculado tu Telegram.' }));
@@ -10340,7 +10340,7 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 await sendUserTelegramNotification(
-                    email,
+                    user.email,
                     `🧪 *¡PRUEBA DE ALERTA EXITOSA EN MAXI SUITE!* 🚀\n\n` +
                     `Hola *${user.name}*, tu canal privado de notificaciones está 100% operativo.\n\n` +
                     `✅ *Billetera vinculada:* \`${user.wallet || 'No asignada aún'}\`\n` +
@@ -10361,27 +10361,18 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/withdraw-to-nequi') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión para realizar retiros.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else if (payload.email) {
-                    email = payload.email;
-                } else {
-                    email = 'jdavidjaramillo@hotmail.com';
-                }
-
-                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
-                if (!user) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
-                    return;
-                }
 
                 const amountUsd = parseFloat(payload.amountUsd) || 0;
                 const bankType = payload.bankType || 'nequi';
@@ -10518,27 +10509,18 @@ const server = http.createServer(async (req, res) => {
         });
         return;
     } else if (req.method === 'POST' && pathname === '/api/user/withdraw-crypto') {
+        const user = getAuthenticatedUser(req);
+        if (!user) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'No autorizado. Se requiere iniciar sesión para realizar retiros.' }));
+            return;
+        }
+
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
             try {
                 const payload = JSON.parse(body || '{}');
-                const token = req.headers['authorization']?.replace('Bearer ', '').trim();
-                let email = null;
-                if (token && usersDb.sessions[token]) {
-                    email = usersDb.sessions[token];
-                } else if (payload.email) {
-                    email = payload.email;
-                } else {
-                    email = 'jdavidjaramillo@hotmail.com';
-                }
-
-                const user = usersDb.users[email] || Object.values(usersDb.users || {})[0];
-                if (!user) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Usuario no encontrado' }));
-                    return;
-                }
 
                 const amountUsd = parseFloat(payload.amountUsd) || 0;
                 const destAddress = (payload.address || '').trim();
@@ -10817,9 +10799,8 @@ const server = http.createServer(async (req, res) => {
             try {
                 const payload = JSON.parse(body || '{}');
                 const password = payload.password || '';
-                const passHash = crypto.createHash('sha256').update(password).digest('hex');
 
-                if (passHash === ADMIN_MASTER_PASSWORD_HASH || password === 'MaxiMaster2026!' || password === 'JuanDavid2026*') {
+                if (verifyAdminPassword(password)) {
                     const token = 'adm_' + crypto.randomBytes(24).toString('hex');
                     usersDb.adminSessions[token] = {
                         name: 'Juan David (Administrador)',
@@ -10941,8 +10922,9 @@ const server = http.createServer(async (req, res) => {
 
                 const { hash, salt } = hashPassword(password);
                 const newWallet = generateNewPersonalWallet();
-                const assignedWallet = (wallet && wallet.trim().startsWith('0x')) ? wallet.trim() : newWallet.walletAddress;
-                const assignedPrivateKey = (wallet && wallet.trim().startsWith('0x')) ? null : newWallet.privateKey;
+                const isCustomWallet = (wallet && wallet.trim().startsWith('0x'));
+                const assignedWallet = isCustomWallet ? wallet.trim() : newWallet.walletAddress;
+                const assignedVault = isCustomWallet ? null : newWallet.encryptedVault;
 
                 user = {
                     id: 'usr_' + Date.now(),
@@ -10950,7 +10932,7 @@ const server = http.createServer(async (req, res) => {
                     email: cleanEmail,
                     phone: phone.trim(),
                     wallet: assignedWallet,
-                    privateKey: assignedPrivateKey,
+                    encryptedVault: assignedVault,
                     passwordHash: hash,
                     passwordSalt: salt,
                     credits: 5,

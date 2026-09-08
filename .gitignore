@@ -11,15 +11,24 @@ dist/
 *.db-wal
 *.db-shm
 
-# Wallets y secretos (por si se generan fuera de ~/.automaton)
+# Wallets, bases de datos y secretos (NUNCA versionar datos de usuarios ni claves)
+data/
+data/*
+registered_users.json
 wallet.json
+wallets/
 *.key
 *.pem
+*.db
+*.db-wal
+*.db-shm
 .env
 .env.*
+.env.local
 
 # Sistema operativo / editor
 .DS_Store
 *.log
 .vscode/
 .idea/
+

@@ -16,7 +16,10 @@ const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 function loadTreasuryAccount() {
-  const passphrase = process.env.AUTOMATON_WALLET_PASSPHRASE || 'Gracias a la vida por maxi 2026';
+  const passphrase = process.env.AUTOMATON_WALLET_PASSPHRASE || process.env.MAXI_VAULT_PASSPHRASE;
+  if (!passphrase) {
+    throw new Error('AUTOMATON_WALLET_PASSPHRASE no configurada en las variables de entorno.');
+  }
   const walletPath = path.join(os.homedir(), '.automaton', 'wallet.json');
   if (!fs.existsSync(walletPath)) {
     throw new Error('No se encontró el archivo de billetera en ~/.automaton/wallet.json');

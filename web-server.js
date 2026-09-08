@@ -3854,10 +3854,44 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     </a>
                 </div>
 
-                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:6px; color:var(--text-main); text-transform:uppercase;">
-                    Número de Nequi / Bancolombia:
+                <label style="display:block; font-size:12.5px; font-weight:800; margin-bottom:8px; color:var(--text-main); text-transform:uppercase;">
+                    Destino del Desembolso en Pesos:
                 </label>
-                <input type="tel" id="withdrawPhoneInput" class="input-box" value="${userPhone}" placeholder="Ej: 314 754 6359" style="margin-bottom:18px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+                    <button type="button" id="destTypeNequi" onclick="selectWithdrawBankType('nequi')" class="btn-primary" style="padding:10px; font-size:13px; font-weight:800; justify-content:center; border-radius:10px; cursor:pointer;">
+                        📱 Nequi
+                    </button>
+                    <button type="button" id="destTypeBancolombia" onclick="selectWithdrawBankType('bancolombia')" class="btn-outline" style="padding:10px; font-size:13px; font-weight:700; justify-content:center; border-radius:10px; cursor:pointer;">
+                        🏦 Bancolombia
+                    </button>
+                </div>
+
+                <!-- NEQUI SECTION -->
+                <div id="nequiFieldsSection">
+                    <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:var(--text-muted);">
+                        Número de Celular Nequi:
+                    </label>
+                    <input type="tel" id="withdrawPhoneInput" class="input-box" value="${userPhone}" placeholder="Ej: 314 754 6359" style="margin-bottom:18px;">
+                </div>
+
+                <!-- BANCOLOMBIA SECTION -->
+                <div id="bancolombiaFieldsSection" style="display:none; margin-bottom:18px;">
+                    <div style="display:grid; grid-template-columns:1fr 1.5fr; gap:8px; margin-bottom:10px;">
+                        <div>
+                            <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px; color:var(--text-muted);">Tipo Cuenta:</label>
+                            <select id="withdrawAccountType" class="input-box" style="padding:11px; font-size:13px; font-weight:700;">
+                                <option value="Ahorros">Ahorros</option>
+                                <option value="Corriente">Corriente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px; color:var(--text-muted);">Número de Cuenta Bancolombia:</label>
+                            <input type="text" id="withdrawAccountNumber" class="input-box" placeholder="Ej: 123-456789-00" style="padding:11px; font-size:13px;">
+                        </div>
+                    </div>
+                    <label style="display:block; font-size:11.5px; font-weight:700; margin-bottom:4px; color:var(--text-muted);">Nombre Completo del Titular & Cédula/NIT:</label>
+                    <input type="text" id="withdrawAccountHolder" class="input-box" value="${userName}" placeholder="Ej: Juan David Jaramillo - CC 12345678" style="padding:11px; font-size:13px;">
+                </div>
 
                 <button class="btn-primary" onclick="submitNequiWithdrawal()" style="width:100%; justify-content:center; padding:14px; font-size:15px; font-weight:900; background:linear-gradient(135deg, #00df89 0%, #00f2fe 100%); color:#06080e; cursor:pointer;">
                     ⚡ Confirmar Retiro a Nequi / Bancolombia
@@ -4769,9 +4803,35 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
+        let currentWithdrawBankType = 'nequi';
+
+        function selectWithdrawBankType(type) {
+            currentWithdrawBankType = type;
+            const nequiBtn = document.getElementById('destTypeNequi');
+            const bancoBtn = document.getElementById('destTypeBancolombia');
+            const nequiSec = document.getElementById('nequiFieldsSection');
+            const bancoSec = document.getElementById('bancolombiaFieldsSection');
+
+            if (type === 'nequi') {
+                if (nequiBtn) { nequiBtn.className = 'btn-primary'; nequiBtn.style.border = ''; }
+                if (bancoBtn) { bancoBtn.className = 'btn-outline'; }
+                if (nequiSec) nequiSec.style.display = 'block';
+                if (bancoSec) bancoSec.style.display = 'none';
+            } else {
+                if (bancoBtn) { bancoBtn.className = 'btn-primary'; bancoBtn.style.border = ''; }
+                if (nequiBtn) { nequiBtn.className = 'btn-outline'; }
+                if (nequiSec) nequiSec.style.display = 'none';
+                if (bancoSec) bancoSec.style.display = 'block';
+            }
+        }
+
         async function submitNequiWithdrawal() {
             const amountUsd = parseFloat(document.getElementById('withdrawAmountInput').value) || 0;
             const phone = document.getElementById('withdrawPhoneInput').value.trim();
+            const bankType = currentWithdrawBankType;
+            const accountType = document.getElementById('withdrawAccountType')?.value || 'Ahorros';
+            const accountNumber = (document.getElementById('withdrawAccountNumber')?.value || '').trim();
+            const accountHolder = (document.getElementById('withdrawAccountHolder')?.value || '').trim();
             const errBox = document.getElementById('withdrawErr');
             const succBox = document.getElementById('withdrawSuccess');
 
@@ -4783,9 +4843,16 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 errBox.innerText = 'Ingresa un monto válido mayor a $0 USD.';
                 return;
             }
-            if (!phone) {
+
+            if (bankType === 'nequi' && !phone) {
                 errBox.style.display = 'block';
-                errBox.innerText = 'Ingresa tu número de Nequi o Bancolombia.';
+                errBox.innerText = 'Ingresa tu número de celular Nequi.';
+                return;
+            }
+
+            if (bankType === 'bancolombia' && (!accountNumber || !accountHolder)) {
+                errBox.style.display = 'block';
+                errBox.innerText = 'Por favor ingresa el número de cuenta Bancolombia y el nombre del titular con cédula.';
                 return;
             }
 
@@ -4797,21 +4864,25 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                         'Content-Type': 'application/json',
                         'Authorization': token ? ('Bearer ' + token) : ''
                     },
-                    body: JSON.stringify({ amountUsd, phone })
+                    body: JSON.stringify({ amountUsd, phone, bankType, accountType, accountNumber, accountHolder })
                 });
                 const data = await res.json();
                 if (data.success) {
                     succBox.style.display = 'block';
-                    succBox.innerHTML = '🎉 <strong>¡Retiro Solicitado con Éxito!</strong><br>' +
+                    const destDesc = bankType === 'bancolombia' 
+                        ? ('Bancolombia ' + accountType + ' #' + accountNumber + ' (' + accountHolder + ')')
+                        : ('Nequi #' + phone);
+                    succBox.innerHTML = '🎉 <strong>¡Retiro Procesado con Éxito!</strong><br>' +
                         'Monto: $' + amountUsd.toFixed(2) + ' USD<br>' +
                         'Recibirás: $' + (data.withdrawal?.netCop || Math.round(amountUsd * 4000)).toLocaleString('es-CO') + ' COP<br>' +
-                        'Destino: Nequi ' + phone + '<br>' +
-                        'Tu saldo llegará en los próximos minutos.';
-                    showToast('📲 ¡Retiro de $' + amountUsd.toFixed(2) + ' USD solicitado a Nequi!', 'success');
+                        'Destino: <strong>' + destDesc + '</strong><br>' +
+                        (data.basescanUrl ? ('Comprobante Base L2: <a href="' + data.basescanUrl + '" target="_blank" style="color:var(--cyan); font-weight:bold; text-decoration:underline;">Ver en BaseScan</a><br>') : '') +
+                        'Tus fondos han sido despachados a Wenia y se transferirán a tu cuenta en minutos.';
+                    showToast('📲 ¡Retiro de $' + amountUsd.toFixed(2) + ' USD procesado a ' + (bankType === 'bancolombia' ? 'Bancolombia' : 'Nequi') + '!', 'success');
                     setTimeout(() => {
                         closeWithdrawModal();
                         refreshUserWalletData();
-                    }, 2500);
+                    }, 4000);
                 } else {
                     errBox.style.display = 'block';
                     errBox.innerText = data.error || 'Error al procesar la solicitud.';
@@ -10225,6 +10296,11 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 const amountUsd = parseFloat(payload.amountUsd) || 0;
+                const bankType = payload.bankType || 'nequi';
+                const isBancolombia = bankType === 'bancolombia';
+                const accountType = payload.accountType || 'Ahorros';
+                const accountNumber = (payload.accountNumber || '').trim();
+                const accountHolder = (payload.accountHolder || user.name || '').trim();
                 const phone = (payload.phone || user.phone || '').trim();
 
                 if (amountUsd <= 0) {
@@ -10232,11 +10308,23 @@ const server = http.createServer(async (req, res) => {
                     res.end(JSON.stringify({ success: false, error: 'El monto a retirar debe ser mayor a 0.' }));
                     return;
                 }
-                if (!phone) {
+
+                if (isBancolombia && !accountNumber) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Por favor proporciona el número de cuenta Bancolombia.' }));
+                    return;
+                }
+
+                if (!isBancolombia && !phone) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: 'Por favor proporciona tu número de Nequi.' }));
                     return;
                 }
+
+                const destinationStr = isBancolombia 
+                    ? (`Bancolombia ${accountType} #${accountNumber} (${accountHolder})`)
+                    : (`Nequi #${phone}`);
+                const bankName = isBancolombia ? 'Bancolombia' : 'Nequi';
 
                 const isPro = user.plan && user.plan !== 'Gratuito';
                 const TRM_COP = 4000;
@@ -10259,8 +10347,13 @@ const server = http.createServer(async (req, res) => {
                     netCop,
                     amountCop: netCop,
                     isPro: !!isPro,
-                    destination: phone,
-                    bank: 'Nequi / Bancolombia',
+                    bankType,
+                    bank: bankName,
+                    accountType: isBancolombia ? accountType : null,
+                    accountNumber: isBancolombia ? accountNumber : null,
+                    accountHolder: isBancolombia ? accountHolder : null,
+                    destination: isBancolombia ? accountNumber : phone,
+                    destinationFormatted: destinationStr,
                     status: 'PROCESANDO_INMEDIATO',
                     txHash,
                     basescanUrl,
@@ -10274,31 +10367,30 @@ const server = http.createServer(async (req, res) => {
 
                 // Send Telegram Notification to Admin (Juan David)
                 const wAlertMsg = `📲 *¡SOLICITUD DE RETIRO RECIBIDA EN MAXI PAY!* 🇨🇴\n\n` +
-                    `👤 *Usuario:* ${user.name} (${user.email})\n` +
+                    `👤 *Comercio:* ${user.name} (${user.email})\n` +
                     `👑 *Plan:* ${user.plan || 'Gratuito'} ${isPro ? '(Tarifa $0 COP)' : '(Tarifa Pasarela $4.500 COP)'}\n` +
                     `💵 *Monto Retirado:* $${amountUsd.toFixed(2)} USD (Subtotal: $${grossCop.toLocaleString('es-CO')} COP)\n` +
                     `💰 *Total Neto a Transferir:* *$${netCop.toLocaleString('es-CO')} COP*\n` +
-                    `🏦 *Destino:* Nequi / Bancolombia a la Mano\n` +
-                    `📱 *Número de Celular:* \`${phone}\`\n` +
+                    `🏦 *Destino Bancario:* ${destinationStr}\n` +
                     `⛓️ *Transferencia a Wenia (Base L2):* ✅ \`${txHash.slice(0, 10)}...${txHash.slice(-8)}\`\n` +
                     `🔍 *Ver en BaseScan:* ${basescanUrl}\n` +
                     `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
-                    `🌐 *Estado:* Fondos recibidos en Wenia. Procede con el desembolso a Nequi.`;
+                    `🌐 *Estado:* Fondos recibidos en Wenia. Procede con el desembolso a ${bankName}.`;
                 sendTelegramAlert(wAlertMsg);
 
                 // Send 1-on-1 Private Telegram Notification to User
                 sendUserTelegramNotification(
                     user.email,
-                    `📲 *¡SOLICITUD DE RETIRO A NEQUI EN PROCESO!* 🇨🇴\n\n` +
+                    `📲 *¡SOLICITUD DE RETIRO A ${bankName.toUpperCase()} EN PROCESO!* 🇨🇴\n\n` +
                     `Hola *${user.name}*, hemos recibido tu solicitud de retiro:\n\n` +
                     `💵 *Monto en Dólares:* $${amountUsd.toFixed(2)} USD\n` +
                     `💰 *Total Neto a Recibir:* *$${netCop.toLocaleString('es-CO')} COP*\n` +
-                    `🏦 *Destino:* Nequi / Bancolombia (\`${phone}\`)\n` +
+                    `🏦 *Destino:* ${destinationStr}\n` +
                     `🏷️ *Tarifa de Liquidación:* ${isPro ? '$0 COP (¡Bonificado Plan Pro! 👑)' : '$4.500 COP (Estándar)'}\n` +
                     `⛓️ *Comprobante On-Chain:* [Ver en BaseScan](${basescanUrl})\n` +
                     `⏱️ *Fecha:* ${new Date().toLocaleString('es-CO')}\n` +
                     `🌐 *Estado:* En proceso de transferencia.\n\n` +
-                    `Te avisaremos tan pronto el saldo esté disponible en tu app de Nequi.`
+                    `Te avisaremos tan pronto el saldo esté disponible en tu cuenta.`
                 );
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });

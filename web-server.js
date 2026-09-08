@@ -3224,17 +3224,17 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Contraseña:</label>
                     <div style="position:relative; margin-bottom:12px;">
-                        <input type="password" id="regPassword" class="input-box" placeholder="Mínimo 6 caracteres" style="padding-right:40px;">
+                        <input type="password" id="regPassword" class="input-box" placeholder="Mínimo 6 caracteres" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitRegister()">
                         <span onclick="togglePasswordVisibility('regPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
                     <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text-main);">Confirmar Contraseña:</label>
                     <div style="position:relative; margin-bottom:12px;">
-                        <input type="password" id="regConfirmPassword" class="input-box" placeholder="Repite tu contraseña" style="padding-right:40px;">
+                        <input type="password" id="regConfirmPassword" class="input-box" placeholder="Repite tu contraseña" style="padding-right:40px;" onkeypress="if(event.key==='Enter') submitRegister()">
                         <span onclick="togglePasswordVisibility('regConfirmPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:16px; user-select:none;" title="Mostrar / Ocultar Contraseña">👁️</span>
                     </div>
 
-                    <button class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer; font-size:15px; font-weight:800; padding:14px;">
+                    <button id="btnSubmitRegister" class="btn-primary" onclick="submitRegister()" style="width:100%; justify-content:center; margin-top:12px; cursor:pointer; font-size:15px; font-weight:800; padding:14px;">
                         🎁 Crear Cuenta & Reclamar 5 Fichas Gratis
                     </button>
 
@@ -3978,12 +3978,22 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
             }
         }
 
+        async function submitRegister() {
+            return submitRegisterFromInput();
+        }
+
         async function submitRegisterFromInput() {
-            const name = document.getElementById('regNameInput').value.trim();
-            const email = document.getElementById('regEmailInput').value.trim();
-            const phone = document.getElementById('regPhoneInput').value.trim();
-            const password = document.getElementById('regPasswordInput').value;
-            const confirmPassword = document.getElementById('regConfirmPasswordInput').value;
+            const nameEl = document.getElementById('regName') || document.getElementById('regNameInput');
+            const emailEl = document.getElementById('regEmail') || document.getElementById('regEmailInput');
+            const phoneEl = document.getElementById('regPhone') || document.getElementById('regPhoneInput');
+            const passEl = document.getElementById('regPassword') || document.getElementById('regPasswordInput');
+            const confirmPassEl = document.getElementById('regConfirmPassword') || document.getElementById('regConfirmPasswordInput');
+            
+            const name = nameEl ? nameEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+            const password = passEl ? passEl.value : '';
+            const confirmPassword = confirmPassEl ? confirmPassEl.value : '';
             const errBox = document.getElementById('regError');
             if (errBox) errBox.style.display = 'none';
 
@@ -3991,6 +4001,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (errBox) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'Por favor completa todos los campos requeridos.';
+                } else {
+                    showToast('Por favor completa todos los campos requeridos.', 'error');
                 }
                 return;
             }
@@ -3999,6 +4011,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (errBox) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'La contraseña debe tener al menos 6 caracteres.';
+                } else {
+                    showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
                 }
                 return;
             }
@@ -4007,8 +4021,16 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (errBox) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'Las contraseñas no coinciden. Por favor verifícalas.';
+                } else {
+                    showToast('Las contraseñas no coinciden.', 'error');
                 }
                 return;
+            }
+
+            const btn = document.getElementById('btnSubmitRegister');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Creando Cuenta...';
             }
 
             try {
@@ -4022,24 +4044,43 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                     localStorage.setItem('maxi_user_token', data.token);
                     document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
                     showToast('🎉 ¡Cuenta creada con éxito! Bienvenido a Maxi Suite.');
-                    showProfile(data.user, data.invoices || []);
+                    if (typeof showProfile === 'function') {
+                        showProfile(data.user, data.invoices || []);
+                    } else {
+                        window.location.href = '/cuenta';
+                    }
                 } else {
                     if (errBox) {
                         errBox.style.display = 'block';
                         errBox.innerText = data.error || 'Error al registrar.';
+                    } else {
+                        showToast(data.error || 'Error al registrar.', 'error');
                     }
                 }
             } catch (err) {
                 if (errBox) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'Error de conexión: ' + err.message;
+                } else {
+                    showToast('Error de conexión: ' + err.message, 'error');
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '🎁 Crear Cuenta & Reclamar 5 Fichas Gratis';
                 }
             }
         }
 
+        async function submitLogin() {
+            return submitLoginFromInput();
+        }
+
         async function submitLoginFromInput() {
-            const email = document.getElementById('loginEmailInput').value.trim();
-            const password = document.getElementById('loginPasswordInput').value;
+            const emailEl = document.getElementById('loginEmail') || document.getElementById('loginEmailInput');
+            const passEl = document.getElementById('loginPassword') || document.getElementById('loginPasswordInput');
+            const email = emailEl ? emailEl.value.trim() : '';
+            const password = passEl ? passEl.value : '';
             const errBox = document.getElementById('loginError');
             if (errBox) errBox.style.display = 'none';
 
@@ -4047,6 +4088,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (errBox) {
                     errBox.style.display = 'block';
                     errBox.innerText = 'Por favor ingresa tu correo electrónico y tu contraseña.';
+                } else {
+                    showToast('Por favor ingresa tu correo electrónico y tu contraseña.', 'error');
                 }
                 return;
             }
@@ -4061,8 +4104,12 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 if (data.success && data.token) {
                     localStorage.setItem('maxi_user_token', data.token);
                     document.cookie = 'maxi_user_token=' + data.token + '; Path=/; Max-Age=2592000; SameSite=Lax';
-                    showToast('⚡ ¡Bienvenido de nuevo, ' + (data.user.name.split(' ')[0]) + '!');
-                    showProfile(data.user, data.invoices || []);
+                    showToast('⚡ ¡Bienvenido de nuevo, ' + ((data.user && data.user.name) ? data.user.name.split(' ')[0] : 'Usuario') + '!');
+                    if (typeof showProfile === 'function') {
+                        showProfile(data.user, data.invoices || []);
+                    } else {
+                        window.location.href = '/cuenta';
+                    }
                 } else {
                     if (errBox) {
                         errBox.style.display = 'block';

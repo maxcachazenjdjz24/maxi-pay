@@ -28,7 +28,7 @@ async function runEndpointTests() {
   });
 
   // Wait for server to start
-  await new Promise(r => setTimeout(r, 2000));
+  await new Promise(r => setTimeout(r, 3500));
 
   try {
     // 1. Health check & Security Headers

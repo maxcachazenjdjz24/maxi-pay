@@ -122,6 +122,52 @@ async function executeAutoSettlementOnBase(orderId, merchantWallet, netUsdcAmoun
   }
 }
 
+// DYNAMIC LIVE TRM (USD -> COP) REAL-TIME EXCHANGE ENGINE
+let cachedLiveTrmCop = 3135;
+let lastTrmFetchTimestamp = 0;
+
+async function fetchLiveTrmCop() {
+  const now = Date.now();
+  if (now - lastTrmFetchTimestamp < 5 * 60 * 1000 && cachedLiveTrmCop > 1000) {
+    return cachedLiveTrmCop;
+  }
+  try {
+    const rate = await new Promise((resolve, reject) => {
+      const req = https.get('https://open.er-api.com/v6/latest/USD', { timeout: 3500 }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json && json.rates && json.rates.COP) {
+              resolve(Math.round(json.rates.COP));
+            } else {
+              reject(new Error('Formato de tasa TRM no válido'));
+            }
+          } catch (e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout fetching TRM')); });
+    });
+    if (rate && rate > 1000 && rate < 10000) {
+      cachedLiveTrmCop = rate;
+      lastTrmFetchTimestamp = now;
+      console.log(`🇨🇴 [LIVE TRM ENGINE UPDATED]: 1 USD = $${rate.toLocaleString('es-CO')} COP`);
+    }
+  } catch (err) {
+    console.warn(`⚠️ [TRM FETCH WARNING]: Usando TRM en memoria ($${cachedLiveTrmCop} COP) - ${err.message}`);
+  }
+  return cachedLiveTrmCop;
+}
+
+function getLiveTrmCopSync() {
+  return cachedLiveTrmCop || 3135;
+}
+
+// Initial fetch on startup
+fetchLiveTrmCop().catch(() => {});
+
 // WENIA TREASURY & ON-CHAIN OFF-RAMP ENGINE (BASE L2)
 const WENIA_TREASURY_ADDRESS = '0xf2Ae7b828BCceF34B484760A1D698dEd0f790651';
 
@@ -2346,6 +2392,7 @@ function getGlobalStyles() {
 
 // 2. MULTI-RAIL CHECKOUT 2.0: ACH DIRECT (US BANK) + BASE L2 NATIVE USDC (QR/WEB3) + INTERNATIONAL CARD & APPLE PAY
 function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'Maxi Pay') {
+  const liveTrm = getLiveTrmCopSync();
   const numAmount = parseFloat(amount) || 20.00;
   const cardFeeAmount = parseFloat((numAmount / (1 - 0.015) - numAmount).toFixed(2));
   const cardTotalToPay = parseFloat((numAmount + cardFeeAmount).toFixed(2));
@@ -2468,33 +2515,38 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
         }
         #checkoutToast {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #0f172a;
-            color: #00df89;
-            border: 1.5px solid #00df89;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 13.5px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 999999;
-            display: none;
-            animation: fadeInToast 0.3s ease;
+            bottom: 24px;
+            right: 24px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        @keyframes fadeInToast {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .pay-toast {
+            background: rgba(6, 8, 14, 0.95);
+            border: 1px solid var(--cyan);
+            color: var(--text-main);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     </style>
     <script type="text/javascript" src="https://checkout.wompi.co/widget.js"></script>
 </head>
-<body>
+<body style="min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; background:var(--bg-main);">
     <div id="checkoutToast"></div>
 
-    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
-        <div class="card" style="width:100%; max-width:560px; text-align:center; padding:28px 24px; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.15);">
-            
+    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; width:100%;">
+        <div class="card" style="width:100%; max-width:560px; text-align:center; padding:28px 24px; border-color:var(--cyan); box-shadow:0 20px 60px rgba(0,242,254,0.15); position:relative; overflow:hidden;">
+            <canvas id="confettiCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10;"></canvas>
+
             <!-- HEADER -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; color:var(--text-main);">
@@ -2510,7 +2562,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px; font-weight:600;">Destinatario: ${recipientName}</div>
 
                 <div style="font-size:36px; font-weight:900; color:var(--emerald); margin-bottom:16px; letter-spacing:-0.03em;">
-                    $${numAmount.toFixed(2)} <span style="font-size:16px; color:var(--text-muted); font-weight:600;">USD (~$${(numAmount * 4000).toLocaleString('es-CO')} COP)</span>
+                    $${numAmount.toFixed(2)} <span style="font-size:16px; color:var(--text-muted); font-weight:600;">USD (~$${Math.round(numAmount * liveTrm).toLocaleString('es-CO')} COP)</span>
                 </div>
 
                 <!-- 3-RAIL SELECTOR TABS -->
@@ -2761,6 +2813,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
           wallet,
           recipientName,
           referenceCode,
+          trmCop: liveTrm,
           wompiPublicKey: WOMPI_PUBLIC_KEY
         })};
 
@@ -3022,7 +3075,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
                 alert('La pasarela Wompi requiere la clave pública configurada en las variables de entorno del servidor.');
                 return;
             }
-            let amountCop = Math.round(parseFloat(CHECKOUT_PAYLOAD.amount) * 4000);
+            let amountCop = Math.round(parseFloat(CHECKOUT_PAYLOAD.amount) * (CHECKOUT_PAYLOAD.trmCop || 3135));
             const amountInCents = amountCop * 100;
             const ref = CHECKOUT_PAYLOAD.orderId + '-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -3085,6 +3138,7 @@ function renderCheckoutHtml(orderId, amount, concept, wallet, recipientName = 'M
 
 // 3. PAGE: CUENTA (SERVER-SIDE RENDERED WITH AUTH COOKIE SUPPORT & ZERO-POPUPS MODALS)
 function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
+  const liveTrm = getLiveTrmCopSync();
   const isUserAuthenticated = !!user;
   const userName = user?.name || '';
   const userEmail = user?.email || '';
@@ -3477,7 +3531,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                                 <span style="font-size:14px; font-weight:800; color:var(--text-muted);">USD</span>
                             </div>
                             <div style="font-size:13px; font-weight:700; color:var(--cyan); margin-top:4px;" id="walletCopBal">
-                                ≈ $0 COP (TRM $4.000 COP)
+                                ≈ $0 COP (TRM $${liveTrm.toLocaleString('es-CO')} COP)
                             </div>
                         </div>
 
@@ -3765,7 +3819,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--border); margin-bottom:16px; font-size:13px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--text-muted); font-weight:600;">
                         <span>Tasa de Cambio (TRM):</span>
-                        <strong style="color:var(--text-main);">$4.000 COP / USD</strong>
+                        <strong id="wTrmDisplay" style="color:var(--text-main);">$${liveTrm.toLocaleString('es-CO')} COP / USD</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:var(--text-muted); font-weight:600;">
                         <span>Subtotal en Pesos:</span>
@@ -3924,7 +3978,7 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
     ${getFooter()}
 
     <script>
-        let currentUserState = ${JSON.stringify(sanitizeUser(user))};
+        let currentUserState = ${JSON.stringify(Object.assign(sanitizeUser(user) || {}, { trmCop: liveTrm }))};
         window.currentUserState = currentUserState;
 
         function getCookie(name) {
@@ -4150,7 +4204,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                         if (activeWalletBox) activeWalletBox.style.display = 'block';
                         
                         document.getElementById('walletUsdBal').innerText = '$' + (data.usdcBalance || '0.00');
-                        document.getElementById('walletCopBal').innerText = '≈ ' + (data.copBalance || '$0 COP') + ' (TRM $4.000 COP)';
+                        document.getElementById('walletCopBal').innerText = '≈ ' + (data.copBalance || '$0 COP') + ' (TRM $' + (data.trmCop ? Number(data.trmCop).toLocaleString('es-CO') : '${liveTrm.toLocaleString('es-CO')}') + ' COP)';
+                        if (data.trmCop && currentUserState) currentUserState.trmCop = data.trmCop;
                         if (document.getElementById('walletEthBal')) {
                             const ethVal = parseFloat(data.ethBalance || '0') || 0;
                             document.getElementById('walletEthBal').innerText = ethVal.toFixed(6);
@@ -4318,7 +4373,8 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
                 sales.forEach(sale => {
                     const dateStr = sale.date ? new Date(sale.date).toLocaleString('es-CO') : 'Reciente';
                     const amountUsd = Number(sale.amountUsd || 0).toFixed(2);
-                    const amountCop = Number(sale.amountCop || (amountUsd * 4000)).toLocaleString('es-CO');
+                    const currentTrm = (currentUserState && currentUserState.trmCop) || ${liveTrm};
+                    const amountCop = Number(sale.amountCop || (amountUsd * currentTrm)).toLocaleString('es-CO');
                     const shortFrom = (sale.from || '0x...').slice(0, 6) + '...' + (sale.from || '').slice(-4);
                     const txUrl = 'https://basescan.org/tx/' + sale.txHash;
 
@@ -4682,12 +4738,15 @@ function renderCuentaPage(user = null, invoices = [], initialTab = 'register') {
 
         function calcTransparentBreakdown(val) {
             const amountUsd = parseFloat(val) || 0;
-            const TRM_COP = 4000;
+            const TRM_COP = (currentUserState && currentUserState.trmCop) || ${liveTrm};
             const subtotalCop = Math.round(amountUsd * TRM_COP);
             const isPro = currentUserState && currentUserState.plan && currentUserState.plan !== 'Gratuito';
             
             const feeCop = (amountUsd > 0 && !isPro) ? 4500 : 0;
             const netCop = Math.max(0, subtotalCop - feeCop);
+
+            const trmDisplayEl = document.getElementById('wTrmDisplay');
+            if (trmDisplayEl) trmDisplayEl.innerText = '$' + TRM_COP.toLocaleString('es-CO') + ' COP / USD';
 
             const subtotalEl = document.getElementById('wSubtotalCop');
             const feeLabelEl = document.getElementById('wFeeLabel');
@@ -9543,7 +9602,7 @@ const server = http.createServer(async (req, res) => {
         if (pathname === '/api/market-ticker') {
             updateLiveMarketPrices().catch(() => {});
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true, prices: liveMarketPrices }));
+            res.end(JSON.stringify({ success: true, trmCop: getLiveTrmCopSync(), prices: liveMarketPrices }));
             return;
         }
 
@@ -9673,8 +9732,9 @@ const server = http.createServer(async (req, res) => {
                     ensureUserGasSponsorship(walletAddr).catch(() => {});
                 }
             }
+            const trm = await fetchLiveTrmCop();
             const numUsd = parseFloat(usdcBalance) || 0;
-            const copBalance = Math.round(numUsd * 4000).toLocaleString('es-CO');
+            const copBalance = Math.round(numUsd * trm).toLocaleString('es-CO');
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
@@ -9684,6 +9744,7 @@ const server = http.createServer(async (req, res) => {
                 usdcBalance,
                 ethBalance,
                 copBalance: '$' + copBalance + ' COP',
+                trmCop: trm,
                 sales: user.sales || [],
                 withdrawals: (usersDb.withdrawals || []).filter(w => (w.userEmail || '').toLowerCase() === (user.email || '').toLowerCase())
             }));
@@ -9693,8 +9754,8 @@ const server = http.createServer(async (req, res) => {
             const userEmail = (parsedUrl.query.email || '').trim().toLowerCase();
             const user = userEmail ? usersDb.users[userEmail] : null;
             const isPro = user && user.plan && user.plan !== 'Gratuito';
-            const TRM_COP = 4000;
-            const grossCop = Math.round(amountUsd * TRM_COP);
+            const trm = await fetchLiveTrmCop();
+            const grossCop = Math.round(amountUsd * trm);
             const settlementFeeCop = (amountUsd > 0 && !isPro) ? 4500 : 0;
             const netCop = Math.max(0, grossCop - settlementFeeCop);
 
@@ -10183,8 +10244,8 @@ const server = http.createServer(async (req, res) => {
                 const bankName = isBancolombia ? 'Bancolombia' : 'Nequi';
 
                 const isPro = user.plan && user.plan !== 'Gratuito';
-                const TRM_COP = 4000;
-                const grossCop = Math.round(amountUsd * TRM_COP);
+                const trm = await fetchLiveTrmCop();
+                const grossCop = Math.round(amountUsd * trm);
                 const feeCop = isPro ? 0 : 4500;
                 const netCop = Math.max(0, grossCop - feeCop);
 
